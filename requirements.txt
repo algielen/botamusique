@@ -1,3 +1,4 @@
+audioop-lts; python_version>='3.13'
 flask
 yt-dlp
 python-magic
