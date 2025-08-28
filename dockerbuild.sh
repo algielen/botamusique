@@ -1,0 +1,1 @@
+docker build --tag botamusique-local -f Dockerfile.local .

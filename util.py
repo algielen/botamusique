@@ -138,17 +138,6 @@ def update(current_version):
     target = var.config.get('bot', 'target_version')
     new_version = new_release_version(target)
     msg = ""
-    if target == "git":
-        msg = "git install, I do nothing<br/>"
-
-    elif (target == "stable" and version.parse(new_version) > version.parse(current_version)) or \
-            (target == "testing" and version.parse(new_version) != version.parse(current_version)):
-        log.info('update: new version, start updating...')
-        tp = sp.check_output(['/usr/bin/env', 'bash', 'update.sh', target]).decode()
-        log.debug(tp)
-        log.info('update: update pip libraries dependencies')
-        sp.check_output([var.config.get('bot', 'pip3_path'), 'install', '--upgrade', '-r', 'requirements.txt']).decode()
-        msg = "New version installed, please restart the bot.<br/>"
 
     log.info(f'update: starting update {YT_PKG_NAME} via pip3')
     tp = sp.check_output([var.config.get('bot', 'pip3_path'), 'install', '--upgrade', YT_PKG_NAME]).decode()
