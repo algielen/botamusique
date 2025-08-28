@@ -1,1 +1,1 @@
-docker build --tag botamusique-local -f Dockerfile.local .
+docker build --tag algielen/botamusique -f Dockerfile.local .

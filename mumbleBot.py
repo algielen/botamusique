@@ -187,27 +187,6 @@ class MumbleBot:
 
         self.redirect_ffmpeg_log = var.config.getboolean('debug', 'redirect_ffmpeg_log')
 
-        # if var.config.getboolean("bot", "auto_check_update"):
-        #     def check_update():
-        #         nonlocal self
-        #         new_version, changelog = util.check_update(self.get_version())
-        #         if new_version:
-        #             self.send_channel_msg(tr('new_version_found', new_version=new_version, changelog=changelog))
-        #
-        #     th = threading.Thread(target=check_update, name="UpdateThread")
-        #     th.daemon = True
-        #     th.start()
-        #
-        # last_startup_version = var.db.get("bot", "version", fallback=None)
-        # try:
-        #     if not last_startup_version or version.parse(last_startup_version) < version.parse(self.version):
-        #         var.db.set("bot", "version", self.version)
-        #         if var.config.getboolean("bot", "auto_check_update"):
-        #             changelog = util.fetch_changelog()
-        #             self.send_channel_msg(tr("update_successful", version=self.version, changelog=changelog))
-        # except version.InvalidVersion:
-        #     var.db.set("bot", "version", self.version)
-
     # Set the CTRL+C shortcut
     def ctrl_caught(self, signal, frame):
         self.log.info(
