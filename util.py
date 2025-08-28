@@ -3,22 +3,23 @@
 
 import hashlib
 import html
-import magic
-import os
 import io
-import sys
-import variables as var
-import zipfile
+import logging
+import os
 import re
 import subprocess as sp
-import logging
+import sys
+import traceback
+import zipfile
 from importlib import reload
 from sys import platform
-import traceback
-import requests
-from packaging import version
 
+import magic
+import requests
 import yt_dlp as youtube_dl
+
+import variables as var
+
 YT_PKG_NAME = 'yt-dlp'
 
 log = logging.getLogger("bot")
@@ -102,41 +103,9 @@ def get_user_ban():
     return res
 
 
-def new_release_version(target):
-    if target == "testing":
-        r = requests.get("https://packages.azlux.fr/botamusique/testing-version")
-    else:
-        r = requests.get("https://packages.azlux.fr/botamusique/version")
-    v = r.text
-    return v.rstrip()
-
-
-def fetch_changelog():
-    r = requests.get("https://packages.azlux.fr/botamusique/changelog")
-    c = r.text
-    return c
-
-
-def check_update(current_version):
-    global log
-    log.debug("update: checking for updates...")
-    new_version = new_release_version(var.config.get('bot', 'target_version'))
-    if version.parse(new_version) > version.parse(current_version):
-        changelog = fetch_changelog()
-        log.info(f"update: new version {new_version} found, current installed version {current_version}.")
-        log.info(f"update: changelog: {changelog}")
-        changelog = changelog.replace("\n", "<br>")
-        return new_version, changelog
-    else:
-        log.debug("update: no new version found.")
-        return None, None
-
-
 def update(current_version):
     global log
 
-    target = var.config.get('bot', 'target_version')
-    new_version = new_release_version(target)
     msg = ""
 
     log.info(f'update: starting update {YT_PKG_NAME} via pip3')
