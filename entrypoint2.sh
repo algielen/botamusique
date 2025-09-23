@@ -1,6 +1,8 @@
 #!/usr/bin/env sh
 
-command="$@"
+command=$*
+
+echo "Entrypoint will use $command"
 
 if [ "$1" = "bash" ] || [ "$1" = "sh" ]; then
     exec "$@"
@@ -53,6 +55,8 @@ fi
 if [ -n "$BAM_CONFIG_FILE" ]; then
     command="$command --config $BAM_CONFIG_FILE"
 fi
+
+echo "Executing command $command"
 
 # Finally execute
 exec $command

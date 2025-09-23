@@ -1,4 +1,4 @@
-ARG ARCH=
+#ARG ARCH=
 FROM python:3.11-alpine AS python-builder
 WORKDIR /botamusique
 
@@ -7,6 +7,7 @@ RUN apk upgrade \
 COPY . /botamusique
 RUN python3 -m venv venv \
     && venv/bin/pip install wheel \
+    && venv/bin/pip install ./pymumble \
     && venv/bin/pip install -r requirements.txt
 
 FROM python:3.11-alpine
