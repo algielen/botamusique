@@ -3,6 +3,8 @@
 command=$*
 
 echo "Entrypoint will use $command"
+echo "Env variables : "
+printenv
 
 if [ "$1" = "bash" ] || [ "$1" = "sh" ]; then
     exec "$@"
