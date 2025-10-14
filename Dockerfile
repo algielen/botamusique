@@ -3,21 +3,18 @@ FROM python:3.11-alpine AS python-builder
 WORKDIR /botamusique
 
 RUN apk upgrade \
-    && apk add --no-cache gcc g++ ffmpeg jpeg-dev libmagic opus opus-tools zlib-dev
-# Explicitly set LD_LIBRARY_PATH during the build stage
-ENV LD_LIBRARY_PATH=/usr/local/lib:/usr/lib:/usr/lib/x86_64-linux-gnu
+    && apk add --no-cache gcc g++ zlib-dev
 
 COPY . /botamusique
-RUN ln -s /usr/lib/libopus.so.0 /usr/local/lib/libopus.so.0
 RUN python3 -m venv venv \
     && venv/bin/pip install wheel \
     && venv/bin/pip install -r requirements.txt
 
 FROM python:3.11-alpine
 RUN apk upgrade --no-cache && \
-    apk add --no-cache opus opus-tools ffmpeg libmagic curl tar
+    apk add --no-cache opus opus-tools ffmpeg jpeg-dev libmagic curl tar
 
-# Set LD_LIBRARY_PATH in the runtime image as well
+# Set LD_LIBRARY_PATH in the runtime image
 ENV LD_LIBRARY_PATH=/usr/local/lib:/usr/lib:/usr/lib/x86_64-linux-gnu
 RUN ln -s /usr/lib/libopus.so.0 /usr/local/lib/libopus.so.0
 
