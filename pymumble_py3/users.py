@@ -10,6 +10,7 @@ class Users(dict):
     """Object that stores and update all connected users"""
 
     def __init__(self, mumble_object, callbacks):
+        super().__init__()
         self.mumble_object = mumble_object
         self.callbacks = callbacks
 

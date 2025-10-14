@@ -7,14 +7,15 @@ import socket
 import ssl
 import struct
 
-from .errors import *
-from .constants import *
-from . import users
-from . import channels
-from . import blobs
-from . import commands
-from . import callbacks
-from . import tools
+from pymumble_py3.errors import *
+from pymumble_py3.constants import *
+from pymumble_py3 import users
+from pymumble_py3 import channels
+from pymumble_py3 import blobs
+from pymumble_py3 import commands
+from pymumble_py3 import callbacks
+from pymumble_py3 import tools
+from pymumble_py3 import soundoutput
 
 from . import mumble_pb2
 
@@ -124,11 +125,10 @@ class Mumble(threading.Thread):
         self.users = users.Users(self, self.callbacks)  # contains the server's connected users information
         self.channels = channels.Channels(self, self.callbacks)  # contains the server's channels information
         self.blobs = blobs.Blobs(self)  # manage the blob objects
-        # if self.receive_sound:
-        from . import soundoutput
-        self.sound_output = soundoutput.SoundOutput(self, PYMUMBLE_AUDIO_PER_PACKET, self.bandwidth, stereo=self.stereo, opus_profile=self.__opus_profile)  # manage the outgoing sounds
-        # else:
-        #     self.sound_output = None
+        self.sound_output = soundoutput.SoundOutput(self, PYMUMBLE_AUDIO_PER_PACKET, self.bandwidth,
+                                                        stereo=self.stereo,
+                                                        opus_profile=self.__opus_profile)  # manage the outgoing sounds
+
         self.commands = commands.Commands()  # manage commands sent between the main and the mumble threads
 
         self.receive_buffer = bytes()  # initialize the control connection input buffer
@@ -543,6 +543,14 @@ class Mumble(threading.Thread):
 
             if size > 0:
                 try:
+                    if session.value not in self.users:
+                        self.Log.warning(f"Received audio for unknown session: {session.value}")
+                        return
+
+                    if self.users[session.value].sound is None:
+                        self.Log.warning(f"User {session.value} has no sound queue initialized.")
+                        return
+
                     newsound = self.users[session.value].sound.add(message[pos:pos + size],
                                                                    sequence.value,
                                                                    type,
@@ -566,7 +574,6 @@ class Mumble(threading.Thread):
 
             pos += size  # go further in the packet, after the audio frame
         # TODO: get position info
-
     def set_application_string(self, string):
         """Set the application name, that can be viewed by other clients on the server"""
         self.application = string
