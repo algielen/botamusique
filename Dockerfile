@@ -2,8 +2,13 @@
 FROM python:3.11-alpine AS python-builder
 WORKDIR /botamusique
 
+# Explicitly install ca-certificates
+RUN apk add --no-cache openssl openssl-dev ca-certificates
+# Update the trust store
+RUN update-ca-certificates
+
 RUN apk upgrade \
-    && apk add --no-cache gcc g++ zlib-dev
+    && apk add --no-cache gcc g++ libmagic jpeg-dev zlib-dev
 
 COPY . /botamusique
 RUN python3 -m venv venv \
@@ -11,6 +16,12 @@ RUN python3 -m venv venv \
     && venv/bin/pip install -r requirements.txt
 
 FROM python:3.11-alpine
+
+# Explicitly install ca-certificates
+RUN apk add --no-cache openssl openssl-dev ca-certificates
+# Update the trust store
+RUN update-ca-certificates
+
 RUN apk upgrade --no-cache && \
     apk add --no-cache opus opus-tools ffmpeg jpeg-dev libmagic curl tar
 
