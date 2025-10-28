@@ -8,6 +8,9 @@ on:
     branches: [ "master" ]
   schedule:
     - cron: '0 2 * * 0'  # Runs every Sunday at 2:00 AM UTC
+  release:
+    types: [published]
+  
 
 jobs:
 
