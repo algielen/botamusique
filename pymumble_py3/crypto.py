@@ -1,6 +1,3 @@
-'''
-OCB2 crypto, broadly following the implementation from Mumble
-'''
 from typing import Tuple
 import struct
 import time
@@ -9,6 +6,7 @@ from math import ceil
 from Crypto.Cipher import AES
 from Crypto.Random import get_random_bytes
 
+# OCB2 crypto, broadly following the implementation from Mumble
 
 AES_BLOCK_SIZE = 128 // 8       # Number of bytes in a block
 AES_KEY_SIZE_BITS = 128

@@ -1,0 +1,20 @@
+services:
+    bota:
+        build:
+          context: .
+          dockerfile: ./Dockerfile
+        image: algielen/botamusique
+        container_name: bota
+        hostname: bota
+        network_mode: bridge
+        restart: no
+        env_file: .env
+        environment:
+            BAM_CONFIG_FILE: /config/configuration.ini
+            BAM_MUSIC_DB: /music/music.db
+            BAM_DB: /config/settings-bota.db
+            BAM_VERBOSE: true
+        volumes:
+            - ${MUSIC_PATH}:/music
+            - ${CONFIG_PATH}:/config
+        cpus: 2

@@ -9,3 +9,5 @@ packaging
 pyradios
 opuslib_next==1.1.5
 protobuf==3.20.3
+pycryptodome
+pytest
