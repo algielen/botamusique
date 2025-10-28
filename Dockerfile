@@ -1,5 +1,5 @@
 #ARG ARCH=
-FROM python:3.11-alpine AS python-builder
+FROM python:3.14-alpine AS python-builder
 WORKDIR /botamusique
 
 # Explicitly install ca-certificates
@@ -15,7 +15,7 @@ RUN python3 -m venv venv \
     && venv/bin/pip install wheel \
     && venv/bin/pip install -r requirements.txt
 
-FROM python:3.11-alpine
+FROM python:3.14-alpine
 
 # Explicitly install ca-certificates
 RUN apk add --no-cache openssl openssl-dev ca-certificates

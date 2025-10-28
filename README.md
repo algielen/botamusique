@@ -6,15 +6,9 @@ This is a fork of the abandoned Botamusique, fixed for my own usage.
 
 -----
 
-<div align="center">
-<img src="static/image/logo.png" alt="botamusique" width="200px" />
-<h1>botamusique</h1>
-</div>
 
 Botamusique is a [Mumble](https://www.mumble.info/) music bot.
 Predicted functionalities will be those people would expect from any classic music player.
-
-[![Build Status](https://ci.azlux.fr/api/badges/azlux/botamusique/status.svg)](https://ci.azlux.fr/azlux/botamusique)
 
 ## Features
 
@@ -35,7 +29,6 @@ Predicted functionalities will be those people would expect from any classic mus
 
 ![botamusique in Mumble channel](https://user-images.githubusercontent.com/2306637/75210917-68fbf680-57bd-11ea-9cf8-c0871edff13f.jpg)
 
-![botamusique web interface](https://user-images.githubusercontent.com/2306637/77822763-b4911f80-7130-11ea-9bc5-83c36c995ab9.png)
 
 -----
 ## Quick Start Guide

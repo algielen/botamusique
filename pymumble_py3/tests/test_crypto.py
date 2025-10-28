@@ -11,8 +11,8 @@ Mumble source tree or at <https://www.mumble.info/LICENSE>.
 
 import pytest
 
-from .crypto import CryptStateOCB2, AES_BLOCK_SIZE, EncryptFailedException, DecryptFailedException
-from .crypto import ocb_encrypt, ocb_decrypt
+from pymumble_py3.crypto import CryptStateOCB2, AES_BLOCK_SIZE, EncryptFailedException, DecryptFailedException
+from pymumble_py3.crypto import ocb_encrypt, ocb_decrypt
 
 
 @pytest.fixture()
