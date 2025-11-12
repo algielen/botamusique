@@ -1,6 +1,6 @@
 audioop-lts; python_version>='3.13'
 flask
-yt-dlp
+yt-dlp[default]
 python-magic
 Pillow
 mutagen
