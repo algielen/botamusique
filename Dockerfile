@@ -29,6 +29,8 @@ RUN apk upgrade --no-cache && \
 ENV LD_LIBRARY_PATH=/usr/local/lib:/usr/lib:/usr/lib/x86_64-linux-gnu
 RUN ln -s /usr/lib/libopus.so.0 /usr/local/lib/libopus.so.0
 
+COPY --from=denoland/deno:bin-2.5.6 /deno /usr/local/bin/deno
+# check quickjs as alternative : https://github.com/yt-dlp/yt-dlp/wiki/EJS#quickjs--quickjs-ng
 COPY --from=python-builder /botamusique /botamusique
 WORKDIR /botamusique
 COPY --chmod=+x entrypoint2.sh /botamusique/entrypoint2.sh
