@@ -57,30 +57,14 @@ Both stable and nightly (developing) builds are available!
 
 **Stable release (recommended)**
 
-This is current stable version, with auto-update support. To install the stable release, run these lines in your terminal:
+This is current stable version, with auto-update support. To install the stable release, download the source from the latest release and run these lines in your terminal:
 ```
-curl -Lo botamusique.tar.gz http://packages.azlux.fr/botamusique/sources-stable.tar.gz
 tar -xzf botamusique.tar.gz
 cd botamusique
 python3 -m venv venv
 venv/bin/pip install wheel
 venv/bin/pip install -r requirements.txt
 ```
-
-**Nightly build (developing version)**
-<details>
-  <summary>Click to expand!</summary>
-
-This build reflects any newest change in the master branch, with auto-update support baked in. This version follow all commits into the master branch.
-```
-curl -Lo botamusique.tar.gz http://packages.azlux.fr/botamusique/sources-testing.tar.gz
-tar -xzf botamusique.tar.gz
-cd botamusique
-python3 -m venv venv
-venv/bin/pip install wheel
-venv/bin/pip install -r requirements.txt
-```
-</details>
 
 **Build from source code**
 <details>
@@ -91,7 +75,7 @@ We will test new features in the master branch, maybe sometimes post some hotfix
 Please be noted that the builtin auto-update support doesn't track this version.
 If you have no idea what these descriptions mean to you, we recommend you install the stable version above.
 ```
-git clone https://github.com/azlux/botamusique.git
+git clone https://github.com/algielen/botamusique.git
 cd botamusique
 python3 -m venv venv
 venv/bin/pip install wheel

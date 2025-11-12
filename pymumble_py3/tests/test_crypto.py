@@ -1,4 +1,4 @@
-'''
+"""
 Ported from Mumble src/tests/TestCrypt/TestCrypt.cpp
 
 =============================================================
@@ -7,7 +7,7 @@ Copyright 2005-2020 The Mumble Developers. All rights reserved.
 Use of this source code is governed by a BSD-style license
 that can be found in the LICENSE file at the root of the
 Mumble source tree or at <https://www.mumble.info/LICENSE>.
-'''
+"""
 
 import pytest
 
@@ -146,7 +146,7 @@ def test_authcrypt(rawkey, nonce):
 
 
 def test_xexstarAttack(rawkey, nonce):
-    ''' Test prevention of the attack described in section 4.1 of https://eprint.iacr.org/2019/311 '''
+    """ Test prevention of the attack described in section 4.1 of https://eprint.iacr.org/2019/311 """
     cs = CryptStateOCB2()
     cs.set_key(rawkey, nonce, nonce)
 

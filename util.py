@@ -269,7 +269,7 @@ def get_url_from_input(string):
         else:
             return ""
 
-    match = re.search("(http|https)://(\S*)?/(\S*)", string, flags=re.IGNORECASE)
+    match = re.search("(http|https)://(\\S*)?/(\\S*)", string, flags=re.IGNORECASE)
     if match:
         url = match[1].lower() + "://" + match[2].lower() + "/" + match[3]
         # https://github.com/mumble-voip/mumble/issues/4999
@@ -334,7 +334,7 @@ def get_media_duration(path):
 
 
 def parse_time(human):
-    match = re.search("(?:(\d\d):)?(?:(\d\d):)?(\d+(?:\.\d*)?)", human, flags=re.IGNORECASE)
+    match = re.search("(?:(\\d\\d):)?(?:(\\d\\d):)?(\\d+(?:\\.\\d*)?)", human, flags=re.IGNORECASE)
     if match:
         if match[1] is None and match[2] is None:
             return float(match[3])
@@ -357,7 +357,7 @@ def format_time(seconds):
 def parse_file_size(human):
     units = {"B": 1, "KB": 1024, "MB": 1024 * 1024, "GB": 1024 * 1024 * 1024, "TB": 1024 * 1024 * 1024 * 1024,
              "K": 1024, "M": 1024 * 1024, "G": 1024 * 1024 * 1024, "T": 1024 * 1024 * 1024 * 1024}
-    match = re.search("(\d+(?:\.\d*)?)\s*([A-Za-z]+)", human, flags=re.IGNORECASE)
+    match = re.search("(\\d+(?:\\.\\d*)?)\\s*([A-Za-z]+)", human, flags=re.IGNORECASE)
     if match:
         num = float(match[1])
         unit = match[2].upper()
@@ -386,7 +386,7 @@ def get_supported_language():
     lang_files = os.listdir(os.path.join(root_dir, 'lang'))
     lang_list = []
     for lang_file in lang_files:
-        match = re.search("([a-z]{2}_[A-Z]{2})\.json", lang_file)
+        match = re.search("([a-z]{2}_[A-Z]{2})\\.json", lang_file)
         if match:
             lang_list.append(match[1])
 
