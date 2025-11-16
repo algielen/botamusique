@@ -1,0 +1,26 @@
+[project]
+name = "botamusique"
+version = "8.3.0"
+description = "Bot to play youtube / soundcloud / radio / local music on Mumble (using pymumble)"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "audioop-lts>=0.2.2",
+    "flask>=3.1.2",
+    "mutagen>=1.47.0",
+    "opuslib-next>=1.1.5",
+    "packaging>=25.0",
+    "pillow>=12.0.0",
+    "protobuf==3.20.3",
+    "pycryptodome>=3.23.0",
+    "pyradios>=2.1.1",
+    "python-magic>=0.4.27",
+    "requests>=2.32.5",
+    "yt-dlp[default]>=2025.11.12",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.1",
+    "python-magic-bin>=0.4.14",
+]

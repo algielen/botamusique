@@ -1,10 +1,11 @@
 #!/usr/bin/env sh
 
 command=$*
-
-echo "Entrypoint will use $command"
-echo "Env variables : "
-printenv
+if [ "$BAM_VERBOSE" = "true" ]; then
+  echo "Entrypoint will use $command"
+  echo "Env variables : "
+  printenv
+fi
 
 if [ "$1" = "bash" ] || [ "$1" = "sh" ]; then
     exec "$@"
@@ -58,7 +59,9 @@ if [ -n "$BAM_CONFIG_FILE" ]; then
     command="$command --config $BAM_CONFIG_FILE"
 fi
 
-echo "Executing command $command"
+if [ "$BAM_VERBOSE" = "true" ]; then
+  echo "Executing command $command"
+fi
 
 # Finally execute
 exec $command
