@@ -1,35 +1,27 @@
 #ARG ARCH=
-FROM python:3.14-alpine AS python-builder
+FROM ghcr.io/astral-sh/uv:python3.14-trixie-slim AS python-builder
+ENV DEBIAN_FRONTEND=noninteractive
 WORKDIR /botamusique
 
-# Explicitly install ca-certificates
-RUN apk add --no-cache openssl openssl-dev ca-certificates
-# Update the trust store
-RUN update-ca-certificates
+RUN apt-get update \
+    && apt-get install --no-install-recommends -y gcc g++ ffmpeg libjpeg-dev libmagic-dev opus-tools zlib1g-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN apk upgrade \
-    && apk add --no-cache gcc g++ libmagic jpeg-dev zlib-dev
 
 COPY . /botamusique
-RUN python3 -m venv venv \
-    && venv/bin/pip install wheel \
-    && venv/bin/pip install -r requirements.txt
+RUN uv venv --clear \
+    && uv sync --no-dev
 
-FROM python:3.14-alpine
+FROM ghcr.io/astral-sh/uv:python3.14-trixie-slim
+ENV DEBIAN_FRONTEND=noninteractive
 
-# Explicitly install ca-certificates
-RUN apk add --no-cache openssl openssl-dev ca-certificates
-# Update the trust store
-RUN update-ca-certificates
-
-RUN apk upgrade --no-cache && \
-    apk add --no-cache opus opus-tools ffmpeg jpeg-dev libmagic curl tar
-
-# Set LD_LIBRARY_PATH in the runtime image
-ENV LD_LIBRARY_PATH=/usr/local/lib:/usr/lib:/usr/lib/x86_64-linux-gnu
-RUN ln -s /usr/lib/libopus.so.0 /usr/local/lib/libopus.so.0
+RUN apt-get update && \
+    apt-get install --no-install-recommends -y opus-tools ffmpeg libmagic-dev curl tar && \
+    rm -rf /var/lib/apt/lists/*
 
 COPY --from=denoland/deno:bin-2.5.6 /deno /usr/local/bin/deno
+RUN chmod +x /usr/local/bin/deno
+RUN deno --version
 # check quickjs as alternative : https://github.com/yt-dlp/yt-dlp/wiki/EJS#quickjs--quickjs-ng
 COPY --from=python-builder /botamusique /botamusique
 WORKDIR /botamusique

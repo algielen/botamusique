@@ -1,1 +1,1 @@
-.venv/Scripts/python.exe -m pip install python-magic-bin
+uv pip install python-magic-bin
