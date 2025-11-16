@@ -28,4 +28,4 @@ WORKDIR /botamusique
 COPY --chmod=+x entrypoint2.sh /botamusique/entrypoint2.sh
 
 ENTRYPOINT [ "/bin/sh", "/botamusique/entrypoint2.sh" ]
-CMD ["venv/bin/python", "mumbleBot.py"]
+CMD ["uv run --no-dev", "mumbleBot.py"]
