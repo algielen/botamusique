@@ -27,5 +27,9 @@ COPY --from=python-builder /botamusique /botamusique
 WORKDIR /botamusique
 COPY --chmod=+x entrypoint2.sh /botamusique/entrypoint2.sh
 
+RUN groupadd -g 568 usergroup
+RUN useradd -u 568 -g usergroup -ms /bin/sh bota
+USER bota
+
 ENTRYPOINT [ "/bin/sh", "/botamusique/entrypoint2.sh" ]
-CMD ["uv run --no-dev", "mumbleBot.py"]
+CMD ["uv", "run", "--locked", "--no-dev", "mumbleBot.py"]

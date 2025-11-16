@@ -1,6 +1,6 @@
 [project]
 name = "botamusique"
-version = "8.3.1"
+version = "8.3.2"
 description = "Bot to play youtube / soundcloud / radio / local music on Mumble (using pymumble)"
 readme = "README.md"
 requires-python = ">=3.14"
