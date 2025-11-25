@@ -7,6 +7,8 @@ import sys
 import math
 import signal
 import configparser
+from argparse import ArgumentParser, Namespace
+
 import audioop
 import subprocess as sp
 import argparse
@@ -733,19 +735,34 @@ class MumbleBot:
 
 
 if __name__ == '__main__':
+
+    # Set defaults from environment variables
+    env_config = os.getenv('BAM_CONFIG_FILE', 'configuration.ini')
+    env_db = os.getenv('BAM_DB')
+    env_music_db = os.getenv('BAM_MUSIC_DB')
+    env_verbose = os.getenv('BAM_VERBOSE') is not None
+    env_host = os.getenv('BAM_MUMBLE_SERVER')
+    env_password = os.getenv('BAM_MUMBLE_PASSWORD')
+    env_port = int(os.getenv('BAM_MUMBLE_PORT')) if os.getenv('BAM_MUMBLE_PORT') else None
+    env_user = os.getenv('BAM_USER')
+    env_tokens = os.getenv('BAM_TOKENS')
+    env_channel = os.getenv('BAM_CHANNEL')
+    env_certificate = os.getenv('BAM_CERTIFICATE')
+    env_bandwidth = int(os.getenv('BAM_BANDWIDTH')) if os.getenv('BAM_BANDWIDTH') else None
+
     supported_languages = util.get_supported_language()
 
-    parser = argparse.ArgumentParser(
+    parser: ArgumentParser = argparse.ArgumentParser(
         description='Bot for playing music on Mumble')
 
     # General arguments
-    parser.add_argument("--config", dest='config', type=str, default='configuration.ini',
+    parser.add_argument("--config", dest='config', type=str,
                         help='Load configuration from this file. Default: configuration.ini')
     parser.add_argument("--db", dest='db', type=str,
                         default=None, help='Settings database file')
     parser.add_argument("--music-db", dest='music_db', type=str,
                         default=None, help='Music library database file')
-    parser.add_argument("--lang", dest='lang', type=str, default=None,
+    parser.add_argument("--lang", dest='lang', type=str,
                         help='Preferred language. Support ' + ", ".join(supported_languages))
 
     parser.add_argument("-q", "--quiet", dest="quiet",
@@ -771,7 +788,43 @@ if __name__ == '__main__':
     parser.add_argument("-b", "--bandwidth", dest="bandwidth",
                         type=int, help="Bandwidth used by the bot")
 
-    args = parser.parse_args()
+    # Update parser defaults with environment variables
+    parser.set_defaults(
+        config=env_config,
+        db=env_db,
+        music_db=env_music_db,
+        verbose=env_verbose,
+        host=env_host,
+        password=env_password,
+        port=env_port,
+        user=env_user,
+        tokens=env_tokens,
+        channel=env_channel,
+        certificate=env_certificate,
+        bandwidth=env_bandwidth
+    )
+
+
+    args: Namespace = parser.parse_args()
+
+    print("=" * 60)
+    print("Final configuration values:")
+    print("=" * 60)
+    print(f"Config file:      {args.config}")
+    print(f"Database:         {args.db}")
+    print(f"Music database:   {args.music_db}")
+    print(f"Language:         {args.lang}")
+    print(f"Verbose mode:     {args.verbose}")
+    print(f"Quiet mode:       {args.quiet}")
+    print(f"Server:           {args.host}")
+    print(f"Port:             {args.port}")
+    print(f"User:             {args.user}")
+    print(f"Password:         {'***' if args.password else None}")
+    print(f"Tokens:           {args.tokens}")
+    print(f"Channel:          {args.channel}")
+    print(f"Certificate:      {args.certificate}")
+    print(f"Bandwidth:        {args.bandwidth}")
+    print("=" * 60)
 
     # ======================
     #     Load Config
