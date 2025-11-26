@@ -11,7 +11,7 @@ dependencies = [
     "opuslib-next>=1.1.5",
     "packaging>=25.0",
     "pillow>=12.0.0",
-    "protobuf==3.20.3",
+    "protobuf==4.25.8",
     "pycryptodome>=3.23.0",
     "pyradios>=2.1.1",
     "python-magic>=0.4.27",
