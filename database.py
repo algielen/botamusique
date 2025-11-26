@@ -1,10 +1,8 @@
+import json
+import logging
 import os
 import re
 import sqlite3
-import json
-import datetime
-import time
-import logging
 
 log = logging.getLogger("bot")
 

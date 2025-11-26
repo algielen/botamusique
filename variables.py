@@ -1,27 +1,28 @@
-from typing import Type, TYPE_CHECKING
+from logging import Logger
 
-if TYPE_CHECKING:
-    import mumbleBot
-    import media.playlist
-    import media.cache
-    import database
+import database
+import media.cache
+import media.playlist
+import mumbleBot
 
-bot: 'mumbleBot.MumbleBot' = None
-playlist: 'media.playlist.BasePlaylist' = None
-cache: 'media.cache.MusicCache' = None
+# TODO delete these global variables
 
-user = ""
-is_proxified = False
+bot: mumbleBot.MumbleBot | None = None
+playlist: media.playlist.BasePlaylist | None = None
+cache: media.cache.MusicCache | None = None
+
+user: str = ""
+is_proxied: bool = False
 
 settings_db_path = None
 music_db_path = None
 db = None
-music_db: 'database.MusicDatabase' = None
-config: 'database.SettingsDatabase' = None
+music_db: database.MusicDatabase | None = None
+config: database.SettingsDatabase | None = None
 
-bot_logger = None
+bot_logger: Logger | None = None
 
-music_folder = ""
-tmp_folder = ""
+music_folder: str = ""
+tmp_folder: str = ""
 
-language = ""
+language: str = ""

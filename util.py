@@ -11,8 +11,10 @@ import subprocess as sp
 import sys
 import traceback
 import zipfile
+from configparser import ConfigParser
 from importlib import reload
 from sys import platform
+from typing import Any
 
 import magic
 import requests
@@ -25,7 +27,7 @@ YT_PKG_NAME = 'yt-dlp'
 log = logging.getLogger("bot")
 
 
-def solve_filepath(path):
+def solve_filepath(path: str) -> str:
     if not path:
         return ''
 
@@ -381,7 +383,7 @@ def verify_password(password, salted_hash, salt):
     return False
 
 
-def get_supported_language():
+def get_supported_language() -> list[Any]:
     root_dir = os.path.dirname(__file__)
     lang_files = os.listdir(os.path.join(root_dir, 'lang'))
     lang_list = []
@@ -393,7 +395,7 @@ def get_supported_language():
     return lang_list
 
 
-def set_logging_formatter(handler: logging.Handler, logging_level):
+def set_logging_formatter(handler: logging.Handler, logging_level: int) -> None:
     if logging_level == logging.DEBUG:
         formatter = logging.Formatter(
             "[%(asctime)s] > [%(threadName)s] > "
@@ -526,8 +528,8 @@ def clear_tmp_folder(path, size):
                     return
 
 
-def check_extra_config(config, template):
-    extra = []
+def check_extra_config(config: ConfigParser, template: ConfigParser) -> list[tuple[str, str]]:
+    extra:list[tuple[str, str]] = []
 
     for key in config.sections():
         if key in ['radio']:
