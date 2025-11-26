@@ -41,7 +41,7 @@ class MumbleBot:
             self.channel = var.config.get("server", "channel")
 
         var.user = args.user
-        var.is_proxified = var.config.getboolean(
+        var.is_proxied = var.config.getboolean(
             "webinterface", "is_web_proxified")
 
         # Flags to indicate the bot is exiting (Ctrl-C, or !kill)

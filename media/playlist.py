@@ -1,14 +1,14 @@
 import json
-import threading
 import logging
 import random
+import threading
 import time
 
 import variables as var
+from database import Condition
 from media.cache import (CachedItemWrapper, ItemNotCachedError,
                          get_cached_wrapper_from_dict, get_cached_wrapper_by_id)
-from database import Condition
-from media.item import ValidationFailedError, PreparationFailedError
+from media.item import ValidationFailedError
 
 
 def get_playlist(mode, _list=None, _index=None):

@@ -4,6 +4,10 @@ import logging
 import os
 import sys
 from argparse import ArgumentParser, Namespace
+from configparser import ConfigParser
+from logging import Logger, Handler
+from logging.handlers import RotatingFileHandler
+from typing import Any
 
 import command
 import constants
@@ -17,20 +21,20 @@ from mumbleBot import MumbleBot
 
 def main():
     # Set defaults from environment variables
-    env_config = os.getenv('BAM_CONFIG_FILE', 'configuration.ini')
-    env_db = os.getenv('BAM_DB')
-    env_music_db = os.getenv('BAM_MUSIC_DB')
-    env_verbose = os.getenv('BAM_VERBOSE') is not None
-    env_host = os.getenv('BAM_MUMBLE_SERVER')
-    env_password = os.getenv('BAM_MUMBLE_PASSWORD')
-    env_port = int(os.getenv('BAM_MUMBLE_PORT')) if os.getenv('BAM_MUMBLE_PORT') else None
-    env_user = os.getenv('BAM_USER')
-    env_tokens = os.getenv('BAM_TOKENS')
-    env_channel = os.getenv('BAM_CHANNEL')
-    env_certificate = os.getenv('BAM_CERTIFICATE')
-    env_bandwidth = int(os.getenv('BAM_BANDWIDTH')) if os.getenv('BAM_BANDWIDTH') else None
+    env_config: str = os.getenv('BAM_CONFIG_FILE', 'configuration.ini')
+    env_db: str | None = os.getenv('BAM_DB')
+    env_music_db: str | None = os.getenv('BAM_MUSIC_DB')
+    env_verbose: object = os.getenv('BAM_VERBOSE') is not None
+    env_host: str | None = os.getenv('BAM_MUMBLE_SERVER')
+    env_password: str | None = os.getenv('BAM_MUMBLE_PASSWORD')
+    env_port: int | None = int(os.getenv('BAM_MUMBLE_PORT')) if os.getenv('BAM_MUMBLE_PORT') else None
+    env_user: str | None = os.getenv('BAM_USER')
+    env_tokens: str | None = os.getenv('BAM_TOKENS')
+    env_channel: str | None = os.getenv('BAM_CHANNEL')
+    env_certificate: str | None = os.getenv('BAM_CERTIFICATE')
+    env_bandwidth: int | None = int(os.getenv('BAM_BANDWIDTH')) if os.getenv('BAM_BANDWIDTH') else None
 
-    supported_languages = util.get_supported_language()
+    supported_languages: list[Any] = util.get_supported_language()
 
     parser: ArgumentParser = argparse.ArgumentParser(
         description='Bot for playing music on Mumble')
@@ -110,8 +114,8 @@ def main():
     #     Load Config
     # ======================
 
-    config = configparser.ConfigParser(interpolation=None, allow_no_value=True)
-    default_config = configparser.ConfigParser(interpolation=None, allow_no_value=True)
+    config: ConfigParser = configparser.ConfigParser(interpolation=None, allow_no_value=True)
+    default_config: ConfigParser = configparser.ConfigParser(interpolation=None, allow_no_value=True)
     var.config = config
 
     if len(default_config.read(
@@ -127,7 +131,7 @@ def main():
         logging.error(f'Could not read configuration from file "{args.config}"')
         sys.exit()
 
-    extra_configs = util.check_extra_config(config, default_config)
+    extra_configs: list[tuple[str, str]] = util.check_extra_config(config, default_config)
     if extra_configs:
         extra_str = ", ".join([f"'[{k}] {v}'" for (k, v) in extra_configs])
         logging.error(f'Unexpected config items {extra_str} defined in your config file. '
@@ -139,7 +143,7 @@ def main():
     #     Setup Logger
     # ======================
 
-    bot_logger = logging.getLogger("bot")
+    bot_logger: Logger = logging.getLogger("bot")
     bot_logger.setLevel(logging.INFO)
 
     if args.verbose:
@@ -150,16 +154,14 @@ def main():
         bot_logger.error("Starting in ERROR loglevel")
 
     logfile = util.solve_filepath(var.config.get('bot', 'logfile').strip())
-    handler = None
     if logfile:
         print(f"Redirecting stdout and stderr to log file: {logfile}")
-        handler = logging.handlers.RotatingFileHandler(logfile, mode='a', maxBytes=10240,
-                                                       backupCount=3)  # Rotate after 10KB, leave 3 old logs
+        # Rotate after 10KB, leave 3 old logs
+        handler: Handler = RotatingFileHandler(logfile, mode='a', maxBytes=10240, backupCount=3)
         if var.config.getboolean("bot", "redirect_stderr"):
-            sys.stderr = util.LoggerIOWrapper(bot_logger, logging.INFO,
-                                              fallback_io_buffer=sys.stderr.buffer)
+            sys.stderr = util.LoggerIOWrapper(bot_logger, logging.INFO, fallback_io_buffer=sys.stderr.buffer)
     else:
-        handler = logging.StreamHandler()
+        handler: Handler = logging.StreamHandler()
 
     util.set_logging_formatter(handler, bot_logger.level)
     bot_logger.addHandler(handler)
@@ -170,11 +172,11 @@ def main():
     #     Load Database
     # ======================
     if args.user:
-        username = args.user
+        username: str = args.user
     else:
-        username = var.config.get("bot", "username")
+        username: str = var.config.get("bot", "username")
 
-    sanitized_username = "".join([x if x.isalnum() else "_" for x in username])
+    sanitized_username: str = "".join([x if x.isalnum() else "_" for x in username])
     var.settings_db_path = args.db if args.db is not None else util.solve_filepath(
         config.get("bot", "database_path") or f"settings-{sanitized_username}.db")
     var.music_db_path = args.music_db if args.music_db is not None else util.solve_filepath(
@@ -199,7 +201,7 @@ def main():
     #      Translation
     # ======================
 
-    lang = ""
+    lang: str = ""
     if args.lang:
         lang = args.lang
     else:
@@ -221,11 +223,11 @@ def main():
     # ======================
     #   Load playback mode
     # ======================
-    playback_mode = None
+
     if var.db.has_option("playlist", "playback_mode"):
-        playback_mode = var.db.get('playlist', 'playback_mode')
+        playback_mode: str = var.db.get('playlist', 'playback_mode')
     else:
-        playback_mode = var.config.get('bot', 'playback_mode')
+        playback_mode: str = var.config.get('bot', 'playback_mode')
 
     if playback_mode in ["one-shot", "repeat", "random", "autoplay"]:
         var.playlist = media.playlist.get_playlist(playback_mode)

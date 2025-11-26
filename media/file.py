@@ -1,15 +1,15 @@
-import os
-import re
-from io import BytesIO
 import base64
 import hashlib
+import os
+from io import BytesIO
+
 import mutagen
 from PIL import Image
 
 import util
 import variables as var
-from media.item import BaseItem, item_builders, item_loaders, item_id_generators, ValidationFailedError
 from constants import tr_cli as tr
+from media.item import BaseItem, item_builders, item_loaders, item_id_generators, ValidationFailedError
 
 '''
 type : file

@@ -99,7 +99,7 @@ def test_ivrecovery():
 
     # Wrap too far
     for i in range(257):
-        crypted = enc.encrypt(secret);
+        crypted = enc.encrypt(secret)
 
     with pytest.raises(DecryptFailedException):
         dec.decrypt(crypted, len(secret))
