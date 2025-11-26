@@ -1,5 +1,5 @@
 from typing import Type, TYPE_CHECKING
-
+# TODO delete these global variables
 if TYPE_CHECKING:
     import mumbleBot
     import media.playlist

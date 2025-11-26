@@ -30,4 +30,4 @@ RUN groupadd -g 568 usergroup
 RUN useradd -u 568 -g usergroup -ms /bin/sh bota
 USER bota
 
-CMD ["uv", "run", "--locked", "--no-dev", "mumbleBot.py"]
+CMD ["uv", "run", "--locked", "--no-dev", "main.py"]
