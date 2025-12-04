@@ -1,0 +1,22 @@
+version: 2
+registries:
+  docker-registry:
+    type: docker-registry
+    url: https://registry.hub.docker.com
+    username: ${{ vars.DOCKER_USERNAME }}
+    password: ${{ secrets.DOCKER_PASSWORD }}
+
+updates:
+  - package-ecosystem: "uv"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    registries:
+      - docker-registry
