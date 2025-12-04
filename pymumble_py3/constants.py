@@ -20,7 +20,7 @@ PYMUMBLE_LOOP_RATE = 0.01   # pause done between two iteration of the main loop 
 PYMUMBLE_PROTOCOL_VERSION = (1, 4, 287)
 PYMUMBLE_VERSION_STRING = "PyMumble %s" % PYMUMBLE_VERSION
 PYMUMBLE_OS_STRING = "PyMumble %s" % PYMUMBLE_VERSION
-PYMUMBLE_OS_VERSION_STRING = "Python %s - %s %s" % (sys.version, platform.system(), platform.release())
+PYMUMBLE_OS_VERSION_STRING = "Python %s - %s %s"
 
 PYMUMBLE_PING_DELAY = 10  # interval between 2 pings in sec
 
