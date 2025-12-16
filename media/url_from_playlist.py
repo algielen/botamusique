@@ -67,15 +67,13 @@ def get_playlist_info(url, start_index=0, user=""):
             return items
 
 
-def playlist_url_item_builder(**kwargs):
-    return PlaylistURLItem(kwargs['url'],
-                           kwargs['title'],
-                           kwargs['playlist_url'],
-                           kwargs['playlist_title'])
+def playlist_url_item_builder(temp_folder, **kwargs):
+    return PlaylistURLItem(kwargs['url'], kwargs['title'], kwargs['playlist_url'], kwargs['playlist_title'],
+                           temp_folder)
 
 
-def playlist_url_item_loader(_dict):
-    return PlaylistURLItem("", "", "", "", _dict)
+def playlist_url_item_loader(_dict, temp_folder):
+    return PlaylistURLItem("", "", "", "", temp_folder, _dict)
 
 
 item_builders['url_from_playlist'] = playlist_url_item_builder
@@ -84,14 +82,14 @@ item_id_generators['url_from_playlist'] = url_item_id_generator
 
 
 class PlaylistURLItem(URLItem):
-    def __init__(self, url, title, playlist_url, playlist_title, from_dict=None):
+    def __init__(self, url, title, playlist_url, playlist_title, temp_folder, from_dict=None):
         if from_dict is None:
-            super().__init__(url)
+            super().__init__(url, temp_folder)
             self.title = title
             self.playlist_url = playlist_url
             self.playlist_title = playlist_title
         else:
-            super().__init__("", from_dict)
+            super().__init__("", temp_folder, from_dict=from_dict)
             self.playlist_title = from_dict['playlist_title']
             self.playlist_url = from_dict['playlist_url']
 

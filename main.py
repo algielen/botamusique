@@ -191,11 +191,13 @@ def main():
 
     DatabaseMigration(var.db, var.music_db).migrate()
 
-    var.music_folder = util.solve_filepath(var.config.get('bot', 'music_folder'))
-    if not var.music_folder.endswith(os.sep):
+    music_folder = util.solve_filepath(var.config.get('bot', 'music_folder'))
+    var.music_folder = music_folder
+    if not music_folder.endswith(os.sep):
         # The file searching logic assumes that the music folder ends in a /
-        var.music_folder = var.music_folder + os.sep
-    var.tmp_folder = util.solve_filepath(var.config.get('bot', 'tmp_folder'))
+        music_folder =  var.music_folder + os.sep
+        var.music_folder = music_folder
+    temp_folder = util.solve_filepath(var.config.get('bot', 'tmp_folder'))
 
     # ======================
     #      Translation
@@ -209,7 +211,6 @@ def main():
 
     if lang not in supported_languages:
         raise KeyError(f"Unsupported language {lang}")
-    var.language = lang
     constants.load_lang(lang)
 
     # ======================
