@@ -23,4 +23,5 @@ dependencies = [
 dev = [
     "pytest>=9.0.1",
     "python-magic-bin>=0.4.14",
+    "pip>=25.0", # PyCharm uses it for its package management
 ]
