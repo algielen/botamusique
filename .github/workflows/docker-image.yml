@@ -6,8 +6,8 @@ on:
     branches: [ "master" ]
   pull_request:
     branches: [ "master" ]
-  schedule:
-    - cron: '0 2 * * 0'  # Runs every Sunday at 2:00 AM UTC
+#  schedule:
+#    - cron: '0 2 * * 0'  # Runs every Sunday at 2:00 AM UTC
   release:
     types: [published]
   
