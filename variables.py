@@ -28,6 +28,3 @@ config: database.SettingsDatabase | None = None
 bot_logger: Logger | None = None
 
 music_folder: str = ""
-tmp_folder: str = ""
-
-language: str = ""

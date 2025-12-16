@@ -11,7 +11,6 @@ import base64
 
 import util
 from constants import tr_cli as tr
-import media
 import variables as var
 from media.item import BaseItem, item_builders, item_loaders, item_id_generators, ValidationFailedError, \
     PreparationFailedError
@@ -20,12 +19,12 @@ from util import format_time
 log = logging.getLogger("bot")
 
 
-def url_item_builder(**kwargs):
-    return URLItem(kwargs['url'])
+def url_item_builder(temp_folder, **kwargs):
+    return URLItem(kwargs['url'], temp_folder)
 
 
-def url_item_loader(_dict):
-    return URLItem("", _dict)
+def url_item_loader(_dict, temp_folder):
+    return URLItem("", temp_folder, from_dict=_dict)
 
 
 def url_item_id_generator(**kwargs):
@@ -38,15 +37,16 @@ item_id_generators['url'] = url_item_id_generator
 
 
 class URLItem(BaseItem):
-    def __init__(self, url, from_dict=None):
+    def __init__(self, url, temp_folder, from_dict=None):
         self.validating_lock = threading.Lock()
+        self.temp_folder = temp_folder
         if from_dict is None:
             super().__init__()
             self.url = url if url[-1] != "/" else url[:-1]
             self.title = ""
             self.duration = 0
             self.id = hashlib.md5(url.encode()).hexdigest()
-            self.path = var.tmp_folder + self.id
+            self.path = temp_folder + self.id
             self.thumbnail = ""
             self.keywords = ""
         else:
@@ -160,10 +160,10 @@ class URLItem(BaseItem):
             raise ValidationFailedError(tr('unable_download', item=self.format_title()))
 
     def _download(self):
-        util.clear_tmp_folder(var.tmp_folder, var.config.getint('bot', 'tmp_folder_max_size'))
+        util.clear_tmp_folder(self.temp_folder, var.config.getint('bot', 'tmp_folder_max_size'))
 
         self.downloading = True
-        base_path = var.tmp_folder + self.id
+        base_path = self.temp_folder + self.id
         save_path = base_path
 
         # Download only if music is not existed

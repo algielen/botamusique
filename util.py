@@ -72,8 +72,8 @@ def get_recursive_file_list_sorted(path):
 #       - prefix can be controlled by the caller
 #       - hash is a sha1 of the string representation of the directories' contents (which are
 #           zipped)
-def zipdir(files, zipname_prefix=None):
-    zipname = var.tmp_folder
+def zipdir(files, temp_folder, zipname_prefix=None):
+    zipname = temp_folder
     if zipname_prefix and '../' not in zipname_prefix:
         zipname += zipname_prefix.strip().replace('/', '_') + '_'
 
