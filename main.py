@@ -146,6 +146,7 @@ def main():
 
     bot_logger: Logger = logging.getLogger("bot")
     bot_logger.setLevel(logging.INFO)
+    bot_logger.propagate = False
 
     if args.verbose:
         bot_logger.setLevel(logging.DEBUG)
@@ -163,10 +164,22 @@ def main():
             sys.stderr = util.LoggerIOWrapper(bot_logger, logging.INFO, fallback_io_buffer=sys.stderr.buffer)
     else:
         handler: Handler = logging.StreamHandler()
-
     util.set_logging_formatter(handler, bot_logger.level)
+
+    # replace bot_logger handlers with ours
+    for handler in list(bot_logger.handlers):
+        if isinstance(handler, logging.StreamHandler):
+            bot_logger.removeHandler(handler)
+            handler.close()
     bot_logger.addHandler(handler)
-    logging.getLogger("root").addHandler(handler)
+
+    # replace root logger handlers with ours
+    #for handler in list(logging.getLogger("root").handlers):
+    #    if isinstance(handler, logging.StreamHandler):
+    #        logging.getLogger("root").removeHandler(handler)
+    #        handler.close()
+    #logging.getLogger("root").addHandler(handler)
+
     var.bot_logger = bot_logger
 
     # ======================
