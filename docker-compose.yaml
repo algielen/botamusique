@@ -6,15 +6,17 @@ services:
         image: algielen/botamusique
         container_name: bota
         hostname: bota
-        network_mode: bridge
+        #network_mode: bridge
         restart: no
-        env_file: .env
+        #env_file: .env
         environment:
-            BAM_CONFIG_FILE: /config/configuration.ini
+            BAM_CONFIG_FILE: /config/config.ini
             BAM_MUSIC_DB: /music/music.db
             BAM_DB: /config/settings-bota.db
             BAM_VERBOSE: true
         volumes:
-            - ${MUSIC_PATH}:/music
-            - ${CONFIG_PATH}:/config
-        cpus: 2
+            - ./tmp/music:/music
+            - ./tmp/config:/config
+
+# after changes: docker compose up --build bota
+# sudo chown -R 568:568 tmp/
