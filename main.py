@@ -7,6 +7,7 @@ from argparse import ArgumentParser, Namespace
 from configparser import ConfigParser
 from logging import Logger, Handler
 from logging.handlers import RotatingFileHandler
+from threading import Thread
 from typing import Any
 
 import command
@@ -16,7 +17,7 @@ import util
 import variables as var
 from database import SettingsDatabase, MusicDatabase, DatabaseMigration
 from media.cache import MusicCache
-from mumbleBot import MumbleBot
+from mumbleBot import MumbleBot, start_web_interface
 
 
 def main():
@@ -244,6 +245,18 @@ def main():
     if var.config.getboolean('bot', 'save_playlist'):
         var.bot_logger.info("bot: load playlist from previous session")
         var.playlist.load()
+
+    # ============================
+    #   Start the web interface
+    # ============================
+    if var.config.getboolean("webinterface", "enabled"):
+        wi_addr = var.config.get("webinterface", "listening_addr")
+        wi_port = var.config.getint("webinterface", "listening_port")
+        tt = Thread(
+            target=start_web_interface, name="WebThread", args=(wi_addr, wi_port))
+        tt.daemon = True
+        bot_logger.info('Starting web interface on {}:{}'.format(wi_addr, wi_port))
+        tt.start()
 
     # Start the main loop.
     var.bot.loop()

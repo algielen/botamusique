@@ -724,3 +724,21 @@ class MumbleBot:
         self.wait_for_ready = True
         self.pause_at_id = ""
 
+def start_web_interface(addr, port):
+    global formatter
+    import interface
+
+    # setup logger
+    werkzeug_logger = logging.getLogger('werkzeug')
+    logfile = util.solve_filepath(var.config.get('webinterface', 'web_logfile'))
+    if logfile:
+        handler = logging.handlers.RotatingFileHandler(logfile, mode='a', maxBytes=10240, backupCount=3)  # Rotate after 10KB, leave 3 old logs
+    else:
+        handler = logging.StreamHandler()
+
+    werkzeug_logger.addHandler(handler)
+
+    interface.init_proxy()
+    interface.web.env = 'development'
+    interface.web.secret_key = var.config.get('webinterface', 'flask_secret')
+    interface.web.run(port=port, host=addr)
