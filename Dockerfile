@@ -12,13 +12,12 @@ RUN uv venv --clear \
     && uv sync --no-dev
 
 
-# FIXME: node 14 is ancient, migrate to node 24!
-FROM node:18-bullseye-slim AS node-builder
+FROM node:24-trixie-slim AS node-builder
 ENV DEBIAN_FRONTEND=noninteractive
 WORKDIR /botamusique/web
 COPY --from=python-builder /botamusique/web .
-RUN npm install
-RUN npm run build
+RUN npm ci \
+    && npm run build
 
 
 FROM ghcr.io/astral-sh/uv:python3.14-trixie-slim AS template-builder
