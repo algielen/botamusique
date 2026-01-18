@@ -1,11 +1,11 @@
 import 'jquery/src/jquery.js';
 import 'jquery-migrate/src/migrate.js';
-import Popper from 'popper.js/dist/esm/popper.js';
+import Popper from 'popper.js';
 import {
   Modal,
   Toast,
   Tooltip,
-} from 'bootstrap/js/src/index.js';
+} from 'bootstrap';
 import {
   getColor,
   isOverflown,

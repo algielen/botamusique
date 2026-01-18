@@ -1,9 +1,9 @@
-import {library, dom} from '@fortawesome/fontawesome-svg-core/index.es.js';
+import {library, dom} from '@fortawesome/fontawesome-svg-core';
 import {
   faTimesCircle, faPlus, faCheck, faUpload, faTimes, faTrash, faPlay, faPause, faFastForward, faPlayCircle, faLightbulb,
   faTrashAlt, faDownload, faSyncAlt, faEdit, faVolumeUp, faVolumeDown, faRobot, faRedo, faRandom, faTasks
-} from '@fortawesome/free-solid-svg-icons/index.es.js';
-import {faFileAlt} from '@fortawesome/free-regular-svg-icons/index.es.js';
+} from '@fortawesome/free-solid-svg-icons';
+import {faFileAlt} from '@fortawesome/free-regular-svg-icons';
 
 library.add(
   // Solid
