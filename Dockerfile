@@ -13,7 +13,7 @@ RUN uv venv --clear \
 
 
 # FIXME: node 14 is ancient, migrate to node 24!
-FROM node:14-bullseye-slim AS node-builder
+FROM node:18-bullseye-slim AS node-builder
 ENV DEBIAN_FRONTEND=noninteractive
 WORKDIR /botamusique/web
 COPY --from=python-builder /botamusique/web .

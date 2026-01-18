@@ -5,6 +5,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 module.exports = {
   mode: 'production',
   devtool: 'source-map',
+  target: 'web',
   entry: {
     main: [
       './js/app.mjs',
@@ -38,23 +39,27 @@ module.exports = {
       test: /\.s[ac]ss$/i,
       use: [
         MiniCssExtractPlugin.loader,
-        'css-loader', // translates CSS into CommonJS modules
+        {
+          loader: 'css-loader',
+          options: {
+            sourceMap: true,
+          },
+        },
         {
           loader: 'postcss-loader',
           options: {
             postcssOptions: {
-              plugins: [
-                [
-                  'autoprefixer',
-                  {
-                    // Options
-                  },
-                ],
-              ],
+              plugins: ['autoprefixer'],
             },
+            sourceMap: true,
           },
         },
-        'sass-loader', // compiles Sass to CSS
+        {
+          loader: 'sass-loader',
+          options: {
+            sourceMap: true,
+          },
+        },
       ],
     },
     {
@@ -70,14 +75,21 @@ module.exports = {
             [
               '@babel/preset-env',
               {
-                'corejs': '3.6',
-                'useBuiltIns': 'usage',
+                corejs: '3.36',
+                useBuiltIns: 'usage',
+                bugfixes: true,
+                targets: '>0.25%, not dead',
               },
             ],
           ],
+          cacheDirectory: true,
         },
       },
     },
     ],
+  },
+
+  resolve: {
+    extensions: ['.mjs', '.js'],
   },
 };
