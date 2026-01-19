@@ -1,6 +1,7 @@
-import 'jquery/src/jquery.js';
-import 'jquery-migrate/src/migrate.js';
-import Popper from 'popper.js';
+import $ from 'jquery';
+// 4.0.1 seems broken when used with node? import 'jquery-migrate';
+// also removed "jquery-migrate": "^4.0.1", from package.json
+import {createPopper} from '@popperjs/core';
 import {
   Modal,
   Toast,
@@ -146,7 +147,7 @@ function addPlaylistItem(item) {
     item.tags.forEach(function(tag_tuple) {
       const tag_copy = tag_element.clone();
       tag_copy.html(tag_tuple[0]);
-      tag_copy.addClass('badge-' + tag_tuple[1]);
+      tag_copy.addClass('bg-' + tag_tuple[1]);
       tag_copy.appendTo(tags);
     });
   } else {
@@ -401,25 +402,24 @@ function setFilterType(event, type) {
   event.preventDefault();
 
   if (filters[type].hasClass('active')) {
-    filters[type].removeClass('active btn-primary').addClass('btn-secondary');
-    filters[type].find('input[type=radio]').removeAttr('checked');
+    // is active -> deactivate
+    filters[type].removeClass('active btn-info').addClass('btn-primary');
   } else {
-    filters[type].removeClass('btn-secondary').addClass('active btn-primary');
-    filters[type].find('input[type=radio]').attr('checked', 'checked');
+    filters[type].removeClass('btn-primary').addClass('active btn-info');
   }
 
   if (type === 'file') {
-    filter_dir.prop('disabled', !filters['file'].hasClass('active'));
+    filter_dir.prop('disabled', !filters[type].hasClass('active'));
   }
 
   updateResults();
 }
 
 
-filter_dir.change(function() {
+filter_dir.on("change", function() {
   updateResults();
 });
-filter_keywords.change(function() {
+filter_keywords.on("change", function() {
   updateResults();
 });
 
@@ -541,7 +541,7 @@ function displayLibraryControls(data) {
     dirs.push(dir_element.value);
     });
   if (data.dirs.length > 0) {
-    console.log(data.dirs);
+    //console.log(data.dirs);
     data.dirs.forEach(function(dir) {
       if(!dirs.includes(dir)) {
         $('<option value="' + dir + '">' + dir + '</option>').appendTo(filter_dir);
@@ -565,7 +565,8 @@ function displayLibraryControls(data) {
       } else {
         const tag_copy = lib_filter_tag_element.clone();
         tag_copy.html(tag);
-        tag_copy.addClass('badge-' + getColor(tag));
+        console.log(getColor(tag));
+        tag_copy.addClass('bg-' + getColor(tag));
         tag_copy.appendTo(lib_filter_tag_group);
         // Bind Event
         tag_copy.click(function(e) {
@@ -614,7 +615,7 @@ function addResultItem(item) {
     item.tags.forEach(function(tag_tuple) {
       const tag_copy = tag_element.clone();
       tag_copy.html(tag_tuple[0]);
-      tag_copy.addClass('badge-' + tag_tuple[1]);
+      tag_copy.addClass('bg-' + tag_tuple[1]);
       tag_copy.appendTo(tags);
     });
   } else {
@@ -912,13 +913,20 @@ volumePopoverBtn.addEventListener('click', function(e) {
   e.stopPropagation();
 
   if (!volume_popover_show) {
-    volume_popover_instance = new Popper(volumePopoverBtn, volumePopoverDiv, {
+    volume_popover_instance = createPopper(volumePopoverBtn, volumePopoverDiv, {
       placement: 'top',
-      modifiers: {
-        offset: {
-          offset: '0, 8',
+      modifiers: [
+        {
+          name: 'arrow',
+          options: {},
         },
-      },
+        {
+          name: "offset",
+          options: {
+            offset: [0, 8],
+          },
+        }
+      ],
     });
     volumePopoverDiv.setAttribute('data-show', '');
   } else {
@@ -1293,7 +1301,7 @@ function playheadDragged(event) {
 document.addEventListener('DOMContentLoaded', () => {
   updateResults();
   updatePlaylist();
-  updateLibraryControls();
+  // already called by updateResults()... updateLibraryControls();
 
   // Check the version of playlist to see if update is needed.
   setInterval(checkForPlaylistUpdate, 3000);

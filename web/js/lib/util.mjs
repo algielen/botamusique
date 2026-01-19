@@ -36,6 +36,8 @@ export function getColor(string) {
       return 'light';
     case 7:
       return 'dark';
+    default:
+      return 'primary'; // fallback for e.g. undefined
   }
 }
 

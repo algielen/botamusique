@@ -14,13 +14,13 @@
 </head>
 
 <body>
-    <header class="container page-header mb-5" id="banner">
-        <div class="row">
+    <header class="container page-header mb-1" id="banner">
+        <div class="row justify-content-center">
             <div class="col-auto">
-                <img src="static/image/logo.png" height="200px"
+                <img src="static/image/logo.png" height="96px"
                                                  alt="{{ tr('aria_botamusique_logo') }}">
             </div>
-            <div class="col my-auto">
+            <div class="col-auto my-auto">
                 <h1>{{ tr('page_title') }}</h1>
             </div>
         </div>
@@ -28,35 +28,49 @@
 
     <main id="playlist" class="container mb-5">
         <div class="btn-toolbar mb-2" role="toolbar" aria-label="{{ tr('playlist_controls') }}">
-            <button type="button" id="play-pause-btn" class="btn btn-info mb-2 btn-space" aria-label="{{ tr('play') }}">
+            <button type="button" id="play-pause-btn" class="btn btn-info mb-2 me-2" aria-label="{{ tr('play') }}">
                 <i class="fas fa-play"></i>
             </button>
             <button type="button" id="fast-forward-btn" class="btn btn-info mb-2" aria-label="{{ tr('skip_track') }}">
                 <i class="fas fa-fast-forward"></i>
             </button>
-            <div class="ml-auto">
-                <div class="dropdown mr-2">
-                    <button class="btn btn-secondary dropdown-toggle" type="button" id="play-mode"
-                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"
-                        aria-label="{{ tr('change_playback_mode') }}">
-                        <i class="fas fa-tasks mr-2" aria-hidden="true" id="modeIndicator"></i>
-                    </button>
-                    <div class="dropdown-menu" aria-labelledby="play-mode">
-                        <a class="dropdown-item" href="#" id="one-shot-mode-btn">
-                            <i class="fas fa-tasks mr-2" aria-hidden="true"></i> {{ tr('oneshot') }}
-                        </a>
-                        <a class="dropdown-item" href="#" id="random-mode-btn">
-                            <i class="fas fa-random mr-2" aria-hidden="true"></i> {{ tr('random') }}
-                        </a>
-                        <a class="dropdown-item" href="#" id="repeat-mode-btn">
-                            <i class="fas fa-redo mr-2" aria-hidden="true"></i> {{ tr('repeat') }}
-                        </a>
-                        <a class="dropdown-item" href="#" id="autoplay-mode-btn">
-                            <i class="fas fa-robot mr-2" aria-hidden="true"></i> {{ tr('autoplay') }}
-                        </a>
-                    </div>
-                </div>
-                <button type="button" id="volume-popover-btn" class="btn btn-warning ml-1"
+            <div class="ms-auto">
+              <div class="dropdown">
+                <button class="btn btn-secondary dropdown-toggle"
+                          type="button"
+                          id="play-mode"
+                          data-bs-toggle="dropdown"
+                          data-toggle="dropdown"
+                          aria-haspopup="true" aria-expanded="false"
+                          aria-label="{{ tr('change_playback_mode') }}">
+                          <i class="fas fa-tasks me-2" aria-hidden="true" id="modeIndicator"></i>
+                      </button>
+
+                <ul class="dropdown-menu" aria-labelledby="play-mode">
+                  <li>
+                    <a class="dropdown-item" href="#" id="one-shot-mode-btn">
+                      <i class="fas fa-tasks me-2" aria-hidden="true"></i> {{ tr('oneshot') }}
+                    </a>
+                  </li>
+                  <li>
+                    <a class="dropdown-item" href="#" id="random-mode-btn">
+                        <i class="fas fa-random me-2" aria-hidden="true"></i> {{ tr('random') }}
+                    </a>
+                  </li>
+                  <li>
+                    <a class="dropdown-item" href="#" id="repeat-mode-btn">
+                        <i class="fas fa-redo me-2" aria-hidden="true"></i> {{ tr('repeat') }}
+                    </a>
+                  </li>
+                  <li>
+                    <a class="dropdown-item" href="#" id="autoplay-mode-btn">
+                        <i class="fas fa-robot me-2" aria-hidden="true"></i> {{ tr('autoplay') }}
+                    </a>
+                  </li>
+                </ul>
+              </div>
+
+                <button type="button" id="volume-popover-btn" class="btn btn-warning ms-1"
                                                               aria-label="{{ tr('open_volume_controls') }}">
                     <i class="fa fa-volume-up" aria-hidden="true"></i>
                 </button>
@@ -66,13 +80,13 @@
                         <i class="fa fa-volume-down" aria-hidden="true"></i>
                     </a>
 
-                    <input type="range" class="custom-range ml-1" id="volume-slider" min="0" max="1" step="0.01"
+                    <input type="range" class="custom-range ms-1" id="volume-slider" min="0" max="1" step="0.01"
                                                                                                      value="0.5" aria-label="{{ tr('volume_slider') }}" />
 
                     <a id="volume-up-btn">
                         <i class="fa fa-volume-up" aria-hidden="true"></i>
                     </a>
-                    <div id="volume-popover-arrow"></div>
+                    <div data-popper-arrow id="volume-popover-arrow"></div>
                 </div>
             </div>
         </div>
@@ -109,21 +123,23 @@
                         <th scope="row" class="playlist-item-index d-none d-md-table-cell">1</th>
                         <td>
                             <input hidden type="hidden" class="playlist-item-id" value="" />
-                            <div class="float-left">
-                                <img width="80" class="playlist-item-thumbnail" src="static/image/unknown-album.png"
-                                                                                alt="{{ tr('aria_default_cover') }}" />
-                            </div>
-                            <div class="playlist-artwork">
-                                <b class="playlist-item-title"></b>
-                                <span class="playlist-item-type badge badge-secondary"></span>
-                                <br />
-                                <span class="playlist-item-artist"></span>
-                                <br />
+                            <div class="row">
+                                <div class="float-left col-auto">
+                                    <img width="80" class="playlist-item-thumbnail" src="static/image/unknown-album.png"
+                                                                                    alt="{{ tr('aria_default_cover') }}" />
+                                </div>
+                                <div class="playlist-artwork col-auto">
+                                    <b class="playlist-item-title"></b>
+                                    <span class="playlist-item-type badge bg-secondary"></span>
+                                    <br />
+                                    <span class="playlist-item-artist"></span>
+                                    <br />
 
-                                <div class="playlist-item-tags">
-                                    <a class="playlist-item-edit tag-space tag-click">
-                                        <i class="fas fa-edit" style="color: #AAAAAA"></i>
-                                    </a>
+                                    <div class="playlist-item-tags">
+                                        <a class="playlist-item-edit tag-space tag-click">
+                                            <i class="fas fa-edit" style="color: #AAAAAA"></i>
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
                         </td>
@@ -131,15 +147,17 @@
                             <small class="playlist-item-path"></small>
                         </td>
                         <td>
-                            <div class="btn-group">
-                                <button type="button" class="playlist-item-play btn btn-info btn-sm"
-                                                      aria-label="{{ tr('aria_skip_current_song') }}">
-                                    <i class="fas fa-play" aria-hidden="true"></i>
-                                </button>
-                                <button type="button" class="playlist-item-trash btn btn-danger btn-sm ml-1"
-                                                      aria-label="{{ tr('aria_remove_this_song') }}">
-                                    <i class="fas fa-trash-alt" aria-hidden="true"></i>
-                                </button>
+                            <div class="row justify-content-center">
+                                <div class="col-auto btn-group">
+                                    <button type="button" class="playlist-item-play btn btn-info btn-sm"
+                                                          aria-label="{{ tr('aria_skip_current_song') }}">
+                                        <i class="fas fa-play" aria-hidden="true"></i>
+                                    </button>
+                                    <button type="button" class="playlist-item-trash btn btn-danger btn-sm"
+                                                          aria-label="{{ tr('aria_remove_this_song') }}">
+                                        <i class="fas fa-trash-alt" aria-hidden="true"></i>
+                                    </button>
+                                </div>
                             </div>
                         </td>
                     </tr>
@@ -148,7 +166,7 @@
         </div>
 
         <div class="btn-group">
-            <button type="button" id="clear-playlist-btn" class="btn btn-danger mr-1">
+            <button type="button" id="clear-playlist-btn" class="btn btn-danger me-1">
                 <i class="fas fa-trash-alt" aria-hidden="true"></i> {{ tr('clear_playlist') }}</button>
         </div>
     </main>
@@ -160,41 +178,34 @@
             <div class="card-header">
                 <h3 class="card-title">{{ tr('filters') }}</h3>
                 <hr>
-                <div class="row">
-                    <div class="col">
-                        <fieldset id="filter-type" class="mb-2">
-                            <legend>{{ tr('type') }}</legend>
-                            <div class="btn-group btn-group-sm btn-group-toggle">
-                                <label id="filter-type-file" class="btn btn-secondary">
-                                    <input type="checkbox" name="options">{{ tr('file') }}
-                                </label>
-                                <label id="filter-type-url" class="btn btn-secondary">
-                                    <input type="checkbox" name="options">{{ tr('url') }}
-                                </label>
-                                <label id="filter-type-radio" class="btn btn-secondary">
-                                    <input type="checkbox" name="options">{{ tr('radio') }}
-                                </label>
-                            </div>
-                        </fieldset>
+                <div class="row g-2">
+                    <div class="col-md">
+                        <div class="input-group mb-3" id="filter-media-source-container">
+                            <label class="input-group-text">{{ tr('type') }}</label>
+                            <button class="btn btn-info active" type="button" id="filter-type-file">{{ tr('file') }}</button>
+                            <button class="btn btn-info active" type="button" id="filter-type-url">{{ tr('url') }}</button>
+                            <button class="btn btn-info active" type="button" id="filter-type-radio">{{ tr('radio') }}</button>
+                        </div>
 
-                        <label for="filter-dir">{{ tr('directory') }}</label>
-                        <div id="filter-path" class="input-group mb-2">
-                            <select class="form-control form-control-sm" id="filter-dir" disabled>
+                        <div class="input-group mb-3" id="filter-dir-container">
+                            <label class="input-group-text" for="filter-dir">{{ tr('directory') }}</label>
+                            <select class="form-select" id="filter-dir">
                             </select>
                         </div>
 
-                        <label for="filter-keywords">{{ tr('keywords') }}</label>
-                        <div id="filter-path" class="input-group mb-2">
-                            <input class="form-control form-control-sm" id="filter-keywords" name="keywords"
-                                                                                             placeholder="{{ tr('keywords_placeholder') }}" style="margin-top:5px;" />
+                        <div class="input-group mb-3" id="filter-keywords-container">
+                            <label class="input-group-text" for="filter-keywords">{{ tr('keywords') }}</label>
+                            <input class="form-control" type="text" id="filter-keywords"
+                                   name="keywords" placeholder="{{ tr('keywords_placeholder') }}"/>
                         </div>
-                    </div>
+                      </div>
 
-                    <div class="col">
-                        <fieldset id="filter-tags">
-                            <legend>{{ tr('tags') }}</legend>
-                            <span class="filter-tag tag-unclicked tag-click badge"></span>
-                        </fieldset>
+                      <div class="col-md">
+                          <fieldset id="filter-tags">
+                              <legend>{{ tr('tags') }}</legend>
+                              <span class="filter-tag tag-unclicked tag-click badge"></span>
+                          </fieldset>
+                      </div>
                     </div>
                 </div>
             </div>
@@ -226,8 +237,8 @@
 
                         <div class="library-info-col library-info-title col-5" style="padding: 12px 0;">
                             <div>
-                                <span class="library-item-type lead text-muted btn-space">[File]</span>
-                                <span class="library-item-title lead btn-space">This is my title</span>
+                                <span class="library-item-type lead text-muted me-2">[File]</span>
+                                <span class="library-item-title lead me-2">This is my title</span>
                                 <span class="library-item-artist text-muted"> - Artist</span>
                             </div>
                         </div>
@@ -237,13 +248,13 @@
                             <div class="library-item-tags">
                                 <a class="tag-space tag-click library-item-edit"><i class="fas fa-edit"
                                         style="color: #AAAAAA"></i></a>
-                                <span class="library-item-notag badge badge-light text-muted font-italic">{{ tr('no_tag') }}</span>
+                                <span class="library-item-notag badge bg-light text-muted font-italic">{{ tr('no_tag') }}</span>
                                 <span class="library-item-tag tag-space badge">Tag</span>
                             </div>
                         </div>
 
                         <div class="btn-group library-action">
-                            <button class="library-item-add-next btn btn-info btn-sm btn-space" type="button"
+                            <button class="library-item-add-next btn btn-info btn-sm" type="button"
                                                                                                 title="{{ tr('next_to_play') }}" aria-label="{{ tr('add_to_playlist_next') }}">
                                 <svg class="library-btn-svg" style="width: 1rem; fill: currentColor;"
                                     viewBox="5 5 17 17">
@@ -254,7 +265,7 @@
                                     </path>
                                 </svg>
                             </button>
-                            <button class="library-item-add-bottom library-btn btn btn-info btn-sm btn-space"
+                            <button class="library-item-add-bottom library-btn btn btn-info btn-sm"
                                     type="button" title="{{ tr('add_to_bottom') }}" aria-label="{{ tr('add_to_bottom_of_current_playlist') }}">
                                 <svg class="library-btn-svg" style="width: 1rem; fill: currentColor;"
                                     viewBox="2 2 20 20">
@@ -263,11 +274,11 @@
                                     </path>
                                 </svg>
                             </button>
-                            <button class="library-item-download btn btn-primary btn-sm btn-space" type="button"
+                            <button class="library-item-download btn btn-primary btn-sm" type="button"
                                                                                                    aria-label="{{ tr('download_song_from_library') }}">
                                 <i class="fas fa-download" aria-hidden="true"></i>
                             </button>
-                            <button class="library-item-trash btn btn-danger btn-sm btn-space library-delete" type="button"
+                            <button class="library-item-trash btn btn-danger btn-sm library-delete" type="button"
                                                                                                aria-label="{{ tr('remove_song_from_library') }}">
                                 <i class="fas fa-trash-alt" aria-hidden="true"></i>
                             </button>
@@ -287,16 +298,16 @@
                 </div>
 
                 <div class="btn-group mb-2" role="group">
-                    <button id="add-to-playlist-btn" type="button" class="btn btn-secondary mr-1">
+                    <button id="add-to-playlist-btn" type="button" class="btn btn-secondary me-1">
                         <i class="fas fa-plus" aria-hidden="true"></i>{{ tr('add_all') }}
                     </button>
-                    <button id="library-rescan-btn" type="button" class="btn btn-secondary mr-1">
+                    <button id="library-rescan-btn" type="button" class="btn btn-secondary me-1">
                         <i class="fas fa-sync-alt" aria-hidden="true"></i>{{ tr('rescan_files') }}
                     </button>
-                    <button id="library-download-btn" type="button" class="btn btn-secondary mr-1">
+                    <button id="library-download-btn" type="button" class="btn btn-secondary me-1">
                         <i class="fas fa-download" aria-hidden="true"></i>{{ tr('download_all') }}
                     </button>
-                    <button type="button" class="btn btn-danger mr-1 library-delete" data-toggle="modal"
+                    <button type="button" class="btn btn-danger me-1 library-delete" data-toggle="modal"
                         data-target="#deleteWarningModal">
                         <i class="fas fa-trash-alt" aria-hidden="true"></i>{{ tr('delete_all') }}
                     </button>
@@ -335,15 +346,14 @@
             <div class="card-body">
                 <form action="./upload" method="post" enctype="multipart/form-data">
                     <div class="row">
-                        <div id="uploadBox" class="col-lg-7">
-                            <div class="input-group mb-3">
-                                <div id="uploadField" style="display: flex; width: 100%">
-                                    <div class="custom-file">
-                                        <input type="file" name="file[]" class="custom-file-input" id="uploadSelectFile" aria-describedby="uploadSubmit" value="{{ tr('browse_music_file') }}" multiple />
-                                        <label class="custom-file-label" for="uploadSelectFile">{{ tr('choose_file') }}</label>
-                                    </div>
-                                </div>
-                            </div>
+                        <div id="uploadBox" class="col-lg-7 mb-3">
+                            <label for="uploadSelectFile" class="form-label">{{ tr('choose_file') }}</label>
+                            <input class="form-control w-50 ms-2 d-inline-block"
+                                   type="file" name="file[]"
+                                   id="uploadSelectFile"
+                                   aria-describedby="uploadSubmit"
+                                   value="{{ tr('browse_music_file') }}"
+                                   multiple >
                         </div>
                         <div class="col-lg-5">
                             <div class="row">
@@ -358,7 +368,7 @@
                                     </div>
                                 </div>
                                 <div class="col-auto">
-                                    <button class="btn btn-primary" type="button" id="uploadSubmit"><i class="fas fa-upload mr-1"></i>{{ tr('upload_submit') }}</button>
+                                    <button class="btn btn-primary" type="button" id="uploadSubmit"><i class="fas fa-upload me-1"></i>{{ tr('upload_submit') }}</button>
                                 </div>
                             </div>
                         </div>
@@ -375,13 +385,11 @@
                     <h3 class="card-title">{{ tr('add_url') }}</h3>
                 </div>
                 <div class="card-body">
-                    <label for="music-url-input">{{ tr('add_youtube_or_soundcloud_url') }}</label>
-                    <div class="input-group mb-2">
-                        <input class="form-control" type="text" id="music-url-input" placeholder="{{ tr('url_placeholder') }}">
+                    <div class="input-group mb-3" id="add-music-url-container">
+                        <label class="input-group-text" for="music-url-input">{{ tr('add_youtube_or_soundcloud_url') }}</label>
+                        <input type="text" class="form-control" id="music-url-input" placeholder="{{ tr('url_placeholder') }}" aria-label="{{ tr('url_placeholder') }}">
+                        <button type="submit" class="btn btn-primary">{{ tr('add_url') }}</button>
                     </div>
-                    <button type="submit" class="btn btn-primary">
-                        {{ tr('add_url') }}
-                    </button>
                 </div>
             </div>
             <div id="add-radio-url" class="card">
@@ -389,13 +397,11 @@
                     <h3 class="card-title">{{ tr('add_radio') }}</h3>
                 </div>
                 <div class="card-body">
-                    <label for="radio-url-input">{{ tr('add_radio_url') }}</label>
-                    <div class="input-group mb-2">
-                        <input id="radio-url-input" class="form-control" type="text" placeholder="{{ tr('radio_url_placeholder') }}">
+                    <div class="input-group mb-3" id="add-radio-container">
+                        <label class="input-group-text" for="radio-url-input">{{ tr('add_radio_url') }}</label>
+                        <input type="text" class="form-control" id="radio-url-input" placeholder="{{ tr('radio_url_placeholder') }}" aria-label="{{ tr('radio_url_placeholder') }}">
+                        <button type="submit" class="btn btn-primary">{{ tr('add_radio') }}</button>
                     </div>
-                    <button type="submit" class="btn btn-primary">
-                        {{ tr('add_radio') }}
-                    </button>
                 </div>
             </div>
         </div>
@@ -409,13 +415,11 @@
         <i class="fas fa-lightbulb" aria-hidden="true"></i>
     </div>
 
-    <div id="playerToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true" data-autohide="false">
+    <div id="playerToast" class="toast w-auto" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="false">
         <div class="toast-header">
-            <i class="fas fa-play-circle mr-2 text-primary"></i>
-            <strong class="mr-auto">{{ tr('mini_player_title') }}</strong>
-            <button type="button" class="ml-2 mb-1 close" data-dismiss="toast" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-            </button>
+            <i class="fas fa-play-circle me-2 text-primary"></i>
+            <strong class="me-auto">{{ tr('mini_player_title') }}</strong>
+            <button type="button" class="ms-2 mb-1 btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
         </div>
         <div class="toast-body" id="playerContainer">
             <img id="playerArtworkIdle" src="static/image/empty_box.svg" alt="{{ tr('aria_empty_box') }}" />
@@ -423,11 +427,11 @@
                                                                          alt="{{ tr('aria_default_cover') }}" />
             <div id="playerInfo">
                 <div id="playerActionBox">
-                    <button id="playerPlayBtn" class="btn btn-primary btn-sm btn-space" style="display: none"
+                    <button id="playerPlayBtn" class="btn btn-primary btn-sm me-2" style="display: none"
                                                                                         aria-label="{{ tr('play') }}">
                         <i class="fas fa-play"></i>
                     </button>
-                    <button id="playerPauseBtn" class="btn btn-primary btn-sm btn-space" style="display: none"
+                    <button id="playerPauseBtn" class="btn btn-primary btn-sm me-2" style="display: none"
                                                                                          aria-label="{{ tr('pause') }}">
                         <i class="fas fa-pause"></i>
                     </button>
@@ -436,14 +440,14 @@
                     </button>
                 </div>
 
-                <div style="overflow: hidden; max-width: 320px;">
+                <div style="overflow: hidden; max-width: 320px;" class="me-5">
                     <strong id="playerTitle">Song Title</strong>
                 </div>
                 <span id="playerArtist">Artist</span>
-                <div id="playerBarBox" class="progress">
-                    <div id="playerBar" class="progress-bar pr-2" role="progressbar" aria-valuenow="50"
+                <div id="playerBarBox" class="progress w-100" style="min-width: 250px;">
+                    <div id="playerBar" class="progress-bar pe-2" role="progressbar" aria-valuenow="50"
                         aria-valuemin="0" aria-valuemax="100"
-                        style="width: 100%; text-align: right; transform: translateX(-100%);"></div>
+                        style="text-align: right; transform: translateX(-100%);"></div>
                 </div>
             </div>
         </div>
@@ -465,22 +469,22 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h3 class="modal-title">{{ tr('edit_tags_for') }} <span id="addTagModalTitle">?</span></h3>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div id="addTagModalBody" class="modal-body">
                     <input hidden type="hidden" id="addTagModalItemId" name="id" value="">
                     <div class="modal-tag" style="display: none; width: 100%;">
-                        <span class="modal-tag-text tag-space badge badge-pill badge-dark">Tag</span>
+                        <span class="modal-tag-text tag-space badge rounded-pill bg-dark">Tag</span>
                         <a class="modal-tag-remove tag-click small"><i
                                 class="fas fa-times-circle btn-outline-danger"></i></a>
                     </div>
                     <div id="addTagModalTags" style="margin-left: 5px; margin-bottom: 10px;">
                     </div>
                     <div class="input-group">
-                        <input class="form-control form-control-sm btn-space" type="text" id="addTagModalInput"
-                                                                                          placeholder="tag1,tag2,..." aria-label="{{ tr('tags_to_add') }}">
+                        <input class="form-control form-control-sm"
+                               type="text" id="addTagModalInput"
+                               placeholder="tag1,tag2,..."
+                               aria-label="{{ tr('tags_to_add') }}">
                         <button id="addTagModalAddBtn" type="button" class="btn btn-primary btn-sm">
                             <i class="fas fa-plus" aria-hidden="true"></i>
                             {{ tr('add') }}
@@ -488,9 +492,9 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">{{ tr('close') }}</button>
-                    <button id="addTagModalSubmit" type="button" class="btn btn-success"
-                                                                 data-dismiss="modal">{{ tr('edit_submit') }}</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" aria-label="Close">{{ tr('close') }}</button>
+                    <button id="addTagModalSubmit" type="button"
+                            class="btn btn-success" data-bs-dismiss="modal">{{ tr('edit_submit') }}</button>
                 </div>
             </div>
         </div>
@@ -501,20 +505,20 @@
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h3 class="modal-title" id="uploadTitle"><i class="fas fa-upload mr-1"></i>{{ tr('uploading_files') }}</h3>
+                    <h3 class="modal-title" id="uploadTitle"><i class="fas fa-upload me-1"></i>{{ tr('uploading_files') }}</h3>
                 </div>
                 <div id="uploadModalBody" class="modal-body">
                     <div id="uploadSuccessAlert" class="alert alert-success" role="alert" style="display: none">
-                        <i class="fas fa-check mr-1"></i>
+                        <i class="fas fa-check me-1"></i>
                         {{ tr('uploaded_finished') }}
                     </div>
                     <div id="uploadModalList" style="margin-left: 5px; margin-bottom: 10px;">
                         <div class="uploadItem" style="display: none; width: 100%; padding-bottom: 8px;">
-                            <i class="far fa-file-alt mr-1"></i>
-                            <span class="uploadItemTitle mr-3"></span>
+                            <i class="far fa-file-alt me-1"></i>
+                            <span class="uploadItemTitle me-3"></span>
                             <span class="uploadItemError text-danger"></span>
                             <div class="progress" style="margin-top: 5px; height: 10px;">
-                                <div class="uploadProgress progress-bar pr-2" role="progressbar" aria-valuenow="0"
+                                <div class="uploadProgress progress-bar pe-2" role="progressbar" aria-valuenow="0"
                                     aria-valuemin="0" aria-valuemax="100"
                                     style="width: 100%; text-align: right; transform: translateX(-100%);"></div>
                             </div>
@@ -523,11 +527,11 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" id="uploadClose" class="btn btn-success" data-dismiss="modal">
-                        <i class="fas fa-times mr-1"></i> {{ tr('close') }}</button>
+                        <i class="fas fa-times me-1"></i> {{ tr('close') }}</button>
                     <button type="button" id="uploadCancel" class="btn btn-danger" data-toggle="tooltip"
                         data-html="true"
                         title="{{ tr('cancel_upload_warning') }}">
-                        <i class="fas fa-trash-alt mr-1" aria-hidden="true"></i> {{ tr('cancel') }}</button>
+                        <i class="fas fa-trash-alt me-1" aria-hidden="true"></i> {{ tr('cancel') }}</button>
                 </div>
             </div>
         </div>

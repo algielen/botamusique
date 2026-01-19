@@ -44,7 +44,7 @@ if __name__ == "__main__":
 
     html_files = os.listdir(template_dir)
     for html_file in html_files:
-        match = re.search("(.+)\.template\.html", html_file)
+        match = re.search('(.+)\\.template\\.html', html_file)
         if match is None:
             continue
 
@@ -59,7 +59,7 @@ if __name__ == "__main__":
         default_lang_dict = load_lang("en_US")
 
         for lang_file in lang_files:
-            match = re.search("([a-z]{2}_[A-Z]{2})\.json", lang_file)
+            match = re.search('([a-z]{2}_[A-Z]{2})\\.json', lang_file)
             if match:
                 lang_list.append(match[1])
 

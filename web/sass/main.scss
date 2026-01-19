@@ -1,14 +1,10 @@
-.btn-space {
-    margin-right: 5px;
-}
-
 /* Playlist */
 .playlist-item {
     transition: all 0.2s ease-in-out;
 }
 
 .playlist-artwork {
-    float: left;
+    //float: left;
     margin-left: 10px;
     white-space: nowrap;
     overflow: hidden;
@@ -161,8 +157,6 @@
     width: 10px;
     height: 10px;
     z-index: -1;
-    top: 16px;
-    left: 46px;
 }
 
 #volume-popover-arrow::before {
@@ -229,7 +223,7 @@
 #playerBarBox {
     margin-top: 5px;
     height: 15px;
-    width: 400px;
+    width: 100%;
     cursor: pointer;
 }
 
