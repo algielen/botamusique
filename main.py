@@ -7,6 +7,7 @@ from argparse import ArgumentParser, Namespace
 from configparser import ConfigParser
 from logging import Logger, Handler
 from logging.handlers import RotatingFileHandler
+from threading import Thread
 from typing import Any
 
 import command
@@ -16,7 +17,7 @@ import util
 import variables as var
 from database import SettingsDatabase, MusicDatabase, DatabaseMigration
 from media.cache import MusicCache
-from mumbleBot import MumbleBot
+from mumbleBot import MumbleBot, start_web_interface
 
 
 def main():
@@ -145,6 +146,7 @@ def main():
 
     bot_logger: Logger = logging.getLogger("bot")
     bot_logger.setLevel(logging.INFO)
+    bot_logger.propagate = False
 
     if args.verbose:
         bot_logger.setLevel(logging.DEBUG)
@@ -162,10 +164,22 @@ def main():
             sys.stderr = util.LoggerIOWrapper(bot_logger, logging.INFO, fallback_io_buffer=sys.stderr.buffer)
     else:
         handler: Handler = logging.StreamHandler()
-
     util.set_logging_formatter(handler, bot_logger.level)
+
+    # replace bot_logger handlers with ours
+    for handler in list(bot_logger.handlers):
+        if isinstance(handler, logging.StreamHandler):
+            bot_logger.removeHandler(handler)
+            handler.close()
     bot_logger.addHandler(handler)
-    logging.getLogger("root").addHandler(handler)
+
+    # replace root logger handlers with ours
+    #for handler in list(logging.getLogger("root").handlers):
+    #    if isinstance(handler, logging.StreamHandler):
+    #        logging.getLogger("root").removeHandler(handler)
+    #        handler.close()
+    #logging.getLogger("root").addHandler(handler)
+
     var.bot_logger = bot_logger
 
     # ======================
@@ -244,6 +258,18 @@ def main():
     if var.config.getboolean('bot', 'save_playlist'):
         var.bot_logger.info("bot: load playlist from previous session")
         var.playlist.load()
+
+    # ============================
+    #   Start the web interface
+    # ============================
+    if var.config.getboolean("webinterface", "enabled"):
+        wi_addr = var.config.get("webinterface", "listening_addr")
+        wi_port = var.config.getint("webinterface", "listening_port")
+        tt = Thread(
+            target=start_web_interface, name="WebThread", args=(wi_addr, wi_port))
+        tt.daemon = True
+        bot_logger.info('Starting web interface on {}:{}'.format(wi_addr, wi_port))
+        tt.start()
 
     # Start the main loop.
     var.bot.loop()

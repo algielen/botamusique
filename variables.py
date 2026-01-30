@@ -4,6 +4,11 @@ import database
 import media.cache
 import media.playlist
 import mumbleBot
+# we have to be very careful not to cause a recursive import loop
+# main --> command --> constants --> variables --> mumbleBot --> constants
+# this requires specific import ordering(!)
+# otherwise use untyped bot and comment out "import mumbleBot":
+#bot = None
 
 # TODO delete these global variables
 

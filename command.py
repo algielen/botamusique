@@ -6,6 +6,10 @@ import re
 import pymumble_py3 as pymumble
 from pyradios import RadioBrowser
 
+import secrets
+import datetime
+
+import interface
 import media.playlist
 import util
 import variables as var
@@ -51,6 +55,7 @@ def register_all_commands(bot):
     bot.register_command(commands('remove'), cmd_remove)
     bot.register_command(commands('remove_tag'), cmd_remove_tag)
     bot.register_command(commands('repeat'), cmd_repeat)
+    bot.register_command(commands('requests_webinterface_access'), cmd_web_access)
     bot.register_command(commands('rescan'), cmd_refresh_cache, no_partial_match=True)
     bot.register_command(commands('search'), cmd_search_library)
     bot.register_command(commands('skip'), cmd_skip)
@@ -62,8 +67,11 @@ def register_all_commands(bot):
     bot.register_command(commands('yt_search'), cmd_yt_search)
 
     # admin command
+    bot.register_command(commands('add_webinterface_user'), cmd_web_user_add, admin=True)
     bot.register_command(commands('drop_database'), cmd_drop_database, no_partial_match=True, admin=True)
     bot.register_command(commands('kill'), cmd_kill, admin=True)
+    bot.register_command(commands('list_webinterface_user'), cmd_web_user_list, admin=True)
+    bot.register_command(commands('remove_webinterface_user'), cmd_web_user_remove, admin=True)
     bot.register_command(commands('max_volume'), cmd_max_volume, admin=True)
     bot.register_command(commands('update'), cmd_update, no_partial_match=True, admin=True)
     bot.register_command(commands('url_ban'), cmd_url_ban, no_partial_match=True, admin=True)
@@ -1243,6 +1251,32 @@ def cmd_refresh_cache(bot, user, text, command, parameter):
         bot.mumble.users[text.actor].send_text_message(tr('not_admin'))
 
 
+def cmd_web_access(bot, user, text, command, parameter):
+    auth_method = var.config.get("webinterface", "auth_method")
+
+    if auth_method == 'token':
+        interface.banned_ip = []
+        interface.bad_access_count = {}
+
+        user_info = var.db.get("user", user, fallback='{}')
+        user_dict = json.loads(user_info)
+        if 'token' in user_dict:
+            var.db.remove_option("web_token", user_dict['token'])
+
+        token = secrets.token_urlsafe(5)
+        user_dict['token'] = token
+        user_dict['token_created'] = str(datetime.datetime.now())
+        user_dict['last_ip'] = ''
+        var.db.set("web_token", token, user)
+        var.db.set("user", user, json.dumps(user_dict))
+
+        access_address = var.config.get("webinterface", "access_address") + "/?token=" + token
+    else:
+        access_address = var.config.get("webinterface", "access_address")
+
+    bot.send_msg(tr('webpage_address', address=access_address), text)
+
+
 def cmd_user_password(bot, user, text, command, parameter):
     if not parameter:
         bot.send_msg(tr('bad_parameter', command=command), text)
@@ -1255,6 +1289,51 @@ def cmd_user_password(bot, user, text, command, parameter):
     var.db.set("user", user, json.dumps(user_dict))
 
     bot.send_msg(tr('user_password_set'), text)
+
+
+def cmd_web_user_add(bot, user, text, command, parameter):
+    if not parameter:
+        bot.send_msg(tr('bad_parameter', command=command), text)
+        return
+
+    auth_method = var.config.get("webinterface", "auth_method")
+
+    if auth_method == 'password':
+        web_users = json.loads(var.db.get("privilege", "web_access", fallback='[]'))
+        if parameter not in web_users:
+            web_users.append(parameter)
+        var.db.set("privilege", "web_access", json.dumps(web_users))
+        bot.send_msg(tr('web_user_list', users=", ".join(web_users)), text)
+    else:
+        bot.send_msg(tr('command_disabled', command=command), text)
+
+
+def cmd_web_user_remove(bot, user, text, command, parameter):
+    if not parameter:
+        bot.send_msg(tr('bad_parameter', command=command), text)
+        return
+
+    auth_method = var.config.get("webinterface", "auth_method")
+
+    if auth_method == 'password':
+        web_users = json.loads(var.db.get("privilege", "web_access", fallback='[]'))
+        if parameter in web_users:
+            web_users.remove(parameter)
+        var.db.set("privilege", "web_access", json.dumps(web_users))
+        bot.send_msg(tr('web_user_list', users=", ".join(web_users)), text)
+    else:
+        bot.send_msg(tr('command_disabled', command=command), text)
+
+
+def cmd_web_user_list(bot, user, text, command, parameter):
+    auth_method = var.config.get("webinterface", "auth_method")
+
+    if auth_method == 'password':
+        web_users = json.loads(var.db.get("privilege", "web_access", fallback='[]'))
+        bot.send_msg(tr('web_user_list', users=", ".join(web_users)), text)
+    else:
+        bot.send_msg(tr('command_disabled', command=command), text)
+
 
 def cmd_version(bot, user, text, command, parameter):
     bot.send_msg(tr('report_version', version=bot.get_version()), text)

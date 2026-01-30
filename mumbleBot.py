@@ -185,10 +185,11 @@ class MumbleBot:
         self.log.info(
             "\nSIGINT caught, quitting, {} more to kill".format(2 - self.nb_exit))
 
-        if var.config.getboolean('bot', 'save_playlist') \
-                and var.config.get("bot", "save_music_library"):
-            self.log.info("bot: save playlist into database")
-            var.playlist.save()
+        # this is already taken care of in the main loop exit
+        #if var.config.getboolean('bot', 'save_playlist') \
+        #        and var.config.get("bot", "save_music_library"):
+        #    self.log.info("bot: save playlist into database")
+        #    var.playlist.save()
 
         if self.nb_exit > 1:
             self.log.info("Forced Quit")
@@ -724,3 +725,27 @@ class MumbleBot:
         self.wait_for_ready = True
         self.pause_at_id = ""
 
+def start_web_interface(addr, port):
+    global formatter
+    import interface
+
+    # setup logger
+    werkzeug_logger = logging.getLogger('werkzeug')
+    werkzeug_logger.propagate = False
+    logfile = util.solve_filepath(var.config.get('webinterface', 'web_logfile'))
+    if logfile:
+        handler = logging.handlers.RotatingFileHandler(logfile, mode='a', maxBytes=10240, backupCount=3)  # Rotate after 10KB, leave 3 old logs
+    else:
+        handler = logging.StreamHandler()
+
+    # replace werkzeug_logger handlers with ours
+    for handler in list(werkzeug_logger.handlers):
+        if isinstance(handler, logging.StreamHandler):
+            werkzeug_logger.removeHandler(handler)
+            handler.close()
+    werkzeug_logger.addHandler(handler)
+
+    interface.init_proxy()
+    #interface.web.env = 'development'
+    interface.web.secret_key = var.config.get('webinterface', 'flask_secret')
+    interface.web.run(port=port, host=addr)

@@ -1,0 +1,55 @@
+{
+  "name": "botamusique",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint": "eslint --config eslint.config.js js/ --ext .mjs",
+    "build": "webpack --config webpack.config.cjs --progress"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/algielen/botamusique.git"
+  },
+  "author": "algielen",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/algielen/botamusique/issues"
+  },
+  "homepage": "https://github.com/azlux/botamusique#readme",
+  "devDependencies": {
+    "@babel/core": "^7.28.6",
+    "@babel/eslint-parser": "^7.28.6",
+    "@babel/eslint-plugin": "^7.27.1",
+    "@babel/plugin-proposal-class-properties": "^7.18.6",
+    "@babel/preset-env": "^7.28.6",
+    "@eslint/compat": "^2.0.1",
+    "@eslint/eslintrc": "^3.3.3",
+    "@eslint/js": "^9.39.2",
+    "autoprefixer": "^10.4.23",
+    "babel-loader": "^10.0.0",
+    "core-js": "^3.47.0",
+    "css-loader": "^7.1.2",
+    "eslint": "^9.39.2",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-jquery": "^1.5.1",
+    "eslint-plugin-jsdoc": "^62.1.0",
+    "globals": "^17.0.0",
+    "html-webpack-plugin": "^5.6.6",
+    "mini-css-extract-plugin": "^2.10.0",
+    "postcss-loader": "^8.2.0",
+    "regenerator-runtime": "^0.14.1",
+    "sass": "^1.97.2",
+    "sass-loader": "^16.0.6",
+    "webpack": "^5.104.1",
+    "webpack-cli": "^6.0.1"
+  },
+  "dependencies": {
+    "@fortawesome/fontawesome-svg-core": "^7.1.0",
+    "@fortawesome/free-regular-svg-icons": "^7.1.0",
+    "@fortawesome/free-solid-svg-icons": "^7.1.0",
+    "bootstrap": "^5.3.8",
+    "bootswatch": "^5.3.8",
+    "jquery": "^4.0.0",
+    "@popperjs/core": "^2.11.8"
+  }
+}
