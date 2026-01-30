@@ -8,12 +8,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/azlux/botamusique.git"
+    "url": "git+https://github.com/algielen/botamusique.git"
   },
-  "author": "azlux",
+  "author": "algielen",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/azlux/botamusique/issues"
+    "url": "https://github.com/algielen/botamusique/issues"
   },
   "homepage": "https://github.com/azlux/botamusique#readme",
   "devDependencies": {
