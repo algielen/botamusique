@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
-from .constants import *
 from threading import Lock
-from .errors import UnknownChannelError, TextTooLongError, ImageTooBigError
-from .acl import ACL
-from . import messages
+
+import pymumble_py3.messages as messages
+from pymumble_py3.acl import ACL
+from pymumble_py3.errors import UnknownChannelError, TextTooLongError, ImageTooBigError
+from pymumble_py3.pymumble_constants import *
 
 
 class Channels(dict):
@@ -12,6 +13,7 @@ class Channels(dict):
     """
 
     def __init__(self, mumble_object, callbacks):
+        super().__init__()
         self.mumble_object = mumble_object
         self.callbacks = callbacks
 

@@ -1,8 +1,6 @@
 import os
 import json
 
-import variables as var
-
 default_lang_dict = {}
 lang_dict = {}
 
@@ -10,9 +8,9 @@ lang_dict = {}
 def load_lang(lang):
     global lang_dict, default_lang_dict
     root_dir = os.path.dirname(__file__)
-    with open(os.path.join(root_dir, "lang/en_US.json"), "r") as f:
+    with open(os.path.join(root_dir, "../lang/en_US.json"), "r") as f:
         default_lang_dict = json.load(f)
-    with open(os.path.join(root_dir, f"lang/{lang}.json"), "r") as f:
+    with open(os.path.join(root_dir, f"../lang/{lang}.json"), "r") as f:
         lang_dict = json.load(f)
 
 
@@ -55,9 +53,9 @@ def _tr(string, *argv, **kwargs):
         return string
 
 
-def commands(command):
+def commands(command, config):
     try:
-        string = var.config.get("commands", command)
+        string = config.get("commands", command)
         return string
     except KeyError:
         raise KeyError("Missed command in configuration file: '{string}'. ".format(string=command))

@@ -6,7 +6,6 @@ import traceback
 import hashlib
 
 from media.item import BaseItem
-from media.item import item_builders, item_loaders, item_id_generators
 from constants import tr_cli as tr
 
 log = logging.getLogger("bot")
@@ -90,42 +89,27 @@ def get_radio_title(url):
     return url
 
 
-def radio_item_builder(**kwargs):
-    if 'name' in kwargs:
-        return RadioItem(kwargs['url'], kwargs['name'])
-    else:
-        return RadioItem(kwargs['url'], '')
-
-
-def radio_item_loader(_dict):
-    return RadioItem("", "", _dict)
-
-
-def radio_item_id_generator(**kwargs):
-    return hashlib.md5(kwargs['url'].encode()).hexdigest()
-
-
-item_builders['radio'] = radio_item_builder
-item_loaders['radio'] = radio_item_loader
-item_id_generators['radio'] = radio_item_id_generator
-
-
 class RadioItem(BaseItem):
-    def __init__(self, url, name="", from_dict=None):
-        if from_dict is None:
-            super().__init__()
-            self.url = url
-            if not name:
-                self.title = get_radio_server_description(self.url)  # The title of the radio station
-            else:
-                self.title = name
-            self.id = hashlib.md5(url.encode()).hexdigest()
-        else:
-            super().__init__(from_dict)
-            self.url = from_dict['url']
-            self.title = from_dict['title']
-
+    def __init__(self, url: str, name: str = ""):
+        super().__init__()
+        self.url = url
+        self.title = name if name else get_radio_server_description(url)
+        self.id = self.generate_id(url)
         self.type = "radio"
+
+    @classmethod
+    def from_dict(cls, d: dict) -> 'RadioItem':
+        instance = cls.__new__(cls)
+        BaseItem.__init__(instance)
+        instance._load_base_from_dict(d)
+        instance.url = d['url']
+        instance.title = d['title']
+        instance.type = "radio"
+        return instance
+
+    @staticmethod
+    def generate_id(url: str) -> str:
+        return hashlib.md5(url.encode()).hexdigest()
 
     def validate(self):
         self.version += 1  # 0 -> 1, notify the wrapper to save me when validate() is visited the first time

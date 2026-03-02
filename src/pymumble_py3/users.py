@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
-from .constants import *
-from .errors import TextTooLongError, ImageTooBigError
 from threading import Lock
-from . import messages
-from . import mumble_pb2
+
+import pymumble_py3.messages as messages
+import pymumble_py3.mumble_pb2 as mumble_pb2
+from pymumble_py3.errors import TextTooLongError, ImageTooBigError
+from pymumble_py3.pymumble_constants import *
 
 
 class Users(dict):

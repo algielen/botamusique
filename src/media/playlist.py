@@ -4,42 +4,45 @@ import random
 import threading
 import time
 
-import variables as var
 from database import Condition
-from media.cache import (CachedItemWrapper, ItemNotCachedError,
-                         get_cached_wrapper_from_dict, get_cached_wrapper_by_id)
+from media.cache import CachedItemWrapper, ItemNotCachedError
 from media.item import ValidationFailedError
 
 
-def get_playlist(mode, _list=None, _index=None):
+def get_playlist(mode, cache, settings_db, music_db, config, send_channel_msg, _list=None, _index=None):
     index = -1
     if _list and _index is None:
         index = _list.current_index
 
     if _list is None:
         if mode == "one-shot":
-            return OneshotPlaylist()
+            return OneshotPlaylist(cache, settings_db, music_db, config, send_channel_msg)
         elif mode == "repeat":
-            return RepeatPlaylist()
+            return RepeatPlaylist(cache, settings_db, music_db, config, send_channel_msg)
         elif mode == "random":
-            return RandomPlaylist()
+            return RandomPlaylist(cache, settings_db, music_db, config, send_channel_msg)
         elif mode == "autoplay":
-            return AutoPlaylist()
+            return AutoPlaylist(cache, settings_db, music_db, config, send_channel_msg)
     else:
         if mode == "one-shot":
-            return OneshotPlaylist().from_list(_list, index)
+            return OneshotPlaylist(cache, settings_db, music_db, config, send_channel_msg).from_list(_list, index)
         elif mode == "repeat":
-            return RepeatPlaylist().from_list(_list, index)
+            return RepeatPlaylist(cache, settings_db, music_db, config, send_channel_msg).from_list(_list, index)
         elif mode == "random":
-            return RandomPlaylist().from_list(_list, index)
+            return RandomPlaylist(cache, settings_db, music_db, config, send_channel_msg).from_list(_list, index)
         elif mode == "autoplay":
-            return AutoPlaylist().from_list(_list, index)
+            return AutoPlaylist(cache, settings_db, music_db, config, send_channel_msg).from_list(_list, index)
     raise
 
 
 class BasePlaylist(list):
-    def __init__(self):
+    def __init__(self, cache, settings_db, music_db, config, send_channel_msg=None):
         super().__init__()
+        self.cache = cache
+        self.settings_db = settings_db
+        self.music_db = music_db
+        self.config = config
+        self.send_channel_msg = send_channel_msg or (lambda msg: None)
         self.current_index = -1
         self.version = 0  # increase by one after each change
         self.mode = "base"  # "repeat", "random"
@@ -140,7 +143,7 @@ class BasePlaylist(list):
                 counter += 1
 
         if counter == 0:
-            var.cache.free(removed.id)
+            self.cache.free(removed.id)
         return removed
 
     def remove_by_id(self, id):
@@ -178,13 +181,7 @@ class BasePlaylist(list):
 
     def randomize(self):
         with self.playlist_lock:
-            # current_index will lose track after shuffling, thus we take current music out before shuffling
-            # current = self.current_item()
-            # del self[self.current_index]
-
             random.shuffle(self)
-
-            # self.insert(0, current)
             self.current_index = -1
             self.version += 1
 
@@ -194,29 +191,29 @@ class BasePlaylist(list):
             self.current_index = -1
             super().clear()
 
-        var.cache.free_all()
+        self.cache.free_all()
 
     def save(self):
         with self.playlist_lock:
-            var.db.remove_section("playlist_item")
+            self.settings_db.remove_section("playlist_item")
             assert self.current_index is not None
-            var.db.set("playlist", "current_index", self.current_index)
+            self.settings_db.set("playlist", "current_index", self.current_index)
 
             for index, music in enumerate(self):
-                var.db.set("playlist_item", str(index), json.dumps({'id': music.id, 'user': music.user}))
+                self.settings_db.set("playlist_item", str(index), json.dumps({'id': music.id, 'user': music.user}))
 
     def load(self):
-        current_index = var.db.getint("playlist", "current_index", fallback=-1)
+        current_index = self.settings_db.getint("playlist", "current_index", fallback=-1)
         if current_index == -1:
             return
 
-        items = var.db.items("playlist_item")
+        items = self.settings_db.items("playlist_item")
         if items:
             music_wrappers = []
             items.sort(key=lambda v: int(v[0]))
             for item in items:
                 item = json.loads(item[1])
-                music_wrapper = get_cached_wrapper_by_id(item['id'], item['user'])
+                music_wrapper = self.cache.get_cached_wrapper_by_id(item['id'], item['user'])
                 if music_wrapper:
                     music_wrappers.append(music_wrapper)
             self.from_list(music_wrappers, current_index)
@@ -258,10 +255,9 @@ class BasePlaylist(list):
                 item.validate()
             except ValidationFailedError as e:
                 self.log.debug("playlist: validating failed.")
-                if var.bot:
-                    var.bot.send_channel_msg(e.msg)
+                self.send_channel_msg(e.msg)
                 self.remove_by_id(item.id)
-                var.cache.free_and_delete(item.id)
+                self.cache.free_and_delete(item.id)
                 continue
 
             if item.version > ver:
@@ -272,8 +268,8 @@ class BasePlaylist(list):
 
 
 class OneshotPlaylist(BasePlaylist):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, cache, settings_db, music_db, config, send_channel_msg=None):
+        super().__init__(cache, settings_db, music_db, config, send_channel_msg)
         self.mode = "one-shot"
         self.current_index = -1
 
@@ -336,8 +332,8 @@ class OneshotPlaylist(BasePlaylist):
 
 
 class RepeatPlaylist(BasePlaylist):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, cache, settings_db, music_db, config, send_channel_msg=None):
+        super().__init__(cache, settings_db, music_db, config, send_channel_msg)
         self.mode = "repeat"
 
     def next(self):
@@ -366,8 +362,8 @@ class RepeatPlaylist(BasePlaylist):
 
 
 class RandomPlaylist(BasePlaylist):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, cache, settings_db, music_db, config, send_channel_msg=None):
+        super().__init__(cache, settings_db, music_db, config, send_channel_msg)
         self.mode = "random"
 
     def from_list(self, _list, current_index):
@@ -391,23 +387,18 @@ class RandomPlaylist(BasePlaylist):
 
 
 class AutoPlaylist(OneshotPlaylist):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, cache, settings_db, music_db, config, send_channel_msg=None):
+        super().__init__(cache, settings_db, music_db, config, send_channel_msg)
         self.mode = "autoplay"
 
     def refresh(self):
-        dicts = var.music_db.query_random_music(var.config.getint("bot", "autoplay_length"),
-                                                Condition().and_not_sub_condition(
-                                                    Condition().and_like('tags', "%don't autoplay,%")))
+        dicts = self.music_db.query_random_music(self.config.getint("bot", "autoplay_length"),
+                                                 Condition().and_not_sub_condition(
+                                                     Condition().and_like('tags', "%don't autoplay,%")))
 
         if dicts:
-            _list = [get_cached_wrapper_from_dict(_dict, "AutoPlay") for _dict in dicts]
+            _list = [self.cache.get_cached_wrapper_from_dict(_dict, "AutoPlay") for _dict in dicts]
             self.from_list(_list, -1)
-
-    # def from_list(self, _list, current_index):
-    #     self.version += 1
-    #     self.refresh()
-    #     return self
 
     def clear(self):
         super().clear()

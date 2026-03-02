@@ -1,27 +1,32 @@
 #!/usr/bin/python3
-import sqlite3
-from functools import wraps
-from flask import Flask, render_template, request, redirect, send_file, Response, jsonify, abort, session
-
-import variables as var
-import util
+import errno
+import json
+import logging
 import math
 import os
 import os.path
-import errno
+import sqlite3
+import time
+from functools import wraps
 from typing import Type
+
+from flask import Flask, render_template, request, redirect, send_file, Response, jsonify, abort, session
+
 import media
-import json
-from media.item import dicts_to_items, BaseItem
+import util
+from database import Condition
 from media.file import FileItem
+from media.item import BaseItem
+from media.radio import RadioItem
 from media.url import URLItem
 from media.url_from_playlist import PlaylistURLItem
-from media.radio import RadioItem
-from media.cache import get_cached_wrapper_from_scrap, get_cached_wrapper_by_id, get_cached_wrappers_by_tags, \
-    get_cached_wrapper
-from database import Condition
-import logging
-import time
+
+_bot = None
+
+
+def set_bot(bot):
+    global _bot
+    _bot = bot
 
 
 class ReverseProxied(object):
@@ -63,7 +68,7 @@ class ReverseProxied(object):
 
 
 root_dir = os.path.dirname(__file__)
-web = Flask(__name__, template_folder=os.path.join(root_dir, "web/templates"))
+web = Flask(__name__, template_folder=os.path.join(root_dir, "../web/templates"))
 #web.config['TEMPLATES_AUTO_RELOAD'] = True
 log = logging.getLogger("bot")
 user = 'Remote Control'
@@ -71,7 +76,7 @@ user = 'Remote Control'
 
 def init_proxy():
     global web
-    if var.is_proxied:
+    if _bot.is_proxied:
         web.wsgi_app = ReverseProxied(web.wsgi_app)
 
 
@@ -83,12 +88,12 @@ def check_auth(username, password):
     password combination is valid.
     """
 
-    if username == var.config.get("webinterface", "user") and password == var.config.get("webinterface", "password"):
+    if username == _bot.config.get("webinterface", "user") and password == _bot.config.get("webinterface", "password"):
         return True
 
-    web_users = json.loads(var.db.get("privilege", "web_access", fallback='[]'))
+    web_users = json.loads(_bot.db.get("privilege", "web_access", fallback='[]'))
     if username in web_users:
-        user_dict = json.loads(var.db.get("user", username, fallback='{}'))
+        user_dict = json.loads(_bot.db.get("user", username, fallback='{}'))
         if 'password' in user_dict and 'salt' in user_dict and \
                 util.verify_password(password, user_dict['password'], user_dict['salt']):
             return True
@@ -116,7 +121,7 @@ def requires_auth(f):
         if request.remote_addr in banned_ip:
             abort(403)
 
-        auth_method = var.config.get("webinterface", "auth_method")
+        auth_method = _bot.config.get("webinterface", "auth_method")
 
         if auth_method == 'password':
             auth = request.authorization
@@ -127,7 +132,7 @@ def requires_auth(f):
                         bad_access_count[request.remote_addr] += 1
                         log.info(f"web: failed login attempt, user: {auth.username}, from ip {request.remote_addr}."
                                  f"{bad_access_count[request.remote_addr]} attempts.")
-                        if bad_access_count[request.remote_addr] > var.config.getint("webinterface", "max_attempts",
+                        if bad_access_count[request.remote_addr] > _bot.config.getint("webinterface", "max_attempts",
                                                                                      fallback=10):
                             banned_ip.append(request.remote_addr)
                             log.info(f"web: access banned for {request.remote_addr}")
@@ -143,14 +148,14 @@ def requires_auth(f):
                 return f(*args, **kwargs)
             elif 'token' in request.args:
                 token = request.args.get('token')
-                token_user = var.db.get("web_token", token, fallback=None)
+                token_user = _bot.db.get("web_token", token, fallback=None)
                 if token_user is not None:
                     user = token_user
 
-                    user_info = var.db.get("user", user, fallback=None)
+                    user_info = _bot.db.get("user", user, fallback=None)
                     user_dict = json.loads(user_info)
                     user_dict['IP'] = request.remote_addr
-                    var.db.set("user", user, json.dumps(user_dict))
+                    _bot.db.set("user", user, json.dumps(user_dict))
 
                     log.debug(
                         f"web: new user access, token validated for the user: {token_user}, from ip {request.remote_addr}.")
@@ -162,17 +167,17 @@ def requires_auth(f):
                 bad_access_count[request.remote_addr] += 1
                 log.info(f"web: bad token from ip {request.remote_addr}, "
                          f"{bad_access_count[request.remote_addr]} attempts.")
-                if bad_access_count[request.remote_addr] > var.config.getint("webinterface", "max_attempts"):
+                if bad_access_count[request.remote_addr] > _bot.config.getint("webinterface", "max_attempts"):
                     banned_ip.append(request.remote_addr)
                     log.info(f"web: access banned for {request.remote_addr}")
             else:
                 bad_access_count[request.remote_addr] = 1
                 log.info(f"web: bad token from ip {request.remote_addr}.")
 
-            return render_template(f'need_token.{var.language}.html',
-                                   name=var.config.get('bot', 'username'),
-                                   command=f"{var.config.get('commands', 'command_symbol')[0]}"
-                                           f"{var.config.get('commands', 'requests_webinterface_access')}")
+            return render_template(f'need_token.{_bot.config.get('bot', 'language')}.html',
+                                   name=_bot.config.get('bot', 'username'),
+                                   command=f"{_bot.config.get('commands', 'command_symbol')[0]}"
+                                           f"{_bot.config.get('commands', 'requests_webinterface_access')}")
 
         return f(*args, **kwargs)
 
@@ -201,7 +206,7 @@ def tag_color(tag):
 
 def build_tags_color_lookup():
     color_lookup = {}
-    for tag in var.music_db.query_all_tags():
+    for tag in _bot.music_db.query_all_tags():
         color_lookup[tag] = tag_color(tag)
 
     return color_lookup
@@ -209,7 +214,7 @@ def build_tags_color_lookup():
 
 def get_all_dirs():
     dirs = ["."]
-    paths = var.music_db.query_all_paths()
+    paths = _bot.music_db.query_all_paths()
     for path in paths:
         pos = 0
         while True:
@@ -226,13 +231,13 @@ def get_all_dirs():
 @web.route("/", methods=['GET'])
 @requires_auth
 def index():
-    return open(os.path.join(root_dir, f"web/templates/index.{var.language}.html"), "r").read()
+    return open(os.path.join(root_dir, f"web/templates/index.{_bot.config.get('bot', 'language')}.html"), "r").read()
 
 
 @web.route("/playlist", methods=['GET'])
 @requires_auth
 def playlist():
-    if len(var.playlist) == 0:
+    if len(_bot.playlist) == 0:
         return jsonify({
             'items': [],
             'current_index': -1,
@@ -248,14 +253,14 @@ def playlist():
         _from = int(request.args['range_from'])
         _to = int(request.args['range_to'])
     else:
-        if var.playlist.current_index - int(DEFAULT_DISPLAY_COUNT / 2) > 0:
-            _from = var.playlist.current_index - int(DEFAULT_DISPLAY_COUNT / 2)
+        if _bot.playlist.current_index - int(DEFAULT_DISPLAY_COUNT / 2) > 0:
+            _from = _bot.playlist.current_index - int(DEFAULT_DISPLAY_COUNT / 2)
             _to = _from - 1 + DEFAULT_DISPLAY_COUNT
 
     tags_color_lookup = build_tags_color_lookup()  # TODO: cached this?
     items = []
 
-    for index, item_wrapper in enumerate(var.playlist[_from: _to + 1]):
+    for index, item_wrapper in enumerate(_bot.playlist[_from: _to + 1]):
         tag_tuples = []
         for tag in item_wrapper.item().tags:
             tag_tuples.append([tag, tags_color_lookup[tag]])
@@ -301,30 +306,30 @@ def playlist():
 
     return jsonify({
         'items': items,
-        'current_index': var.playlist.current_index,
-        'length': len(var.playlist),
+        'current_index': _bot.playlist.current_index,
+        'length': len(_bot.playlist),
         'start_from': _from
     })
 
 
 def status():
-    if len(var.playlist) > 0:
-        return jsonify({'ver': var.playlist.version,
-                        'current_index': var.playlist.current_index,
+    if len(_bot.playlist) > 0:
+        return jsonify({'ver': _bot.playlist.version,
+                        'current_index': _bot.playlist.current_index,
                         'empty': False,
-                        'play': not var.bot.is_pause,
-                        'mode': var.playlist.mode,
-                        'volume': var.bot.volume_helper.plain_volume_set,
-                        'playhead': var.bot.playhead
+                        'play': not _bot.is_pause,
+                        'mode': _bot.playlist.mode,
+                        'volume': _bot.volume_helper.plain_volume_set,
+                        'playhead': _bot.playhead
                         })
 
     else:
-        return jsonify({'ver': var.playlist.version,
-                        'current_index': var.playlist.current_index,
+        return jsonify({'ver': _bot.playlist.version,
+                        'current_index': _bot.playlist.current_index,
                         'empty': True,
-                        'play': not var.bot.is_pause,
-                        'mode': var.playlist.mode,
-                        'volume': var.bot.volume_helper.plain_volume_set,
+                        'play': not _bot.is_pause,
+                        'mode': _bot.playlist.mode,
+                        'volume': _bot.volume_helper.plain_volume_set,
                         'playhead': 0
                         })
 
@@ -339,173 +344,173 @@ def post():
         log.debug("web: Post request from %s: %s" % (request.remote_addr, str(payload)))
 
         if 'add_item_at_once' in payload:
-            music_wrapper = get_cached_wrapper_by_id(payload['add_item_at_once'], user)
+            music_wrapper = _bot.cache.get_cached_wrapper_by_id(payload['add_item_at_once'], user)
             if music_wrapper:
-                var.playlist.insert(var.playlist.current_index + 1, music_wrapper)
+                _bot.playlist.insert(_bot.playlist.current_index + 1, music_wrapper)
                 log.info('web: add to playlist(next): ' + music_wrapper.format_debug_string())
-                if not var.bot.is_pause:
-                    var.bot.interrupt()
+                if not _bot.is_pause:
+                    _bot.interrupt()
                 else:
-                    var.bot.is_pause = False
+                    _bot.is_pause = False
             else:
                 abort(404)
 
         if 'add_item_bottom' in payload:
-            music_wrapper = get_cached_wrapper_by_id(payload['add_item_bottom'], user)
+            music_wrapper = _bot.cache.get_cached_wrapper_by_id(payload['add_item_bottom'], user)
 
             if music_wrapper:
-                var.playlist.append(music_wrapper)
+                _bot.playlist.append(music_wrapper)
                 log.info('web: add to playlist(bottom): ' + music_wrapper.format_debug_string())
             else:
                 abort(404)
 
         elif 'add_item_next' in payload:
-            music_wrapper = get_cached_wrapper_by_id(payload['add_item_next'], user)
+            music_wrapper = _bot.cache.get_cached_wrapper_by_id(payload['add_item_next'], user)
             if music_wrapper:
-                var.playlist.insert(var.playlist.current_index + 1, music_wrapper)
+                _bot.playlist.insert(_bot.playlist.current_index + 1, music_wrapper)
                 log.info('web: add to playlist(next): ' + music_wrapper.format_debug_string())
             else:
                 abort(404)
 
         elif 'add_url' in payload:
-            music_wrapper = get_cached_wrapper_from_scrap(type='url', url=payload['add_url'], user=user)
-            var.playlist.append(music_wrapper)
+            music_wrapper = _bot.cache.get_cached_wrapper_from_scrap(type='url', url=payload['add_url'], user=user)
+            _bot.playlist.append(music_wrapper)
 
             log.info("web: add to playlist: " + music_wrapper.format_debug_string())
-            if len(var.playlist) == 2:
+            if len(_bot.playlist) == 2:
                 # If I am the second item on the playlist. (I am the next one!)
-                var.bot.async_download_next()
+                _bot.async_download_next()
 
         elif 'add_radio' in payload:
             url = payload['add_radio']
-            music_wrapper = get_cached_wrapper_from_scrap(type='radio', url=url, user=user)
-            var.playlist.append(music_wrapper)
+            music_wrapper = _bot.cache.get_cached_wrapper_from_scrap(type='radio', url=url, user=user)
+            _bot.playlist.append(music_wrapper)
 
             log.info("cmd: add to playlist: " + music_wrapper.format_debug_string())
 
         elif 'delete_music' in payload:
-            music_wrapper = var.playlist[int(payload['delete_music'])]
+            music_wrapper = _bot.playlist[int(payload['delete_music'])]
             log.info("web: delete from playlist: " + music_wrapper.format_debug_string())
 
-            if len(var.playlist) >= int(payload['delete_music']):
+            if len(_bot.playlist) >= int(payload['delete_music']):
                 index = int(payload['delete_music'])
 
-                if index == var.playlist.current_index:
-                    var.playlist.remove(index)
+                if index == _bot.playlist.current_index:
+                    _bot.playlist.remove(index)
 
-                    if index < len(var.playlist):
-                        if not var.bot.is_pause:
-                            var.bot.interrupt()
-                            var.playlist.current_index -= 1
+                    if index < len(_bot.playlist):
+                        if not _bot.is_pause:
+                            _bot.interrupt()
+                            _bot.playlist.current_index -= 1
                             # then the bot will move to next item
 
                     else:  # if item deleted is the last item of the queue
-                        var.playlist.current_index -= 1
-                        if not var.bot.is_pause:
-                            var.bot.interrupt()
+                        _bot.playlist.current_index -= 1
+                        if not _bot.is_pause:
+                            _bot.interrupt()
                 else:
-                    var.playlist.remove(index)
+                    _bot.playlist.remove(index)
 
         elif 'play_music' in payload:
-            music_wrapper = var.playlist[int(payload['play_music'])]
+            music_wrapper = _bot.playlist[int(payload['play_music'])]
             log.info("web: jump to: " + music_wrapper.format_debug_string())
 
-            if len(var.playlist) >= int(payload['play_music']):
-                var.bot.play(int(payload['play_music']))
+            if len(_bot.playlist) >= int(payload['play_music']):
+                _bot.play(int(payload['play_music']))
                 time.sleep(0.1)
         elif 'move_playhead' in payload:
-            if float(payload['move_playhead']) < var.playlist.current_item().item().duration:
+            if float(payload['move_playhead']) < _bot.playlist.current_item().item().duration:
                 log.info(f"web: move playhead to {float(payload['move_playhead'])} s.")
-                var.bot.play(var.playlist.current_index, float(payload['move_playhead']))
+                _bot.play(_bot.playlist.current_index, float(payload['move_playhead']))
 
         elif 'delete_item_from_library' in payload:
             _id = payload['delete_item_from_library']
-            var.playlist.remove_by_id(_id)
-            item = var.cache.get_item_by_id(_id)
+            _bot.playlist.remove_by_id(_id)
+            item = _bot.cache.get_item_by_id(_id)
 
             if os.path.isfile(item.uri()):
                 log.info("web: delete file " + item.uri())
                 os.remove(item.uri())
 
-            var.cache.free_and_delete(_id)
+            _bot.cache.free_and_delete(_id)
             time.sleep(0.1)
 
         elif 'add_tag' in payload:
-            music_wrappers = get_cached_wrappers_by_tags([payload['add_tag']], user)
+            music_wrappers = _bot.cache.get_cached_wrappers_by_tags([payload['add_tag']], user)
             for music_wrapper in music_wrappers:
                 log.info("cmd: add to playlist: " + music_wrapper.format_debug_string())
-            var.playlist.extend(music_wrappers)
+            _bot.playlist.extend(music_wrappers)
 
         elif 'action' in payload:
             action = payload['action']
             if action == "random":
-                if var.playlist.mode != "random":
-                    var.playlist = media.playlist.get_playlist("random", var.playlist)
+                if _bot.playlist.mode != "random":
+                    _bot.playlist = media.playlist.get_playlist("random", _bot.cache, _bot.db, _bot.music_db, _bot.config, _bot.send_channel_msg, _bot.playlist)
                 else:
-                    var.playlist.randomize()
-                var.bot.interrupt()
-                var.db.set('playlist', 'playback_mode', "random")
+                    _bot.playlist.randomize()
+                _bot.interrupt()
+                _bot.db.set('playlist', 'playback_mode', "random")
                 log.info("web: playback mode changed to random.")
             if action == "one-shot":
-                var.playlist = media.playlist.get_playlist("one-shot", var.playlist)
-                var.db.set('playlist', 'playback_mode', "one-shot")
+                _bot.playlist = media.playlist.get_playlist("one-shot", _bot.cache, _bot.db, _bot.music_db, _bot.config, _bot.send_channel_msg, _bot.playlist)
+                _bot.db.set('playlist', 'playback_mode', "one-shot")
                 log.info("web: playback mode changed to one-shot.")
             if action == "repeat":
-                var.playlist = media.playlist.get_playlist("repeat", var.playlist)
-                var.db.set('playlist', 'playback_mode', "repeat")
+                _bot.playlist = media.playlist.get_playlist("repeat", _bot.cache, _bot.db, _bot.music_db, _bot.config, _bot.send_channel_msg, _bot.playlist)
+                _bot.db.set('playlist', 'playback_mode', "repeat")
                 log.info("web: playback mode changed to repeat.")
             if action == "autoplay":
-                var.playlist = media.playlist.get_playlist("autoplay", var.playlist)
-                var.db.set('playlist', 'playback_mode', "autoplay")
+                _bot.playlist = media.playlist.get_playlist("autoplay", _bot.cache, _bot.db, _bot.music_db, _bot.config, _bot.send_channel_msg, _bot.playlist)
+                _bot.db.set('playlist', 'playback_mode', "autoplay")
                 log.info("web: playback mode changed to autoplay.")
             if action == "rescan":
-                var.cache.build_dir_cache()
-                var.music_db.manage_special_tags()
+                _bot.cache.build_dir_cache()
+                _bot.music_db.manage_special_tags()
                 log.info("web: Local file cache refreshed.")
             elif action == "stop":
-                if var.config.getboolean("bot", "clear_when_stop_in_oneshot") \
-                        and var.playlist.mode == 'one-shot':
-                    var.bot.clear()
+                if _bot.config.getboolean("bot", "clear_when_stop_in_oneshot") \
+                        and _bot.playlist.mode == 'one-shot':
+                    _bot.clear()
                 else:
-                    var.bot.stop()
+                    _bot.stop()
             elif action == "next":
-                if not var.bot.is_pause:
-                    var.bot.interrupt()
+                if not _bot.is_pause:
+                    _bot.interrupt()
                 else:
-                    var.playlist.next()
-                    var.bot.wait_for_ready = True
+                    _bot.playlist.next()
+                    _bot.wait_for_ready = True
             elif action == "pause":
-                var.bot.pause()
+                _bot.pause()
             elif action == "resume":
-                var.bot.resume()
+                _bot.resume()
             elif action == "clear":
-                var.bot.clear()
+                _bot.clear()
             elif action == "volume_up":
-                if var.bot.volume_helper.plain_volume_set + 0.03 < 1.0:
-                    var.bot.volume_helper.set_volume(var.bot.volume_helper.plain_volume_set + 0.03)
+                if _bot.volume_helper.plain_volume_set + 0.03 < 1.0:
+                    _bot.volume_helper.set_volume(_bot.volume_helper.plain_volume_set + 0.03)
                 else:
-                    var.bot.volume_helper.set_volume(1.0)
-                var.db.set('bot', 'volume', str(var.bot.volume_helper.plain_volume_set))
-                log.info("web: volume up to %d" % (var.bot.volume_helper.plain_volume_set * 100))
+                    _bot.volume_helper.set_volume(1.0)
+                _bot.db.set('bot', 'volume', str(_bot.volume_helper.plain_volume_set))
+                log.info("web: volume up to %d" % (_bot.volume_helper.plain_volume_set * 100))
             elif action == "volume_down":
-                if var.bot.volume_helper.plain_volume_set - 0.03 > 0:
-                    var.bot.volume_helper.set_volume(var.bot.unconverted_volume - 0.03)
+                if _bot.volume_helper.plain_volume_set - 0.03 > 0:
+                    _bot.volume_helper.set_volume(_bot.unconverted_volume - 0.03)
                 else:
-                    var.bot.volume_helper.set_volume(1.0)
-                var.db.set('bot', 'volume', str(var.bot.volume_helper.plain_volume_set))
-                log.info("web: volume down to %d" % (var.bot.volume_helper.plain_volume_set * 100))
+                    _bot.volume_helper.set_volume(1.0)
+                _bot.db.set('bot', 'volume', str(_bot.volume_helper.plain_volume_set))
+                log.info("web: volume down to %d" % (_bot.volume_helper.plain_volume_set * 100))
             elif action == "volume_set_value":
                 if 'new_volume' in payload:
                     if float(payload['new_volume']) > 1:
-                        var.bot.volume_helper.set_volume(1.0)
+                        _bot.volume_helper.set_volume(1.0)
                     elif float(payload['new_volume']) < 0:
-                        var.bot.volume_helper.set_volume(0)
+                        _bot.volume_helper.set_volume(0)
                     else:
                         # value for new volume is between 0 and 1, round to two decimal digits
-                        var.bot.volume_helper.set_volume(round(float(payload['new_volume']), 2))
+                        _bot.volume_helper.set_volume(round(float(payload['new_volume']), 2))
 
-                    var.db.set('bot', 'volume', str(var.bot.volume_helper.plain_volume_set))
-                    log.info("web: volume set to %d" % (var.bot.volume_helper.plain_volume_set * 100))
+                    _bot.db.set('bot', 'volume', str(_bot.volume_helper.plain_volume_set))
+                    log.info("web: volume set to %d" % (_bot.volume_helper.plain_volume_set * 100))
 
     return status()
 
@@ -554,16 +559,16 @@ def build_library_query_condition(form):
 def library_info():
     global log
 
-    while var.cache.dir_lock.locked():
+    while _bot.cache.dir_lock.locked():
         time.sleep(0.1)
 
-    tags = var.music_db.query_all_tags()
-    max_upload_file_size = util.parse_file_size(var.config.get("webinterface", "max_upload_file_size"))
+    tags = _bot.music_db.query_all_tags()
+    max_upload_file_size = util.parse_file_size(_bot.config.get("webinterface", "max_upload_file_size"))
 
     return jsonify(dict(
         dirs=get_all_dirs(),
-        upload_enabled=var.config.getboolean("webinterface", "upload_enabled") or var.bot.is_admin(user),
-        delete_allowed=var.config.getboolean("bot", "delete_allowed") or var.bot.is_admin(user),
+        upload_enabled=_bot.config.getboolean("webinterface", "upload_enabled") or _bot.is_admin(user),
+        delete_allowed=_bot.config.getboolean("bot", "delete_allowed") or _bot.is_admin(user),
         tags=tags,
         max_upload_file_size=max_upload_file_size
     ))
@@ -584,7 +589,7 @@ def library():
 
             total_count = 0
             try:
-                total_count = var.music_db.query_music_count(condition)
+                total_count = _bot.music_db.query_music_count(condition)
             except sqlite3.OperationalError:
                 pass
 
@@ -596,32 +601,32 @@ def library():
                 })
 
             if payload['action'] == 'add':
-                items = dicts_to_items(var.music_db.query_music(condition))
+                items = _bot.cache.dicts_to_items(_bot.music_db.query_music(condition))
                 music_wrappers = []
                 for item in items:
-                    music_wrapper = get_cached_wrapper(item, user)
+                    music_wrapper = _bot.cache.get_cached_wrapper(item, user)
                     music_wrappers.append(music_wrapper)
 
                     log.info("cmd: add to playlist: " + music_wrapper.format_debug_string())
 
-                var.playlist.extend(music_wrappers)
+                _bot.playlist.extend(music_wrappers)
 
                 return redirect("./", code=302)
             elif payload['action'] == 'delete':
-                if var.config.getboolean("bot", "delete_allowed"):
-                    items = dicts_to_items(var.music_db.query_music(condition))
+                if _bot.config.getboolean("bot", "delete_allowed"):
+                    items = _bot.cache.dicts_to_items(_bot.music_db.query_music(condition))
                     for item in items:
-                        var.playlist.remove_by_id(item.id)
-                        item = var.cache.get_item_by_id(item.id)
+                        _bot.playlist.remove_by_id(item.id)
+                        item = _bot.cache.get_item_by_id(item.id)
 
                         if os.path.isfile(item.uri()):
                             log.info("web: delete file " + item.uri())
                             os.remove(item.uri())
 
-                        var.cache.free_and_delete(item.id)
+                        _bot.cache.free_and_delete(item.id)
 
-                    if len(os.listdir(var.music_folder + payload['dir'])) == 0:
-                        os.rmdir(var.music_folder + payload['dir'])
+                    if len(os.listdir(_bot.music_folder + payload['dir'])) == 0:
+                        os.rmdir(_bot.music_folder + payload['dir'])
 
                     time.sleep(0.1)
                     return redirect("./", code=302)
@@ -637,7 +642,7 @@ def library():
                     current_page = 1
 
                 condition.limit(ITEM_PER_PAGE)
-                items = dicts_to_items(var.music_db.query_music(condition))
+                items = _bot.cache.dicts_to_items(_bot.music_db.query_music(condition))
 
                 results = []
                 for item in items:
@@ -664,15 +669,15 @@ def library():
                 })
         elif payload['action'] == 'edit_tags':
             tags = list(dict.fromkeys(payload['tags'].split(",")))  # remove duplicated items
-            if payload['id'] in var.cache:
-                music_wrapper = get_cached_wrapper_by_id(payload['id'], user)
+            if payload['id'] in _bot.cache:
+                music_wrapper = _bot.cache.get_cached_wrapper_by_id(payload['id'], user)
                 music_wrapper.clear_tags()
                 music_wrapper.add_tags(tags)
-                var.playlist.version += 1
+                _bot.playlist.version += 1
             else:
-                item = var.music_db.query_music_by_id(payload['id'])
+                item = _bot.music_db.query_music_by_id(payload['id'])
                 item['tags'] = tags
-                var.music_db.insert_music(item)
+                _bot.music_db.insert_music(item)
             return redirect("./", code=302)
 
     else:
@@ -684,7 +689,7 @@ def library():
 def upload():
     global log
 
-    if not var.config.getboolean("webinterface", "upload_enabled"):
+    if not _bot.config.getboolean("webinterface", "upload_enabled"):
         abort(403)
 
     file = request.files['file']
@@ -707,8 +712,8 @@ def upload():
     log.info('web: - mimetype: ' + file.mimetype)
 
     if "audio" in file.mimetype or "video" in file.mimetype:
-        storagepath = os.path.abspath(os.path.join(var.music_folder, targetdir))
-        if not storagepath.startswith(os.path.abspath(var.music_folder)):
+        storagepath = os.path.abspath(os.path.join(_bot.music_folder, targetdir))
+        if not storagepath.startswith(os.path.abspath(_bot.music_folder)):
             abort(403)
 
         try:
@@ -737,7 +742,7 @@ def download():
     global log
 
     if 'id' in request.args and request.args['id']:
-        item = dicts_to_items(var.music_db.query_music(
+        item = _bot.cache.dicts_to_items(_bot.music_db.query_music(
             Condition().and_equal('id', request.args['id'])))[0]
 
         requested_file = item.uri()
@@ -751,9 +756,10 @@ def download():
 
     else:
         condition = build_library_query_condition(request.args)
-        items = dicts_to_items(var.music_db.query_music(condition))
+        items = _bot.cache.dicts_to_items(_bot.music_db.query_music(condition))
 
-        zipfile = util.zipdir([item.uri() for item in items])
+        temp_folder = util.solve_filepath(_bot.config.get('bot', 'tmp_folder'))
+        zipfile = util.zipdir([item.uri() for item in items], temp_folder, _bot.config)
 
         try:
             return send_file(zipfile, as_attachment=True)

@@ -1,47 +1,40 @@
+import hashlib
 import logging
-import yt_dlp as youtube_dl
-from constants import tr_cli as tr
-import variables as var
-from media.item import item_builders, item_loaders, item_id_generators
-from media.url import URLItem, url_item_id_generator
+import threading
 
+import yt_dlp as youtube_dl
+
+from constants import tr_cli as tr
+from media.item import BaseItem
+from media.url import URLItem
 
 log = logging.getLogger("bot")
 
 
-def get_playlist_info(url, start_index=0, user=""):
+def get_playlist_info(url, config, start_index=0, user=""):
     ydl_opts = {
         'extract_flat': 'in_playlist',
-        'verbose': var.config.getboolean('debug', 'youtube_dl')
+        'verbose': config.getboolean('debug', 'youtube_dl')
     }
 
-    cookie = var.config.get('youtube_dl', 'cookie_file')
+    cookie = config.get('youtube_dl', 'cookie_file')
     if cookie:
-        ydl_opts['cookiefile'] = var.config.get('youtube_dl', 'cookie_file')
+        ydl_opts['cookiefile'] = config.get('youtube_dl', 'cookie_file')
 
-    user_agent = var.config.get('youtube_dl', 'user_agent')
+    user_agent = config.get('youtube_dl', 'user_agent')
     if user_agent:
-        youtube_dl.utils.std_headers['User-Agent'] = var.config.get('youtube_dl', 'user_agent')
+        youtube_dl.utils.std_headers['User-Agent'] = config.get('youtube_dl', 'user_agent')
 
     with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-        attempts = var.config.getint('bot', 'download_attempts')
+        attempts = config.getint('bot', 'download_attempts')
         for i in range(attempts):
             items = []
             try:
                 info = ydl.extract_info(url, download=False)
-                # # if url is not a playlist but a video
-                # if 'entries' not in info and 'webpage_url' in info:
-                #     music = {'type': 'url',
-                #              'title': info['title'],
-                #              'url': info['webpage_url'],
-                #              'user': user,
-                #              'ready': 'validation'}
-                #     items.append(music)
-                #     return items
 
                 playlist_title = info['title']
                 for j in range(start_index, min(len(info['entries']),
-                                                start_index + var.config.getint('bot', 'max_track_playlist'))):
+                                                start_index + config.getint('bot', 'max_track_playlist'))):
                     # Unknow String if No title into the json
                     title = info['entries'][j]['title'] if 'title' in info['entries'][j] else "Unknown Title"
                     # Add youtube url if the url in the json isn't a full url
@@ -67,35 +60,36 @@ def get_playlist_info(url, start_index=0, user=""):
             return items
 
 
-def playlist_url_item_builder(**kwargs):
-    return PlaylistURLItem(kwargs['url'],
-                           kwargs['title'],
-                           kwargs['playlist_url'],
-                           kwargs['playlist_title'])
-
-
-def playlist_url_item_loader(_dict):
-    return PlaylistURLItem("", "", "", "", _dict)
-
-
-item_builders['url_from_playlist'] = playlist_url_item_builder
-item_loaders['url_from_playlist'] = playlist_url_item_loader
-item_id_generators['url_from_playlist'] = url_item_id_generator
-
-
 class PlaylistURLItem(URLItem):
-    def __init__(self, url, title, playlist_url, playlist_title, from_dict=None):
-        if from_dict is None:
-            super().__init__(url)
-            self.title = title
-            self.playlist_url = playlist_url
-            self.playlist_title = playlist_title
-        else:
-            super().__init__("", from_dict)
-            self.playlist_title = from_dict['playlist_title']
-            self.playlist_url = from_dict['playlist_url']
-
+    def __init__(self, url: str, title: str, playlist_url: str, playlist_title: str, temp_folder: str, config, settings_db):
+        super().__init__(url, temp_folder, config, settings_db)
+        self.title = title
+        self.playlist_url = playlist_url
+        self.playlist_title = playlist_title
         self.type = "url_from_playlist"
+
+    @classmethod
+    def from_dict(cls, d: dict, tmp_folder: str, config, settings_db) -> 'PlaylistURLItem':
+        instance = cls.__new__(cls)
+        BaseItem.__init__(instance)
+        instance._load_base_from_dict(d)
+        # URLItem fields
+        instance.validating_lock = threading.Lock()
+        instance.temp_folder = tmp_folder
+        instance.config = config
+        instance.settings_db = settings_db
+        instance.url = d['url']
+        instance.thumbnail = d['thumbnail']
+        instance.downloading = False
+        # PlaylistURLItem fields
+        instance.type = "url_from_playlist"
+        instance.playlist_url = d['playlist_url']
+        instance.playlist_title = d['playlist_title']
+        return instance
+
+    @staticmethod
+    def generate_id(url: str) -> str:
+        return hashlib.md5(url.encode()).hexdigest()
 
     def to_dict(self):
         tmp_dict = super().to_dict()

@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 import time
-from threading import Lock
 from collections import deque
+from threading import Lock
 
 import opuslib_next
 
-from .constants import *
+from pymumble_constants import *
 
 
 class SoundQueue:

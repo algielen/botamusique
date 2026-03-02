@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from .errors import UnknownCallbackError
-from .constants import *
+from pymumble_py3.errors import UnknownCallbackError
+from pymumble_py3.pymumble_constants import *
 import threading
 
 
@@ -14,6 +14,7 @@ class CallBacks(dict):
     keep processing short to avoid delays on audio transmission
     """
     def __init__(self):
+        super().__init__()
         self.update({
             PYMUMBLE_CLBK_CONNECTED: None,  # Connection succeeded
             PYMUMBLE_CLBK_DISCONNECTED: None,  # Connection as been dropped

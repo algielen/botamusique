@@ -1,23 +1,25 @@
 # -*- coding: utf-8 -*-
-import threading
 import logging
-import time
-import select
+import platform
 import socket
 import ssl
 import struct
+import sys
+import threading
+import time
 
+import select
+
+import pymumble_py3.blobs as blobs
+import pymumble_py3.callbacks as callbacks
+import pymumble_py3.channels as channels
+import pymumble_py3.commands as commands
+import pymumble_py3.mumble_pb2 as mumble_pb2
+import pymumble_py3.soundoutput as soundoutput
+import pymumble_py3.tools as tools
+import pymumble_py3.users as users
 from pymumble_py3.errors import *
-from pymumble_py3.constants import *
-from pymumble_py3 import users
-from pymumble_py3 import channels
-from pymumble_py3 import blobs
-from pymumble_py3 import commands
-from pymumble_py3 import callbacks
-from pymumble_py3 import tools
-from pymumble_py3 import soundoutput
-
-from . import mumble_pb2
+from pymumble_py3.pymumble_constants import *
 
 
 def _wrap_socket(sock, keyfile=None, certfile=None, verify_mode=ssl.CERT_NONE, server_hostname=None):
@@ -126,8 +128,8 @@ class Mumble(threading.Thread):
         self.channels = channels.Channels(self, self.callbacks)  # contains the server's channels information
         self.blobs = blobs.Blobs(self)  # manage the blob objects
         self.sound_output = soundoutput.SoundOutput(self, PYMUMBLE_AUDIO_PER_PACKET, self.bandwidth,
-                                                        stereo=self.stereo,
-                                                        opus_profile=self.__opus_profile)  # manage the outgoing sounds
+                                                    stereo=self.stereo,
+                                                    opus_profile=self.__opus_profile)  # manage the outgoing sounds
 
         self.commands = commands.Commands()  # manage commands sent between the main and the mumble threads
 

@@ -1,69 +1,37 @@
 import logging
 
-item_builders = {}
-item_loaders = {}
-item_id_generators = {}
-
-
-def example_builder(**kwargs):
-    return BaseItem()
-
-
-def example_loader(_dict):
-    return BaseItem(from_dict=_dict)
-
-
-def example_id_generator(**kwargs):
-    return ""
-
-
-item_builders['base'] = example_builder
-item_loaders['base'] = example_loader
-item_id_generators['base'] = example_id_generator
-
-
-def dicts_to_items(music_dicts):
-    items = []
-    for music_dict in music_dicts:
-        type = music_dict['type']
-        items.append(item_loaders[type](music_dict))
-    return items
-
-
-def dict_to_item(music_dict):
-    type = music_dict['type']
-    return item_loaders[type](music_dict)
 
 class ValidationFailedError(Exception):
-    def __init__(self, msg = None):
+    def __init__(self, msg=None):
         self.msg = msg
+
 
 class PreparationFailedError(Exception):
-    def __init__(self, msg = None):
+    def __init__(self, msg=None):
         self.msg = msg
 
+
 class BaseItem:
-    def __init__(self, from_dict=None):
+    def __init__(self):
         self.log = logging.getLogger("bot")
         self.type = "base"
+        self.id = ""
         self.title = ""
         self.path = ""
         self.tags = []
         self.keywords = ""
         self.duration = 0
         self.version = 0  # if version increase, wrapper will re-save this item
+        self.ready = "pending"  # pending - is_valid() -> validated - prepare() -> yes, failed
 
-        if from_dict is None:
-            self.id = ""
-            self.ready = "pending"  # pending - is_valid() -> validated - prepare() -> yes, failed
-        else:
-            self.id = from_dict['id']
-            self.ready = from_dict['ready']
-            self.tags = from_dict['tags']
-            self.title = from_dict['title']
-            self.path = from_dict['path']
-            self.keywords = from_dict['keywords']
-            self.duration = from_dict['duration']
+    def _load_base_from_dict(self, d: dict):
+        self.id = d['id']
+        self.ready = d['ready']
+        self.tags = d['tags']
+        self.title = d['title']
+        self.path = d['path']
+        self.keywords = d['keywords']
+        self.duration = d['duration']
 
     def is_ready(self):
         return True if self.ready == "yes" else False

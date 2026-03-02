@@ -16,11 +16,8 @@ from importlib import reload
 from sys import platform
 from typing import Any
 
-import magic
 import requests
 import yt_dlp as youtube_dl
-
-import variables as var
 
 YT_PKG_NAME = 'yt-dlp'
 
@@ -40,31 +37,6 @@ def solve_filepath(path: str) -> str:
         return mydir + '/' + path
 
 
-def get_recursive_file_list_sorted(path):
-    filelist = []
-    for root, dirs, files in os.walk(path, topdown=True, onerror=None, followlinks=True):
-        relroot = root.replace(path, '', 1)
-        if relroot != '' and relroot in var.config.get('bot', 'ignored_folders'):
-            continue
-        for file in files:
-            if file in var.config.get('bot', 'ignored_files'):
-                continue
-
-            fullpath = os.path.join(path, relroot, file)
-            if not os.access(fullpath, os.R_OK):
-                continue
-
-            try:
-                mime = magic.from_file(fullpath, mime=True)
-                if 'audio' in mime or 'audio' in magic.from_file(fullpath).lower() or 'video' in mime:
-                    filelist.append(os.path.join(relroot, file))
-            except:
-                pass
-
-    filelist.sort()
-    return filelist
-
-
 # - zips files
 # - returns the absolute path of the created zip file
 # - zip file will be in the applications tmp folder (according to configuration)
@@ -72,8 +44,8 @@ def get_recursive_file_list_sorted(path):
 #       - prefix can be controlled by the caller
 #       - hash is a sha1 of the string representation of the directories' contents (which are
 #           zipped)
-def zipdir(files, zipname_prefix=None):
-    zipname = var.tmp_folder
+def zipdir(files, temp_folder, config, zipname_prefix=None):
+    zipname = temp_folder
     if zipname_prefix and '../' not in zipname_prefix:
         zipname += zipname_prefix.strip().replace('/', '_') + '_'
 
@@ -88,7 +60,7 @@ def zipdir(files, zipname_prefix=None):
     for file_to_add in files:
         if not os.access(file_to_add, os.R_OK):
             continue
-        if file_to_add in var.config.get('bot', 'ignored_files'):
+        if file_to_add in config.get('bot', 'ignored_files'):
             continue
 
         add_file_as = os.path.basename(file_to_add)
@@ -98,20 +70,20 @@ def zipdir(files, zipname_prefix=None):
     return zipname
 
 
-def get_user_ban():
+def get_user_ban(settings_db):
     res = "List of ban hash"
-    for i in var.db.items("user_ban"):
+    for i in settings_db.items("user_ban"):
         res += "<br/>" + i[0]
     return res
 
 
-def update(current_version):
+def update(current_version, config):
     global log
 
     msg = ""
 
     log.info(f'update: starting update {YT_PKG_NAME} via pip3')
-    tp = sp.check_output([var.config.get('bot', 'pip3_path'), 'install', '--upgrade', YT_PKG_NAME]).decode()
+    tp = sp.check_output([config.get('bot', 'pip3_path'), 'install', '--upgrade', YT_PKG_NAME]).decode()
     if f"Collecting {YT_PKG_NAME}" in tp.splitlines():
         msg += "Update done: " + tp.split('Successfully installed')[1]
     else:
@@ -280,12 +252,12 @@ def get_url_from_input(string):
         return ""
 
 
-def youtube_search(query):
+def youtube_search(query, config):
     global log
     import json
 
     try:
-        cookie_file =  var.config.get('youtube_dl', 'cookie_file')
+        cookie_file = config.get('youtube_dl', 'cookie_file')
         cookie = parse_cookie_file(cookie_file) if cookie_file else {}
         r = requests.get("https://www.youtube.com/results", cookies=cookie,
                          params={'search_query': query}, timeout=5)
@@ -385,7 +357,7 @@ def verify_password(password, salted_hash, salt):
 
 def get_supported_language() -> list[Any]:
     root_dir = os.path.dirname(__file__)
-    lang_files = os.listdir(os.path.join(root_dir, 'lang'))
+    lang_files = os.listdir(os.path.join(root_dir, '../lang'))
     lang_list = []
     for lang_file in lang_files:
         match = re.search("([a-z]{2}_[A-Z]{2})\\.json", lang_file)
@@ -529,7 +501,7 @@ def clear_tmp_folder(path, size):
 
 
 def check_extra_config(config: ConfigParser, template: ConfigParser) -> list[tuple[str, str]]:
-    extra:list[tuple[str, str]] = []
+    extra: list[tuple[str, str]] = []
 
     for key in config.sections():
         if key in ['radio']:
@@ -545,7 +517,7 @@ def parse_cookie_file(cookiefile):
     # https://stackoverflow.com/a/54659484/1584825
 
     cookies = {}
-    with open (cookiefile, 'r') as fp:
+    with open(cookiefile, 'r') as fp:
         for line in fp:
             if not re.match(r'^#', line):
                 lineFields = line.strip().split('\t')

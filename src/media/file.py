@@ -7,9 +7,8 @@ import mutagen
 from PIL import Image
 
 import util
-import variables as var
 from constants import tr_cli as tr
-from media.item import BaseItem, item_builders, item_loaders, item_id_generators, ValidationFailedError
+from media.item import BaseItem, ValidationFailedError
 
 '''
 type : file
@@ -23,50 +22,43 @@ type : file
 '''
 
 
-def file_item_builder(**kwargs):
-    return FileItem(kwargs['path'])
-
-
-def file_item_loader(_dict):
-    return FileItem("", _dict)
-
-
-def file_item_id_generator(**kwargs):
-    return hashlib.md5(kwargs['path'].encode()).hexdigest()
-
-
-item_builders['file'] = file_item_builder
-item_loaders['file'] = file_item_loader
-item_id_generators['file'] = file_item_id_generator
-
-
 class FileItem(BaseItem):
-    def __init__(self, path, from_dict=None):
-        if not from_dict:
-            super().__init__()
-            self.path = path
-            self.title = ""
-            self.artist = ""
-            self.thumbnail = None
-            self.id = hashlib.md5(path.encode()).hexdigest()
-            if os.path.exists(self.uri()):
-                self._get_info_from_tag()
-                self.ready = "yes"
-                self.duration = util.get_media_duration(self.uri())
-            self.keywords = self.title + " " + self.artist
-        else:
-            super().__init__(from_dict)
-            self.artist = from_dict['artist']
-            self.thumbnail = from_dict['thumbnail']
-            try:
-                self.validate()
-            except ValidationFailedError:
-                self.ready = "failed"
-
+    def __init__(self, path: str, music_folder: str):
+        super().__init__()
         self.type = "file"
+        self.path = path
+        self.title = ""
+        self.artist = ""
+        self.thumbnail = None
+        self.music_folder = music_folder
+        self.id = self.generate_id(path)
+        if os.path.exists(self.uri()):
+            self._get_info_from_tag()
+            self.ready = "yes"
+            self.duration = util.get_media_duration(self.uri())
+        self.keywords = self.title + " " + self.artist
+
+    @classmethod
+    def from_dict(cls, d: dict, music_folder: str) -> 'FileItem':
+        instance = cls.__new__(cls)
+        BaseItem.__init__(instance)
+        instance._load_base_from_dict(d)
+        instance.type = "file"
+        instance.artist = d['artist']
+        instance.thumbnail = d['thumbnail']
+        instance.music_folder = music_folder
+        try:
+            instance.validate()
+        except ValidationFailedError:
+            instance.ready = "failed"
+        return instance
+
+    @staticmethod
+    def generate_id(path: str) -> str:
+        return hashlib.md5(path.encode()).hexdigest()
 
     def uri(self):
-        return var.music_folder + self.path if self.path[0] != "/" else self.path
+        return self.music_folder + self.path if self.path[0] != "/" else self.path
 
     def is_ready(self):
         return True
@@ -101,10 +93,6 @@ class FileItem(BaseItem):
                     im = Image.open(path_thumbnail)
 
             if ext == ".mp3":
-                # title: TIT2
-                # artist: TPE1, TPE2
-                # album: TALB
-                # cover artwork: APIC:
                 tags = mutagen.File(self.uri())
                 if 'TIT2' in tags:
                     self.title = tags['TIT2'].text[0]
@@ -116,10 +104,6 @@ class FileItem(BaseItem):
                         im = Image.open(BytesIO(tags["APIC:"].data))
 
             elif ext == ".m4a" or ext == ".m4b" or ext == ".mp4" or ext == ".m4p":
-                # title: ©nam (\xa9nam)
-                # artist: ©ART
-                # album: ©alb
-                # cover artwork: covr
                 tags = mutagen.File(self.uri())
                 if '©nam' in tags:
                     self.title = tags['©nam'][0]
@@ -131,20 +115,6 @@ class FileItem(BaseItem):
                         im = Image.open(BytesIO(tags["covr"][0]))
 
             elif ext == ".opus":
-                # title: 'title'
-                # artist: 'artist'
-                # album: 'album'
-                # cover artwork: 'metadata_block_picture', and then:
-                ##                          |
-                ##                          |
-                ##                          v
-                ##            Decode string as base64 binary
-                ##                          |
-                ##                          v
-                ##      Open that binary as a mutagen.flac.Picture
-                ##                          |
-                ##                          v
-                ##              Extract binary image data
                 tags = mutagen.File(self.uri())
                 if 'title' in tags:
                     self.title = tags['title'][0]
@@ -158,10 +128,6 @@ class FileItem(BaseItem):
                         im = Image.open(BytesIO(as_flac_picture.data))
 
             elif ext == ".flac":
-                # title: 'title'
-                # artist: 'artist'
-                # album: 'album'
-                # cover artwork: tags.pictures
                 tags = mutagen.File(self.uri())
                 if 'title' in tags:
                     self.title = tags['title'][0]
