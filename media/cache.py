@@ -4,17 +4,11 @@ import threading
 
 import util
 from database import MusicDatabase, Condition
+from media.file import FileItem
 from media.item import BaseItem
-
-
-def _item_classes():
-    # Lazy import to break the circular dependency:
-    # media.file -> util -> media.cache -> media.file
-    from media.file import FileItem
-    from media.url import URLItem
-    from media.radio import RadioItem
-    from media.url_from_playlist import PlaylistURLItem
-    return FileItem, URLItem, RadioItem, PlaylistURLItem
+from media.radio import RadioItem
+from media.url import URLItem
+from media.url_from_playlist import PlaylistURLItem
 
 
 class ItemNotCachedError(Exception):
@@ -47,7 +41,6 @@ class MusicCache(dict):
 
     def get_item(self, **kwargs):
         # kwargs should provide type and other parameters to build the item if not in the library.
-        FileItem, URLItem, RadioItem, PlaylistURLItem = _item_classes()
         item_type = kwargs['type']
 
         if 'id' in kwargs:
@@ -118,7 +111,6 @@ class MusicCache(dict):
             return None
 
     def dict_to_item(self, d: dict) -> BaseItem:
-        FileItem, URLItem, RadioItem, PlaylistURLItem = _item_classes()
         match d['type']:
             case 'file':
                 return FileItem.from_dict(d, self.music_folder)
@@ -175,7 +167,6 @@ class MusicCache(dict):
             else:
                 files.remove(result['path'])
 
-        FileItem, _, _, _ = _item_classes()
         for file in files:
             results = self.music_db.query_music(Condition().and_equal('path', file))
             if not results:
