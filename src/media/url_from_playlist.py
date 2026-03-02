@@ -1,12 +1,12 @@
 import hashlib
 import logging
 import threading
+
 import yt_dlp as youtube_dl
+
 from constants import tr_cli as tr
-import util
 from media.item import BaseItem
 from media.url import URLItem
-
 
 log = logging.getLogger("bot")
 

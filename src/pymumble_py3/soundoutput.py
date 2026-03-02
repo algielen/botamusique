@@ -1,15 +1,16 @@
 # -*- coding: utf-8 -*-
 
-from time import time
+import socket
 import struct
 import threading
-import socket
+from time import time
+
 import opuslib_next
 
-from .constants import *
-from .errors import CodecNotSupportedError
-from .tools import VarInt
-from .messages import VoiceTarget
+from pymumble_py3.errors import CodecNotSupportedError
+from pymumble_py3.messages import VoiceTarget
+from pymumble_py3.pymumble_constants import *
+from pymumble_py3.tools import VarInt
 
 
 class SoundOutput:

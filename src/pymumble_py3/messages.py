@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
-from .constants import *
 from threading import Lock
+
+from pymumble_py3.pymumble_constants import *
 
 
 class Cmd:

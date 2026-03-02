@@ -1,8 +1,8 @@
 import logging
+import magic
 import os
 import threading
 
-import util
 from database import MusicDatabase, Condition
 from media.file import FileItem
 from media.item import BaseItem
@@ -15,6 +15,19 @@ class ItemNotCachedError(Exception):
     pass
 
 
+def solve_filepath(path: str) -> str:
+    if not path:
+        return ''
+
+    if path[0] == '/':
+        return path
+    elif os.path.exists(path):
+        return path
+    else:
+        mydir = os.path.dirname(os.path.realpath(__file__))
+        return mydir + '/' + path
+
+
 class MusicCache(dict):
     def __init__(self, music_db: MusicDatabase, settings_db, config, music_folder: str):
         super().__init__()
@@ -22,7 +35,7 @@ class MusicCache(dict):
         self.settings_db = settings_db
         self.config = config
         self.music_folder = music_folder
-        self.tmp_folder = util.solve_filepath(config.get('bot', 'tmp_folder'))
+        self.tmp_folder = solve_filepath(config.get('bot', 'tmp_folder'))
         self.log = logging.getLogger("bot")
         self.dir_lock = threading.Lock()
 
@@ -156,7 +169,7 @@ class MusicCache(dict):
     def build_dir_cache(self):
         self.dir_lock.acquire()
         self.log.info("library: rebuild directory cache")
-        files = util.get_recursive_file_list_sorted(self.music_folder, self.config)
+        files = self.get_recursive_file_list_sorted(self.music_folder)
 
         # remove deleted files
         results = self.music_db.query_music(Condition().or_equal('type', 'file'))
@@ -176,6 +189,30 @@ class MusicCache(dict):
 
         self.music_db.manage_special_tags()
         self.dir_lock.release()
+
+    def get_recursive_file_list_sorted(self, path):
+        filelist = []
+        for root, dirs, files in os.walk(path, topdown=True, onerror=None, followlinks=True):
+            relroot = root.replace(path, '', 1)
+            if relroot != '' and relroot in self.config.get('bot', 'ignored_folders'):
+                continue
+            for file in files:
+                if file in self.config.get('bot', 'ignored_files'):
+                    continue
+
+                fullpath = os.path.join(path, relroot, file)
+                if not os.access(fullpath, os.R_OK):
+                    continue
+
+                try:
+                    mime = magic.from_file(fullpath, mime=True)
+                    if 'audio' in mime or 'audio' in magic.from_file(fullpath).lower() or 'video' in mime:
+                        filelist.append(os.path.join(relroot, file))
+                except:
+                    pass
+
+        filelist.sort()
+        return filelist
 
     # -------------------------
     # Cached wrapper helpers

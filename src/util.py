@@ -16,7 +16,6 @@ from importlib import reload
 from sys import platform
 from typing import Any
 
-import magic
 import requests
 import yt_dlp as youtube_dl
 
@@ -36,31 +35,6 @@ def solve_filepath(path: str) -> str:
     else:
         mydir = os.path.dirname(os.path.realpath(__file__))
         return mydir + '/' + path
-
-
-def get_recursive_file_list_sorted(path, config):
-    filelist = []
-    for root, dirs, files in os.walk(path, topdown=True, onerror=None, followlinks=True):
-        relroot = root.replace(path, '', 1)
-        if relroot != '' and relroot in config.get('bot', 'ignored_folders'):
-            continue
-        for file in files:
-            if file in config.get('bot', 'ignored_files'):
-                continue
-
-            fullpath = os.path.join(path, relroot, file)
-            if not os.access(fullpath, os.R_OK):
-                continue
-
-            try:
-                mime = magic.from_file(fullpath, mime=True)
-                if 'audio' in mime or 'audio' in magic.from_file(fullpath).lower() or 'video' in mime:
-                    filelist.append(os.path.join(relroot, file))
-            except:
-                pass
-
-    filelist.sort()
-    return filelist
 
 
 # - zips files
@@ -383,7 +357,7 @@ def verify_password(password, salted_hash, salt):
 
 def get_supported_language() -> list[Any]:
     root_dir = os.path.dirname(__file__)
-    lang_files = os.listdir(os.path.join(root_dir, 'lang'))
+    lang_files = os.listdir(os.path.join(root_dir, '../lang'))
     lang_list = []
     for lang_file in lang_files:
         match = re.search("([a-z]{2}_[A-Z]{2})\\.json", lang_file)

@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 import struct
 
-from .constants import *
-from .mumble_pb2 import RequestBlob
+from pymumble_py3.mumble_pb2 import RequestBlob
+from pymumble_py3.pymumble_constants import PYMUMBLE_MSG_TYPES_REQUESTBLOB
 
 
 class Blobs(dict):
@@ -10,6 +10,7 @@ class Blobs(dict):
     Manage the Blob library
     """
     def __init__(self, mumble_object):
+        super().__init__()
         self.mumble_object = mumble_object
         
     def get_user_comment(self, hash):

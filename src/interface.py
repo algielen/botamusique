@@ -1,24 +1,25 @@
 #!/usr/bin/python3
-import sqlite3
-from functools import wraps
-from flask import Flask, render_template, request, redirect, send_file, Response, jsonify, abort, session
-
-import util
+import errno
+import json
+import logging
 import math
 import os
 import os.path
-import errno
+import sqlite3
+import time
+from functools import wraps
 from typing import Type
+
+from flask import Flask, render_template, request, redirect, send_file, Response, jsonify, abort, session
+
 import media
-import json
-from media.item import BaseItem
+import util
+from database import Condition
 from media.file import FileItem
+from media.item import BaseItem
+from media.radio import RadioItem
 from media.url import URLItem
 from media.url_from_playlist import PlaylistURLItem
-from media.radio import RadioItem
-from database import Condition
-import logging
-import time
 
 _bot = None
 
@@ -67,7 +68,7 @@ class ReverseProxied(object):
 
 
 root_dir = os.path.dirname(__file__)
-web = Flask(__name__, template_folder=os.path.join(root_dir, "web/templates"))
+web = Flask(__name__, template_folder=os.path.join(root_dir, "../web/templates"))
 #web.config['TEMPLATES_AUTO_RELOAD'] = True
 log = logging.getLogger("bot")
 user = 'Remote Control'

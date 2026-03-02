@@ -118,14 +118,14 @@ def main():
     default_config: ConfigParser = configparser.ConfigParser(interpolation=None, allow_no_value=True)
 
     if len(default_config.read(
-            util.solve_filepath('configuration.default.ini'),
+            util.solve_filepath('../configuration.default.ini'),
             encoding='utf-8')) == 0:
         logging.error("Could not read default configuration file 'configuration.default.ini', please check"
                       "your installation.")
         sys.exit()
 
     if len(config.read(
-            [util.solve_filepath('configuration.default.ini'), util.solve_filepath(args.config)],
+            [util.solve_filepath('../configuration.default.ini'), util.solve_filepath(args.config)],
             encoding='utf-8')) == 0:
         logging.error(f'Could not read configuration from file "{args.config}"')
         sys.exit()

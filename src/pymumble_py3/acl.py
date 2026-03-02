@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
 import time
-
-from .errors import ACLChanGroupNotExist
 from threading import Lock
-from . import messages
+
+import pymumble_py3.messages as messages
+from pymumble_py3.errors import ACLChanGroupNotExist
 
 
 class ACL(dict):
     def __init__(self, mumble_object, channel_id):
+        super().__init__()
         self.mumble_object = mumble_object
         self.channel_id = channel_id  # channel id attached to the ACLS
         self.inherit_acls = False

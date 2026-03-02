@@ -16,11 +16,12 @@ import traceback
 
 import audioop
 
-import pymumble_py3 as pymumble
-import pymumble_py3.constants
 import util
 from constants import tr_cli as tr
 from media.item import ValidationFailedError, PreparationFailedError
+from pymumble_py3.mumble import Mumble
+from pymumble_py3.pymumble_constants import PYMUMBLE_CONN_STATE_FAILED, PYMUMBLE_CLBK_TEXTMESSAGERECEIVED, \
+    PYMUMBLE_CLBK_SOUNDRECEIVED, PYMUMBLE_CLBK_USERREMOVED, PYMUMBLE_CLBK_USERUPDATED
 
 
 class MumbleBot:
@@ -113,17 +114,17 @@ class MumbleBot:
         else:
             self.bandwidth = self.config.getint("bot", "bandwidth")
 
-        self.mumble = pymumble.Mumble(host, user=self.username, port=port, password=password, tokens=tokens,
+        self.mumble = Mumble(host, user=self.username, port=port, password=password, tokens=tokens,
                                       stereo=self.stereo,
                                       debug=self.config.getboolean('debug', 'mumble_connection'),
                                       certfile=certificate)
-        self.mumble.callbacks.set_callback(pymumble.constants.PYMUMBLE_CLBK_TEXTMESSAGERECEIVED, self.message_received)
+        self.mumble.callbacks.set_callback(PYMUMBLE_CLBK_TEXTMESSAGERECEIVED, self.message_received)
 
         self.mumble.set_codec_profile("audio")
         self.mumble.start()  # start the mumble thread
         self.mumble.is_ready()  # wait for the connection
 
-        if self.mumble.connected >= pymumble.constants.PYMUMBLE_CONN_STATE_FAILED:
+        if self.mumble.connected >= PYMUMBLE_CONN_STATE_FAILED:
             exit()
 
         self.set_comment()
@@ -164,7 +165,7 @@ class MumbleBot:
         if not self.db.has_option("bot", "ducking") and self.config.getboolean("bot", "ducking") \
                 or self.config.getboolean("bot", "ducking"):
             self.is_ducking = True
-            self.mumble.callbacks.set_callback(pymumble.constants.PYMUMBLE_CLBK_SOUNDRECEIVED,
+            self.mumble.callbacks.set_callback(PYMUMBLE_CLBK_SOUNDRECEIVED,
                                                self.ducking_sound_received)
             self.mumble.set_receive_sound(True)
 
@@ -175,8 +176,8 @@ class MumbleBot:
             user_change_callback = \
                 lambda user, action: threading.Thread(target=self.users_changed,
                                                       args=(user, action), daemon=True).start()
-            self.mumble.callbacks.set_callback(pymumble.constants.PYMUMBLE_CLBK_USERREMOVED, user_change_callback)
-            self.mumble.callbacks.set_callback(pymumble.constants.PYMUMBLE_CLBK_USERUPDATED, user_change_callback)
+            self.mumble.callbacks.set_callback(PYMUMBLE_CLBK_USERREMOVED, user_change_callback)
+            self.mumble.callbacks.set_callback(PYMUMBLE_CLBK_USERUPDATED, user_change_callback)
 
         # Debug use
         self._loop_status = 'Idle'

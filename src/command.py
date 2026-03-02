@@ -1,16 +1,15 @@
 # coding=utf-8
+import datetime
 import json
 import logging
 import re
+import secrets
 
-import pymumble_py3 as pymumble
 from pyradios import RadioBrowser
 
-import secrets
-import datetime
-
 import interface
-import media.playlist
+import media
+import pymumble_py3 as pymumble
 import util
 from constants import commands
 from constants import tr_cli as tr
@@ -710,7 +709,7 @@ def cmd_ducking(bot, user, text, command, parameter):
     if parameter == "" or parameter == "on":
         bot.is_ducking = True
         bot.db.set('bot', 'ducking', True)
-        bot.mumble.callbacks.set_callback(pymumble.constants.PYMUMBLE_CLBK_SOUNDRECEIVED, bot.ducking_sound_received)
+        bot.mumble.callbacks.set_callback(pymumble.pymumble_constants.PYMUMBLE_CLBK_SOUNDRECEIVED, bot.ducking_sound_received)
         bot.mumble.set_receive_sound(True)
         log.info('cmd: ducking is on')
         msg = "Ducking on."
