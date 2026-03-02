@@ -12,13 +12,13 @@ import errno
 from typing import Type
 import media
 import json
-from media.item import dicts_to_items, BaseItem
+from media.item import BaseItem
 from media.file import FileItem
 from media.url import URLItem
 from media.url_from_playlist import PlaylistURLItem
 from media.radio import RadioItem
 from media.cache import get_cached_wrapper_from_scrap, get_cached_wrapper_by_id, get_cached_wrappers_by_tags, \
-    get_cached_wrapper
+    get_cached_wrapper, dicts_to_items
 from database import Condition
 import logging
 import time

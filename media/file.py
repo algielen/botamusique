@@ -9,7 +9,7 @@ from PIL import Image
 import util
 import variables as var
 from constants import tr_cli as tr
-from media.item import BaseItem, item_builders, item_loaders, item_id_generators, ValidationFailedError
+from media.item import BaseItem, ValidationFailedError
 
 '''
 type : file
@@ -23,47 +23,38 @@ type : file
 '''
 
 
-def file_item_builder(**kwargs):
-    return FileItem(kwargs['path'])
-
-
-def file_item_loader(_dict):
-    return FileItem("", _dict)
-
-
-def file_item_id_generator(**kwargs):
-    return hashlib.md5(kwargs['path'].encode()).hexdigest()
-
-
-item_builders['file'] = file_item_builder
-item_loaders['file'] = file_item_loader
-item_id_generators['file'] = file_item_id_generator
-
-
 class FileItem(BaseItem):
-    def __init__(self, path, from_dict=None):
-        if not from_dict:
-            super().__init__()
-            self.path = path
-            self.title = ""
-            self.artist = ""
-            self.thumbnail = None
-            self.id = hashlib.md5(path.encode()).hexdigest()
-            if os.path.exists(self.uri()):
-                self._get_info_from_tag()
-                self.ready = "yes"
-                self.duration = util.get_media_duration(self.uri())
-            self.keywords = self.title + " " + self.artist
-        else:
-            super().__init__(from_dict)
-            self.artist = from_dict['artist']
-            self.thumbnail = from_dict['thumbnail']
-            try:
-                self.validate()
-            except ValidationFailedError:
-                self.ready = "failed"
-
+    def __init__(self, path: str):
+        super().__init__()
         self.type = "file"
+        self.path = path
+        self.title = ""
+        self.artist = ""
+        self.thumbnail = None
+        self.id = self.generate_id(path)
+        if os.path.exists(self.uri()):
+            self._get_info_from_tag()
+            self.ready = "yes"
+            self.duration = util.get_media_duration(self.uri())
+        self.keywords = self.title + " " + self.artist
+
+    @classmethod
+    def from_dict(cls, d: dict) -> 'FileItem':
+        instance = cls.__new__(cls)
+        BaseItem.__init__(instance)
+        instance._load_base_from_dict(d)
+        instance.type = "file"
+        instance.artist = d['artist']
+        instance.thumbnail = d['thumbnail']
+        try:
+            instance.validate()
+        except ValidationFailedError:
+            instance.ready = "failed"
+        return instance
+
+    @staticmethod
+    def generate_id(path: str) -> str:
+        return hashlib.md5(path.encode()).hexdigest()
 
     def uri(self):
         return var.music_folder + self.path if self.path[0] != "/" else self.path

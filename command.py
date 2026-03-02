@@ -17,8 +17,8 @@ from constants import commands
 from constants import tr_cli as tr
 from database import SettingsDatabase, MusicDatabase, Condition
 from media.cache import get_cached_wrapper_from_scrap, get_cached_wrapper_by_id, get_cached_wrappers_by_tags, \
-    get_cached_wrapper, get_cached_wrapper_from_dict, get_cached_wrappers_from_dicts
-from media.item import item_id_generators, dict_to_item, dicts_to_items
+    get_cached_wrapper, get_cached_wrapper_from_dict, get_cached_wrappers_from_dicts, dict_to_item, dicts_to_items
+from media.url import URLItem
 from media.url_from_playlist import get_playlist_info
 
 log = logging.getLogger("bot")
@@ -178,7 +178,7 @@ def cmd_url_ban(bot, user, text, command, parameter):
 
     url = util.get_url_from_input(parameter)
     if url:
-        _id = item_id_generators['url'](url=url)
+        _id = URLItem.generate_id(url)
         var.cache.free_and_delete(_id)
         var.playlist.remove_by_id(_id)
     else:

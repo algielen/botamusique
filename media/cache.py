@@ -5,7 +5,36 @@ import threading
 import util
 import variables as var
 from database import MusicDatabase, Condition
-from media.item import item_builders, item_id_generators, dict_to_item
+from media.item import BaseItem
+
+
+def _item_classes():
+    # Lazy import to break the circular dependency:
+    # media.file -> util -> variables -> media.cache -> media.file
+    from media.file import FileItem
+    from media.url import URLItem
+    from media.radio import RadioItem
+    from media.url_from_playlist import PlaylistURLItem
+    return FileItem, URLItem, RadioItem, PlaylistURLItem
+
+
+def dict_to_item(d: dict) -> BaseItem:
+    FileItem, URLItem, RadioItem, PlaylistURLItem = _item_classes()
+    match d['type']:
+        case 'file':
+            return FileItem.from_dict(d)
+        case 'url':
+            return URLItem.from_dict(d)
+        case 'url_from_playlist':
+            return PlaylistURLItem.from_dict(d)
+        case 'radio':
+            return RadioItem.from_dict(d)
+        case _:
+            raise ValueError(f"Unknown item type: {d['type']}")
+
+
+def dicts_to_items(dicts: list) -> list:
+    return [dict_to_item(d) for d in dicts]
 
 
 class ItemNotCachedError(Exception):
@@ -35,12 +64,24 @@ class MusicCache(dict):
             # raise KeyError("Unable to fetch item from the database! Please try to refresh the cache by !recache.")
 
     def get_item(self, **kwargs):
-        # kwargs should provide type and id, and parameters to build the item if not existed in the library.
-        # if cached
+        # kwargs should provide type and other parameters to build the item if not in the library.
+        FileItem, URLItem, RadioItem, PlaylistURLItem = _item_classes()
+        item_type = kwargs['type']
+
         if 'id' in kwargs:
             id = kwargs['id']
         else:
-            id = item_id_generators[kwargs['type']](**kwargs)
+            match item_type:
+                case 'file':
+                    id = FileItem.generate_id(kwargs['path'])
+                case 'url':
+                    id = URLItem.generate_id(kwargs['url'])
+                case 'url_from_playlist':
+                    id = PlaylistURLItem.generate_id(kwargs['url'])
+                case 'radio':
+                    id = RadioItem.generate_id(kwargs['url'])
+                case _:
+                    raise ValueError(f"Unknown item type: {item_type}")
 
         if id in self:
             return self[id]
@@ -53,7 +94,25 @@ class MusicCache(dict):
             return item
 
         # if not in the database, build one
-        self[id] = item_builders[kwargs['type']](**kwargs)  # newly built item will not be saved immediately
+        temp_folder = util.solve_filepath(var.config.get('bot', 'tmp_folder'))
+        match item_type:
+            case 'file':
+                self[id] = FileItem(kwargs['path'])
+            case 'url':
+                self[id] = URLItem(kwargs['url'], temp_folder)
+            case 'url_from_playlist':
+                self[id] = PlaylistURLItem(
+                    kwargs['url'],
+                    kwargs.get('title', ''),
+                    kwargs['playlist_url'],
+                    kwargs['playlist_title'],
+                    temp_folder,
+                )
+            case 'radio':
+                self[id] = RadioItem(kwargs['url'], kwargs.get('name', ''))
+            case _:
+                raise ValueError(f"Unknown item type: {item_type}")
+
         return self[id]
 
     def get_items_by_tags(self, tags):
@@ -116,10 +175,11 @@ class MusicCache(dict):
             else:
                 files.remove(result['path'])
 
+        FileItem, _, _, _ = _item_classes()
         for file in files:
             results = self.db.query_music(Condition().and_equal('path', file))
             if not results:
-                item = item_builders['file'](path=file)
+                item = FileItem(file)
                 self.log.debug("library: music save into database: %s" % item.format_debug_string())
                 self.db.insert_music(item.to_dict())
 

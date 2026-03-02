@@ -1,9 +1,12 @@
+import hashlib
 import logging
+import threading
 import yt_dlp as youtube_dl
 from constants import tr_cli as tr
+import util
 import variables as var
-from media.item import item_builders, item_loaders, item_id_generators
-from media.url import URLItem, url_item_id_generator
+from media.item import BaseItem
+from media.url import URLItem
 
 
 log = logging.getLogger("bot")
@@ -67,33 +70,34 @@ def get_playlist_info(url, start_index=0, user=""):
             return items
 
 
-def playlist_url_item_builder(temp_folder, **kwargs):
-    return PlaylistURLItem(kwargs['url'], kwargs['title'], kwargs['playlist_url'], kwargs['playlist_title'],
-                           temp_folder)
-
-
-def playlist_url_item_loader(_dict, temp_folder):
-    return PlaylistURLItem("", "", "", "", temp_folder, _dict)
-
-
-item_builders['url_from_playlist'] = playlist_url_item_builder
-item_loaders['url_from_playlist'] = playlist_url_item_loader
-item_id_generators['url_from_playlist'] = url_item_id_generator
-
-
 class PlaylistURLItem(URLItem):
-    def __init__(self, url, title, playlist_url, playlist_title, temp_folder, from_dict=None):
-        if from_dict is None:
-            super().__init__(url, temp_folder)
-            self.title = title
-            self.playlist_url = playlist_url
-            self.playlist_title = playlist_title
-        else:
-            super().__init__("", temp_folder, from_dict=from_dict)
-            self.playlist_title = from_dict['playlist_title']
-            self.playlist_url = from_dict['playlist_url']
-
+    def __init__(self, url: str, title: str, playlist_url: str, playlist_title: str, temp_folder: str):
+        super().__init__(url, temp_folder)
+        self.title = title
+        self.playlist_url = playlist_url
+        self.playlist_title = playlist_title
         self.type = "url_from_playlist"
+
+    @classmethod
+    def from_dict(cls, d: dict) -> 'PlaylistURLItem':
+        instance = cls.__new__(cls)
+        BaseItem.__init__(instance)
+        instance._load_base_from_dict(d)
+        # URLItem fields
+        instance.validating_lock = threading.Lock()
+        instance.temp_folder = util.solve_filepath(var.config.get('bot', 'tmp_folder'))
+        instance.url = d['url']
+        instance.thumbnail = d['thumbnail']
+        instance.downloading = False
+        # PlaylistURLItem fields
+        instance.type = "url_from_playlist"
+        instance.playlist_url = d['playlist_url']
+        instance.playlist_title = d['playlist_title']
+        return instance
+
+    @staticmethod
+    def generate_id(url: str) -> str:
+        return hashlib.md5(url.encode()).hexdigest()
 
     def to_dict(self):
         tmp_dict = super().to_dict()

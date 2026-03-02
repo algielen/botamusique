@@ -12,53 +12,43 @@ import base64
 import util
 from constants import tr_cli as tr
 import variables as var
-from media.item import BaseItem, item_builders, item_loaders, item_id_generators, ValidationFailedError, \
-    PreparationFailedError
+from media.item import BaseItem, ValidationFailedError, PreparationFailedError
 from util import format_time
 
 log = logging.getLogger("bot")
 
 
-def url_item_builder(temp_folder, **kwargs):
-    return URLItem(kwargs['url'], temp_folder)
-
-
-def url_item_loader(_dict, temp_folder):
-    return URLItem("", temp_folder, from_dict=_dict)
-
-
-def url_item_id_generator(**kwargs):
-    return hashlib.md5(kwargs['url'].encode()).hexdigest()
-
-
-item_builders['url'] = url_item_builder
-item_loaders['url'] = url_item_loader
-item_id_generators['url'] = url_item_id_generator
-
-
 class URLItem(BaseItem):
-    def __init__(self, url, temp_folder, from_dict=None):
+    def __init__(self, url: str, temp_folder: str):
+        super().__init__()
         self.validating_lock = threading.Lock()
         self.temp_folder = temp_folder
-        if from_dict is None:
-            super().__init__()
-            self.url = url if url[-1] != "/" else url[:-1]
-            self.title = ""
-            self.duration = 0
-            self.id = hashlib.md5(url.encode()).hexdigest()
-            self.path = temp_folder + self.id
-            self.thumbnail = ""
-            self.keywords = ""
-        else:
-            super().__init__(from_dict)
-            self.url = from_dict['url']
-            self.duration = from_dict['duration']
-            self.path = from_dict['path']
-            self.title = from_dict['title']
-            self.thumbnail = from_dict['thumbnail']
-
+        self.url = url if url[-1] != "/" else url[:-1]
+        self.title = ""
+        self.duration = 0
+        self.id = self.generate_id(url)
+        self.path = temp_folder + self.id
+        self.thumbnail = ""
+        self.keywords = ""
         self.downloading = False
         self.type = "url"
+
+    @classmethod
+    def from_dict(cls, d: dict) -> 'URLItem':
+        instance = cls.__new__(cls)
+        BaseItem.__init__(instance)
+        instance._load_base_from_dict(d)
+        instance.validating_lock = threading.Lock()
+        instance.temp_folder = util.solve_filepath(var.config.get('bot', 'tmp_folder'))
+        instance.url = d['url']
+        instance.thumbnail = d['thumbnail']
+        instance.downloading = False
+        instance.type = "url"
+        return instance
+
+    @staticmethod
+    def generate_id(url: str) -> str:
+        return hashlib.md5(url.encode()).hexdigest()
 
     def uri(self):
         return self.path
