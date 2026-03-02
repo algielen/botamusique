@@ -14,7 +14,6 @@ import command
 import constants
 import media.playlist
 import util
-import variables as var
 from database import SettingsDatabase, MusicDatabase, DatabaseMigration
 from media.cache import MusicCache
 from mumbleBot import MumbleBot, start_web_interface
@@ -117,7 +116,6 @@ def main():
 
     config: ConfigParser = configparser.ConfigParser(interpolation=None, allow_no_value=True)
     default_config: ConfigParser = configparser.ConfigParser(interpolation=None, allow_no_value=True)
-    var.config = config
 
     if len(default_config.read(
             util.solve_filepath('configuration.default.ini'),
@@ -155,12 +153,12 @@ def main():
         bot_logger.setLevel(logging.ERROR)
         bot_logger.error("Starting in ERROR loglevel")
 
-    logfile = util.solve_filepath(var.config.get('bot', 'logfile').strip())
+    logfile = util.solve_filepath(config.get('bot', 'logfile').strip())
     if logfile:
         print(f"Redirecting stdout and stderr to log file: {logfile}")
         # Rotate after 10KB, leave 3 old logs
         handler: Handler = RotatingFileHandler(logfile, mode='a', maxBytes=10240, backupCount=3)
-        if var.config.getboolean("bot", "redirect_stderr"):
+        if config.getboolean("bot", "redirect_stderr"):
             sys.stderr = util.LoggerIOWrapper(bot_logger, logging.INFO, fallback_io_buffer=sys.stderr.buffer)
     else:
         handler: Handler = logging.StreamHandler()
@@ -173,45 +171,33 @@ def main():
             handler.close()
     bot_logger.addHandler(handler)
 
-    # replace root logger handlers with ours
-    #for handler in list(logging.getLogger("root").handlers):
-    #    if isinstance(handler, logging.StreamHandler):
-    #        logging.getLogger("root").removeHandler(handler)
-    #        handler.close()
-    #logging.getLogger("root").addHandler(handler)
-
-    var.bot_logger = bot_logger
-
     # ======================
     #     Load Database
     # ======================
     if args.user:
         username: str = args.user
     else:
-        username: str = var.config.get("bot", "username")
+        username: str = config.get("bot", "username")
 
     sanitized_username: str = "".join([x if x.isalnum() else "_" for x in username])
-    var.settings_db_path = args.db if args.db is not None else util.solve_filepath(
+    settings_db_path = args.db if args.db is not None else util.solve_filepath(
         config.get("bot", "database_path") or f"settings-{sanitized_username}.db")
-    var.music_db_path = args.music_db if args.music_db is not None else util.solve_filepath(
+    music_db_path = args.music_db if args.music_db is not None else util.solve_filepath(
         config.get("bot", "music_database_path"))
 
-    var.db = SettingsDatabase(var.settings_db_path)
+    settings_db = SettingsDatabase(settings_db_path)
 
-    if var.config.get("bot", "save_music_library"):
-        var.music_db = MusicDatabase(var.music_db_path)
+    if config.get("bot", "save_music_library"):
+        music_db = MusicDatabase(music_db_path)
     else:
-        var.music_db = MusicDatabase(":memory:")
+        music_db = MusicDatabase(":memory:")
 
-    DatabaseMigration(var.db, var.music_db).migrate()
+    DatabaseMigration(settings_db, music_db).migrate()
 
-    music_folder = util.solve_filepath(var.config.get('bot', 'music_folder'))
-    var.music_folder = music_folder
+    music_folder = util.solve_filepath(config.get('bot', 'music_folder'))
     if not music_folder.endswith(os.sep):
         # The file searching logic assumes that the music folder ends in a /
-        music_folder =  var.music_folder + os.sep
-        var.music_folder = music_folder
-    temp_folder = util.solve_filepath(var.config.get('bot', 'tmp_folder'))
+        music_folder = music_folder + os.sep
 
     # ======================
     #      Translation
@@ -221,7 +207,7 @@ def main():
     if args.lang:
         lang = args.lang
     else:
-        lang = var.config.get('bot', 'language')
+        lang = config.get('bot', 'language')
 
     if lang not in supported_languages:
         raise KeyError(f"Unsupported language {lang}")
@@ -230,50 +216,56 @@ def main():
     # ======================
     #     Prepare Cache
     # ======================
-    var.cache = MusicCache(var.music_db)
+    cache = MusicCache(music_db, settings_db, config, music_folder)
 
-    if var.config.getboolean("bot", "refresh_cache_on_startup"):
-        var.cache.build_dir_cache()
+    if config.getboolean("bot", "refresh_cache_on_startup"):
+        cache.build_dir_cache()
 
     # ======================
     #   Load playback mode
     # ======================
 
-    if var.db.has_option("playlist", "playback_mode"):
-        playback_mode: str = var.db.get('playlist', 'playback_mode')
+    if settings_db.has_option("playlist", "playback_mode"):
+        playback_mode: str = settings_db.get('playlist', 'playback_mode')
     else:
-        playback_mode: str = var.config.get('bot', 'playback_mode')
+        playback_mode: str = config.get('bot', 'playback_mode')
 
     if playback_mode in ["one-shot", "repeat", "random", "autoplay"]:
-        var.playlist = media.playlist.get_playlist(playback_mode)
+        playlist = media.playlist.get_playlist(
+            playback_mode, cache, settings_db, music_db, config, send_channel_msg=None)
     else:
         raise KeyError(f"Unknown playback mode '{playback_mode}'")
 
     # ======================
     #  Create bot instance
     # ======================
-    var.bot = MumbleBot(args)
-    command.register_all_commands(var.bot)
+    bot = MumbleBot(args, config, settings_db, music_db, cache, playlist, music_folder,
+                    settings_db_path, music_db_path)
+
+    # Wire up the playlist's send_channel_msg callback now that bot exists
+    playlist.send_channel_msg = bot.send_channel_msg
+
+    command.register_all_commands(bot)
 
     # load playlist
-    if var.config.getboolean('bot', 'save_playlist'):
-        var.bot_logger.info("bot: load playlist from previous session")
-        var.playlist.load()
+    if config.getboolean('bot', 'save_playlist'):
+        bot_logger.info("bot: load playlist from previous session")
+        playlist.load()
 
     # ============================
     #   Start the web interface
     # ============================
-    if var.config.getboolean("webinterface", "enabled"):
-        wi_addr = var.config.get("webinterface", "listening_addr")
-        wi_port = var.config.getint("webinterface", "listening_port")
+    if config.getboolean("webinterface", "enabled"):
+        wi_addr = config.get("webinterface", "listening_addr")
+        wi_port = config.getint("webinterface", "listening_port")
         tt = Thread(
-            target=start_web_interface, name="WebThread", args=(wi_addr, wi_port))
+            target=start_web_interface, name="WebThread", args=(wi_addr, wi_port, bot))
         tt.daemon = True
         bot_logger.info('Starting web interface on {}:{}'.format(wi_addr, wi_port))
         tt.start()
 
     # Start the main loop.
-    var.bot.loop()
+    bot.loop()
 
 if __name__ == '__main__':
     main()

@@ -1,8 +1,6 @@
 import os
 import json
 
-import variables as var
-
 default_lang_dict = {}
 lang_dict = {}
 
@@ -55,9 +53,9 @@ def _tr(string, *argv, **kwargs):
         return string
 
 
-def commands(command):
+def commands(command, config):
     try:
-        string = var.config.get("commands", command)
+        string = config.get("commands", command)
         return string
     except KeyError:
         raise KeyError("Missed command in configuration file: '{string}'. ".format(string=command))

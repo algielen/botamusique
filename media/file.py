@@ -7,7 +7,6 @@ import mutagen
 from PIL import Image
 
 import util
-import variables as var
 from constants import tr_cli as tr
 from media.item import BaseItem, ValidationFailedError
 
@@ -24,13 +23,14 @@ type : file
 
 
 class FileItem(BaseItem):
-    def __init__(self, path: str):
+    def __init__(self, path: str, music_folder: str):
         super().__init__()
         self.type = "file"
         self.path = path
         self.title = ""
         self.artist = ""
         self.thumbnail = None
+        self.music_folder = music_folder
         self.id = self.generate_id(path)
         if os.path.exists(self.uri()):
             self._get_info_from_tag()
@@ -39,13 +39,14 @@ class FileItem(BaseItem):
         self.keywords = self.title + " " + self.artist
 
     @classmethod
-    def from_dict(cls, d: dict) -> 'FileItem':
+    def from_dict(cls, d: dict, music_folder: str) -> 'FileItem':
         instance = cls.__new__(cls)
         BaseItem.__init__(instance)
         instance._load_base_from_dict(d)
         instance.type = "file"
         instance.artist = d['artist']
         instance.thumbnail = d['thumbnail']
+        instance.music_folder = music_folder
         try:
             instance.validate()
         except ValidationFailedError:
@@ -57,7 +58,7 @@ class FileItem(BaseItem):
         return hashlib.md5(path.encode()).hexdigest()
 
     def uri(self):
-        return var.music_folder + self.path if self.path[0] != "/" else self.path
+        return self.music_folder + self.path if self.path[0] != "/" else self.path
 
     def is_ready(self):
         return True
@@ -92,10 +93,6 @@ class FileItem(BaseItem):
                     im = Image.open(path_thumbnail)
 
             if ext == ".mp3":
-                # title: TIT2
-                # artist: TPE1, TPE2
-                # album: TALB
-                # cover artwork: APIC:
                 tags = mutagen.File(self.uri())
                 if 'TIT2' in tags:
                     self.title = tags['TIT2'].text[0]
@@ -107,10 +104,6 @@ class FileItem(BaseItem):
                         im = Image.open(BytesIO(tags["APIC:"].data))
 
             elif ext == ".m4a" or ext == ".m4b" or ext == ".mp4" or ext == ".m4p":
-                # title: ©nam (\xa9nam)
-                # artist: ©ART
-                # album: ©alb
-                # cover artwork: covr
                 tags = mutagen.File(self.uri())
                 if '©nam' in tags:
                     self.title = tags['©nam'][0]
@@ -122,20 +115,6 @@ class FileItem(BaseItem):
                         im = Image.open(BytesIO(tags["covr"][0]))
 
             elif ext == ".opus":
-                # title: 'title'
-                # artist: 'artist'
-                # album: 'album'
-                # cover artwork: 'metadata_block_picture', and then:
-                ##                          |
-                ##                          |
-                ##                          v
-                ##            Decode string as base64 binary
-                ##                          |
-                ##                          v
-                ##      Open that binary as a mutagen.flac.Picture
-                ##                          |
-                ##                          v
-                ##              Extract binary image data
                 tags = mutagen.File(self.uri())
                 if 'title' in tags:
                     self.title = tags['title'][0]
@@ -149,10 +128,6 @@ class FileItem(BaseItem):
                         im = Image.open(BytesIO(as_flac_picture.data))
 
             elif ext == ".flac":
-                # title: 'title'
-                # artist: 'artist'
-                # album: 'album'
-                # cover artwork: tags.pictures
                 tags = mutagen.File(self.uri())
                 if 'title' in tags:
                     self.title = tags['title'][0]

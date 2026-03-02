@@ -12,76 +12,72 @@ import datetime
 import interface
 import media.playlist
 import util
-import variables as var
 from constants import commands
 from constants import tr_cli as tr
 from database import SettingsDatabase, MusicDatabase, Condition
-from media.cache import get_cached_wrapper_from_scrap, get_cached_wrapper_by_id, get_cached_wrappers_by_tags, \
-    get_cached_wrapper, get_cached_wrapper_from_dict, get_cached_wrappers_from_dicts, dict_to_item, dicts_to_items
-from media.url import URLItem
 from media.url_from_playlist import get_playlist_info
 
 log = logging.getLogger("bot")
 
 
 def register_all_commands(bot):
-    bot.register_command(commands('add_from_shortlist'), cmd_shortlist)
-    bot.register_command(commands('add_tag'), cmd_add_tag)
-    bot.register_command(commands('change_user_password'), cmd_user_password, no_partial_match=True)
-    bot.register_command(commands('clear'), cmd_clear)
-    bot.register_command(commands('current_music'), cmd_current_music)
-    bot.register_command(commands('delete_from_library'), cmd_delete_from_library)
-    bot.register_command(commands('ducking'), cmd_ducking)
-    bot.register_command(commands('ducking_threshold'), cmd_ducking_threshold)
-    bot.register_command(commands('ducking_volume'), cmd_ducking_volume)
-    bot.register_command(commands('find_tagged'), cmd_find_tagged)
-    bot.register_command(commands('help'), cmd_help, no_partial_match=False, access_outside_channel=True)
-    bot.register_command(commands('joinme'), cmd_joinme, access_outside_channel=True)
-    bot.register_command(commands('last'), cmd_last)
-    bot.register_command(commands('list_file'), cmd_list_file)
-    bot.register_command(commands('mode'), cmd_mode)
-    bot.register_command(commands('pause'), cmd_pause)
-    bot.register_command(commands('play'), cmd_play)
-    bot.register_command(commands('play_file'), cmd_play_file)
-    bot.register_command(commands('play_file_match'), cmd_play_file_match)
-    bot.register_command(commands('play_playlist'), cmd_play_playlist)
-    bot.register_command(commands('play_radio'), cmd_play_radio)
-    bot.register_command(commands('play_tag'), cmd_play_tags)
-    bot.register_command(commands('play_url'), cmd_play_url)
-    bot.register_command(commands('queue'), cmd_queue)
-    bot.register_command(commands('random'), cmd_random)
-    bot.register_command(commands('rb_play'), cmd_rb_play)
-    bot.register_command(commands('rb_query'), cmd_rb_query)
-    bot.register_command(commands('remove'), cmd_remove)
-    bot.register_command(commands('remove_tag'), cmd_remove_tag)
-    bot.register_command(commands('repeat'), cmd_repeat)
-    bot.register_command(commands('requests_webinterface_access'), cmd_web_access)
-    bot.register_command(commands('rescan'), cmd_refresh_cache, no_partial_match=True)
-    bot.register_command(commands('search'), cmd_search_library)
-    bot.register_command(commands('skip'), cmd_skip)
-    bot.register_command(commands('stop'), cmd_stop)
-    bot.register_command(commands('stop_and_getout'), cmd_stop_and_getout)
-    bot.register_command(commands('version'), cmd_version, no_partial_match=True)
-    bot.register_command(commands('volume'), cmd_volume)
-    bot.register_command(commands('yt_play'), cmd_yt_play)
-    bot.register_command(commands('yt_search'), cmd_yt_search)
+    bot.register_command(commands('add_from_shortlist', bot.config), cmd_shortlist)
+    bot.register_command(commands('add_tag', bot.config), cmd_add_tag)
+    bot.register_command(commands('change_user_password', bot.config), cmd_user_password, no_partial_match=True)
+    bot.register_command(commands('clear', bot.config), cmd_clear)
+    bot.register_command(commands('current_music', bot.config), cmd_current_music)
+    bot.register_command(commands('delete_from_library', bot.config), cmd_delete_from_library)
+    bot.register_command(commands('ducking', bot.config), cmd_ducking)
+    bot.register_command(commands('ducking_threshold', bot.config), cmd_ducking_threshold)
+    bot.register_command(commands('ducking_volume', bot.config), cmd_ducking_volume)
+    bot.register_command(commands('find_tagged', bot.config), cmd_find_tagged)
+    bot.register_command(commands('help', bot.config), cmd_help, no_partial_match=False, access_outside_channel=True)
+    bot.register_command(commands('joinme', bot.config), cmd_joinme, access_outside_channel=True)
+    bot.register_command(commands('last', bot.config), cmd_last)
+    bot.register_command(commands('list_file', bot.config), cmd_list_file)
+    bot.register_command(commands('mode', bot.config), cmd_mode)
+    bot.register_command(commands('pause', bot.config), cmd_pause)
+    bot.register_command(commands('play', bot.config), cmd_play)
+    bot.register_command(commands('play_file', bot.config), cmd_play_file)
+    bot.register_command(commands('play_file_match', bot.config), cmd_play_file_match)
+    bot.register_command(commands('play_playlist', bot.config), cmd_play_playlist)
+    bot.register_command(commands('play_radio', bot.config), cmd_play_radio)
+    bot.register_command(commands('play_tag', bot.config), cmd_play_tags)
+    bot.register_command(commands('play_url', bot.config), cmd_play_url)
+    bot.register_command(commands('queue', bot.config), cmd_queue)
+    bot.register_command(commands('random', bot.config), cmd_random)
+    bot.register_command(commands('rb_play', bot.config), cmd_rb_play)
+    bot.register_command(commands('rb_query', bot.config), cmd_rb_query)
+    bot.register_command(commands('remove', bot.config), cmd_remove)
+    bot.register_command(commands('remove_tag', bot.config), cmd_remove_tag)
+    bot.register_command(commands('repeat', bot.config), cmd_repeat)
+    bot.register_command(commands('requests_webinterface_access', bot.config), cmd_web_access)
+    bot.register_command(commands('rescan', bot.config), cmd_refresh_cache, no_partial_match=True)
+    bot.register_command(commands('search', bot.config), cmd_search_library)
+    bot.register_command(commands('skip', bot.config), cmd_skip)
+    bot.register_command(commands('stop', bot.config), cmd_stop)
+    bot.register_command(commands('stop_and_getout', bot.config), cmd_stop_and_getout)
+    bot.register_command(commands('version', bot.config), cmd_version, no_partial_match=True)
+    bot.register_command(commands('volume', bot.config), cmd_volume)
+    bot.register_command(commands('yt_play', bot.config), cmd_yt_play)
+    bot.register_command(commands('yt_search', bot.config), cmd_yt_search)
 
     # admin command
-    bot.register_command(commands('add_webinterface_user'), cmd_web_user_add, admin=True)
-    bot.register_command(commands('drop_database'), cmd_drop_database, no_partial_match=True, admin=True)
-    bot.register_command(commands('kill'), cmd_kill, admin=True)
-    bot.register_command(commands('list_webinterface_user'), cmd_web_user_list, admin=True)
-    bot.register_command(commands('remove_webinterface_user'), cmd_web_user_remove, admin=True)
-    bot.register_command(commands('max_volume'), cmd_max_volume, admin=True)
-    bot.register_command(commands('update'), cmd_update, no_partial_match=True, admin=True)
-    bot.register_command(commands('url_ban'), cmd_url_ban, no_partial_match=True, admin=True)
-    bot.register_command(commands('url_ban_list'), cmd_url_ban_list, no_partial_match=True, admin=True)
-    bot.register_command(commands('url_unban'), cmd_url_unban, no_partial_match=True, admin=True)
-    bot.register_command(commands('url_unwhitelist'), cmd_url_unwhitelist, no_partial_match=True, admin=True)
-    bot.register_command(commands('url_whitelist'), cmd_url_whitelist, no_partial_match=True, admin=True)
-    bot.register_command(commands('url_whitelist_list'), cmd_url_whitelist_list, no_partial_match=True, admin=True)
-    bot.register_command(commands('user_ban'), cmd_user_ban, no_partial_match=True, admin=True)
-    bot.register_command(commands('user_unban'), cmd_user_unban, no_partial_match=True, admin=True)
+    bot.register_command(commands('add_webinterface_user', bot.config), cmd_web_user_add, admin=True)
+    bot.register_command(commands('drop_database', bot.config), cmd_drop_database, no_partial_match=True, admin=True)
+    bot.register_command(commands('kill', bot.config), cmd_kill, admin=True)
+    bot.register_command(commands('list_webinterface_user', bot.config), cmd_web_user_list, admin=True)
+    bot.register_command(commands('remove_webinterface_user', bot.config), cmd_web_user_remove, admin=True)
+    bot.register_command(commands('max_volume', bot.config), cmd_max_volume, admin=True)
+    bot.register_command(commands('update', bot.config), cmd_update, no_partial_match=True, admin=True)
+    bot.register_command(commands('url_ban', bot.config), cmd_url_ban, no_partial_match=True, admin=True)
+    bot.register_command(commands('url_ban_list', bot.config), cmd_url_ban_list, no_partial_match=True, admin=True)
+    bot.register_command(commands('url_unban', bot.config), cmd_url_unban, no_partial_match=True, admin=True)
+    bot.register_command(commands('url_unwhitelist', bot.config), cmd_url_unwhitelist, no_partial_match=True, admin=True)
+    bot.register_command(commands('url_whitelist', bot.config), cmd_url_whitelist, no_partial_match=True, admin=True)
+    bot.register_command(commands('url_whitelist_list', bot.config), cmd_url_whitelist_list, no_partial_match=True, admin=True)
+    bot.register_command(commands('user_ban', bot.config), cmd_user_ban, no_partial_match=True, admin=True)
+    bot.register_command(commands('user_unban', bot.config), cmd_user_unban, no_partial_match=True, admin=True)
 
     # Just for debug use
     bot.register_command('rtrms', cmd_real_time_rms, True)
@@ -124,15 +120,15 @@ def send_multi_lines_in_channel(bot, lines, linebreak="<br />"):
 
 
 def send_item_added_message(bot, wrapper, index, text):
-    if index == var.playlist.current_index + 1:
+    if index == bot.playlist.current_index + 1:
         bot.send_msg(tr('file_added', item=wrapper.format_song_string()) +
                      tr('position_in_the_queue', position=tr('next_to_play')), text)
-    elif index == len(var.playlist) - 1:
+    elif index == len(bot.playlist) - 1:
         bot.send_msg(tr('file_added', item=wrapper.format_song_string()) +
                      tr('position_in_the_queue', position=tr('last_song_on_the_queue')), text)
     else:
         bot.send_msg(tr('file_added', item=wrapper.format_song_string()) +
-                     tr('position_in_the_queue', position=f"{index + 1}/{len(var.playlist)}."), text)
+                     tr('position_in_the_queue', position=f"{index + 1}/{len(bot.playlist)}."), text)
 
 
 # ---------------- Variables -----------------
@@ -155,11 +151,11 @@ def cmd_user_ban(bot, user, text, command, parameter):
     global log
 
     if parameter:
-        var.db.set("user_ban", parameter, None)
+        bot.db.set("user_ban", parameter, None)
         bot.send_msg(tr("user_ban_success", user=parameter), text)
     else:
         ban_list = "<ul>"
-        for i in var.db.items("url_ban"):
+        for i in bot.db.items("url_ban"):
             ban_list += "<li>" + i[0] + "</li>"
         ban_list += "</ul>"
         bot.send_msg(tr("user_ban_list", list=ban_list), text)
@@ -168,8 +164,8 @@ def cmd_user_ban(bot, user, text, command, parameter):
 def cmd_user_unban(bot, user, text, command, parameter):
     global log
 
-    if parameter and var.db.has_option("user_ban", parameter):
-        var.db.remove_option("user_ban", parameter)
+    if parameter and bot.db.has_option("user_ban", parameter):
+        bot.db.remove_option("user_ban", parameter)
         bot.send_msg(tr("user_unban_success", user=parameter), text)
 
 
@@ -178,32 +174,32 @@ def cmd_url_ban(bot, user, text, command, parameter):
 
     url = util.get_url_from_input(parameter)
     if url:
-        _id = URLItem.generate_id(url)
-        var.cache.free_and_delete(_id)
-        var.playlist.remove_by_id(_id)
+        _id = bot.cache.get_item(type='url', url=url).id
+        bot.cache.free_and_delete(_id)
+        bot.playlist.remove_by_id(_id)
     else:
-        if var.playlist.current_item() and var.playlist.current_item().type == 'url':
-            item = var.playlist.current_item().item()
+        if bot.playlist.current_item() and bot.playlist.current_item().type == 'url':
+            item = bot.playlist.current_item().item()
             url = item.url
-            var.cache.free_and_delete(item.id)
-            var.playlist.remove_by_id(item.id)
+            bot.cache.free_and_delete(item.id)
+            bot.playlist.remove_by_id(item.id)
         else:
             bot.send_msg(tr('bad_parameter', command=command), text)
             return
 
     # Remove from the whitelist first
-    if var.db.has_option('url_whitelist', url):
-        var.db.remove_option("url_whitelist", url)
+    if bot.db.has_option('url_whitelist', url):
+        bot.db.remove_option("url_whitelist", url)
         bot.send_msg(tr("url_unwhitelist_success", url=url), text)
 
-    if not var.db.has_option('url_ban', url):
-        var.db.set("url_ban", url, None)
+    if not bot.db.has_option('url_ban', url):
+        bot.db.set("url_ban", url, None)
     bot.send_msg(tr("url_ban_success", url=url), text)
 
 
 def cmd_url_ban_list(bot, user, text, command, parameter):
     ban_list = "<ul>"
-    for i in var.db.items("url_ban"):
+    for i in bot.db.items("url_ban"):
         ban_list += "<li>" + i[0] + "</li>"
     ban_list += "</ul>"
 
@@ -213,7 +209,7 @@ def cmd_url_ban_list(bot, user, text, command, parameter):
 def cmd_url_unban(bot, user, text, command, parameter):
     url = util.get_url_from_input(parameter)
     if url:
-        var.db.remove_option("url_ban", url)
+        bot.db.remove_option("url_ban", url)
         bot.send_msg(tr("url_unban_success", url=url), text)
     else:
         bot.send_msg(tr('bad_parameter', command=command), text)
@@ -223,13 +219,13 @@ def cmd_url_whitelist(bot, user, text, command, parameter):
     url = util.get_url_from_input(parameter)
     if url:
         # Unban first
-        if var.db.has_option('url_ban', url):
-            var.db.remove_option("url_ban", url)
+        if bot.db.has_option('url_ban', url):
+            bot.db.remove_option("url_ban", url)
             bot.send_msg(tr("url_unban_success"), text)
 
         # Then add to whitelist
-        if not var.db.has_option('url_whitelist', url):
-            var.db.set("url_whitelist", url, None)
+        if not bot.db.has_option('url_whitelist', url):
+            bot.db.set("url_whitelist", url, None)
         bot.send_msg(tr("url_whitelist_success", url=url), text)
     else:
         bot.send_msg(tr('bad_parameter', command=command), text)
@@ -237,7 +233,7 @@ def cmd_url_whitelist(bot, user, text, command, parameter):
 
 def cmd_url_whitelist_list(bot, user, text, command, parameter):
     ban_list = "<ul>"
-    for i in var.db.items("url_whitelist"):
+    for i in bot.db.items("url_whitelist"):
         ban_list += "<li>" + i[0] + "</li>"
     ban_list += "</ul>"
 
@@ -247,7 +243,7 @@ def cmd_url_whitelist_list(bot, user, text, command, parameter):
 def cmd_url_unwhitelist(bot, user, text, command, parameter):
     url = util.get_url_from_input(parameter)
     if url:
-        var.db.remove_option("url_whitelist", url)
+        bot.db.remove_option("url_whitelist", url)
         bot.send_msg(tr("url_unwhitelist_success"), text)
     else:
         bot.send_msg(tr('bad_parameter', command=command), text)
@@ -260,7 +256,7 @@ def cmd_play(bot, user, text, command, parameter):
     index = -1
     start_at = 0
     if len(params) > 0:
-        if params[0].isdigit() and 1 <= int(params[0]) <= len(var.playlist):
+        if params[0].isdigit() and 1 <= int(params[0]) <= len(bot.playlist):
             index = int(params[0])
         else:
             bot.send_msg(tr('invalid_index', index=parameter), text)
@@ -273,14 +269,14 @@ def cmd_play(bot, user, text, command, parameter):
                 bot.send_msg(tr('bad_parameter', command=command), text)
                 return
 
-    if len(var.playlist) > 0:
+    if len(bot.playlist) > 0:
         if index != -1:
             bot.play(int(index) - 1, start_at)
 
         elif bot.is_pause:
             bot.resume()
         else:
-            bot.send_msg(var.playlist.current_item().format_current_playing(), text)
+            bot.send_msg(bot.playlist.current_item().format_current_playing(), text)
     else:
         bot.is_pause = False
         bot.send_msg(tr('queue_empty'), text)
@@ -297,15 +293,15 @@ def cmd_play_file(bot, user, text, command, parameter, do_not_refresh_cache=Fals
     global log, song_shortlist
 
     # assume parameter is a path
-    music_wrappers = get_cached_wrappers_from_dicts(var.music_db.query_music(Condition().and_equal('path', parameter)), user)
+    music_wrappers = bot.cache.get_cached_wrappers_from_dicts(bot.music_db.query_music(Condition().and_equal('path', parameter)), user)
     if music_wrappers:
-        var.playlist.append(music_wrappers[0])
+        bot.playlist.append(music_wrappers[0])
         log.info("cmd: add to playlist: " + music_wrappers[0].format_debug_string())
-        send_item_added_message(bot, music_wrappers[0], len(var.playlist) - 1, text)
+        send_item_added_message(bot, music_wrappers[0], len(bot.playlist) - 1, text)
         return
 
     # assume parameter is a folder
-    music_wrappers = get_cached_wrappers_from_dicts(var.music_db.query_music(Condition()
+    music_wrappers = bot.cache.get_cached_wrappers_from_dicts(bot.music_db.query_music(Condition()
                                                                              .and_equal('type', 'file')
                                                                              .and_like('path', parameter + '%')), user)
     if music_wrappers:
@@ -315,20 +311,20 @@ def cmd_play_file(bot, user, text, command, parameter, do_not_refresh_cache=Fals
             log.info("cmd: add to playlist: " + music_wrapper.format_debug_string())
             msgs.append("<b>{:s}</b> ({:s})".format(music_wrapper.item().title, music_wrapper.item().path))
 
-        var.playlist.extend(music_wrappers)
+        bot.playlist.extend(music_wrappers)
 
         send_multi_lines_in_channel(bot, msgs)
         return
 
     # try to do a partial match
-    matches = var.music_db.query_music(Condition()
+    matches = bot.music_db.query_music(Condition()
                                        .and_equal('type', 'file')
                                        .and_like('path', '%' + parameter + '%', case_sensitive=False))
     if len(matches) == 1:
-        music_wrapper = get_cached_wrapper_from_dict(matches[0], user)
-        var.playlist.append(music_wrapper)
+        music_wrapper = bot.cache.get_cached_wrapper_from_dict(matches[0], user)
+        bot.playlist.append(music_wrapper)
         log.info("cmd: add to playlist: " + music_wrapper.format_debug_string())
-        send_item_added_message(bot, music_wrapper, len(var.playlist) - 1, text)
+        send_item_added_message(bot, music_wrapper, len(bot.playlist) - 1, text)
         return
     elif len(matches) > 1:
         song_shortlist = matches
@@ -343,7 +339,7 @@ def cmd_play_file(bot, user, text, command, parameter, do_not_refresh_cache=Fals
     if do_not_refresh_cache:
         bot.send_msg(tr("no_file"), text)
     else:
-        var.cache.build_dir_cache()
+        bot.cache.build_dir_cache()
         cmd_play_file(bot, user, text, command, parameter, do_not_refresh_cache=True)
 
 
@@ -351,7 +347,7 @@ def cmd_play_file_match(bot, user, text, command, parameter, do_not_refresh_cach
     global log
 
     if parameter:
-        file_dicts = var.music_db.query_music(Condition().and_equal('type', 'file'))
+        file_dicts = bot.music_db.query_music(Condition().and_equal('type', 'file'))
         msgs = [tr('multiple_file_added') + "<ul>"]
         try:
             count = 0
@@ -361,7 +357,7 @@ def cmd_play_file_match(bot, user, text, command, parameter, do_not_refresh_cach
                 match = re.search(parameter, file)
                 if match and match[0]:
                     count += 1
-                    music_wrapper = get_cached_wrapper(dict_to_item(file_dict), user)
+                    music_wrapper = bot.cache.get_cached_wrapper(bot.cache.dict_to_item(file_dict), user)
                     music_wrappers.append(music_wrapper)
                     log.info("cmd: add to playlist: " + music_wrapper.format_debug_string())
                     msgs.append("<li><b>{}</b> ({})</li>".format(music_wrapper.item().title,
@@ -374,13 +370,13 @@ def cmd_play_file_match(bot, user, text, command, parameter, do_not_refresh_cach
 
             if count != 0:
                 msgs.append("</ul>")
-                var.playlist.extend(music_wrappers)
+                bot.playlist.extend(music_wrappers)
                 send_multi_lines_in_channel(bot, msgs, "")
             else:
                 if do_not_refresh_cache:
                     bot.send_msg(tr("no_file"), text)
                 else:
-                    var.cache.build_dir_cache()
+                    bot.cache.build_dir_cache()
                     cmd_play_file_match(bot, user, text, command, parameter, do_not_refresh_cache=True)
 
         except re.error as e:
@@ -395,13 +391,13 @@ def cmd_play_url(bot, user, text, command, parameter):
 
     url = util.get_url_from_input(parameter)
     if url:
-        music_wrapper = get_cached_wrapper_from_scrap(type='url', url=url, user=user)
-        var.playlist.append(music_wrapper)
+        music_wrapper = bot.cache.get_cached_wrapper_from_scrap(type='url', url=url, user=user)
+        bot.playlist.append(music_wrapper)
 
         log.info("cmd: add to playlist: " + music_wrapper.format_debug_string())
-        send_item_added_message(bot, music_wrapper, len(var.playlist) - 1, text)
+        send_item_added_message(bot, music_wrapper, len(bot.playlist) - 1, text)
 
-        if len(var.playlist) == 2:
+        if len(bot.playlist) == 2:
             # If I am the second item on the playlist. (I am the next one!)
             bot.async_download_next()
     else:
@@ -420,9 +416,9 @@ def cmd_play_playlist(bot, user, text, command, parameter):
     url = util.get_url_from_input(parameter)
     if url:
         log.debug(f"cmd: fetching media info from playlist url {url}")
-        items = get_playlist_info(url=url, start_index=offset, user=user)
+        items = get_playlist_info(url, bot.config, start_index=offset, user=user)
         if len(items) > 0:
-            var.playlist.extend(list(map(lambda item: get_cached_wrapper_from_scrap(**item), items)))
+            bot.playlist.extend(list(map(lambda item: bot.cache.get_cached_wrapper_from_scrap(**item), items)))
             for music in items:
                 log.info("cmd: add to playlist: " + music.format_debug_string())
         else:
@@ -435,7 +431,7 @@ def cmd_play_radio(bot, user, text, command, parameter):
     global log
 
     if not parameter:
-        all_radio = var.config.items('radio')
+        all_radio = bot.config.items('radio')
         msg = tr('preconfigurated_radio')
         for i in all_radio:
             comment = ""
@@ -444,16 +440,16 @@ def cmd_play_radio(bot, user, text, command, parameter):
             msg += "<br />" + i[0] + comment
         bot.send_msg(msg, text)
     else:
-        if var.config.has_option('radio', parameter):
-            parameter = var.config.get('radio', parameter)
+        if bot.config.has_option('radio', parameter):
+            parameter = bot.config.get('radio', parameter)
             parameter = parameter.split()[0]
         url = util.get_url_from_input(parameter)
         if url:
-            music_wrapper = get_cached_wrapper_from_scrap(type='radio', url=url, user=user)
+            music_wrapper = bot.cache.get_cached_wrapper_from_scrap(type='radio', url=url, user=user)
 
-            var.playlist.append(music_wrapper)
+            bot.playlist.append(music_wrapper)
             log.info("cmd: add to playlist: " + music_wrapper.format_debug_string())
-            send_item_added_message(bot, music_wrapper, len(var.playlist) - 1, text)
+            send_item_added_message(bot, music_wrapper, len(bot.playlist) - 1, text)
         else:
             bot.send_msg(tr('bad_url'), text)
 
@@ -543,8 +539,8 @@ def cmd_rb_play(bot, user, text, command, parameter):
         bot.send_msg(msg, text)
         if url != "-1":
             log.info('cmd: Found url: ' + url)
-            music_wrapper = get_cached_wrapper_from_scrap(type='radio', url=url, name=stationname, user=user)
-            var.playlist.append(music_wrapper)
+            music_wrapper = bot.cache.get_cached_wrapper_from_scrap(type='radio', url=url, name=stationname, user=user)
+            bot.playlist.append(music_wrapper)
             log.info("cmd: add to playlist: " + music_wrapper.format_debug_string())
             bot.async_download_next()
         else:
@@ -577,7 +573,7 @@ def cmd_yt_search(bot, user, text, command, parameter):
 
         # if query
         else:
-            results = util.youtube_search(parameter)
+            results = util.youtube_search(parameter, bot.config)
             if results:
                 yt_last_result = results
                 yt_last_page = 0
@@ -605,7 +601,7 @@ def cmd_yt_play(bot, user, text, command, parameter):
     global log, yt_last_result, yt_last_page
 
     if parameter:
-        results = util.youtube_search(parameter)
+        results = util.youtube_search(parameter, bot.config)
         if results:
             yt_last_result = results
             yt_last_page = 0
@@ -627,8 +623,8 @@ def cmd_help(bot, user, text, command, parameter):
 def cmd_stop(bot, user, text, command, parameter):
     global log
 
-    if var.config.getboolean("bot", "clear_when_stop_in_oneshot") \
-            and var.playlist.mode == 'one-shot':
+    if bot.config.getboolean("bot", "clear_when_stop_in_oneshot") \
+            and bot.playlist.mode == 'one-shot':
         cmd_clear(bot, user, text, command, parameter)
     else:
         bot.stop()
@@ -655,7 +651,7 @@ def cmd_update(bot, user, text, command, parameter):
     if bot.is_admin(user):
         bot.mumble.users[text.actor].send_text_message(
             tr('start_updating'))
-        msg = util.update(bot.version)
+        msg = util.update(bot.version, bot.config)
         bot.mumble.users[text.actor].send_text_message(msg)
     else:
         bot.mumble.users[text.actor].send_text_message(
@@ -666,8 +662,8 @@ def cmd_stop_and_getout(bot, user, text, command, parameter):
     global log
 
     bot.stop()
-    if var.playlist.mode == "one-shot":
-        var.playlist.clear()
+    if bot.playlist.mode == "one-shot":
+        bot.playlist.clear()
 
     bot.join_channel()
 
@@ -676,9 +672,9 @@ def cmd_volume(bot, user, text, command, parameter):
     global log
 
     # The volume is a percentage
-    max_vol = min(int(var.config.getfloat('bot', 'max_volume') * 100), 100.0)
-    if var.db.has_option('bot', 'max_volume'):
-        max_vol = float(var.db.get('bot', 'max_volume')) * 100.0
+    max_vol = min(int(bot.config.getfloat('bot', 'max_volume') * 100), 100.0)
+    if bot.db.has_option('bot', 'max_volume'):
+        max_vol = float(bot.db.get('bot', 'max_volume')) * 100.0
     if parameter and parameter.isdigit() and 0 <= int(parameter) <= 100:
         if int(parameter) <= max_vol:
             vol = int(parameter)
@@ -687,7 +683,7 @@ def cmd_volume(bot, user, text, command, parameter):
             vol = max_vol
             bot.send_msg(tr('max_volume', max=int(vol)), text)
         bot.volume_helper.set_volume(float(vol) / 100.0)
-        var.db.set('bot', 'volume', str(float(vol) / 100.0))
+        bot.db.set('bot', 'volume', str(float(vol) / 100.0))
         log.info(f'cmd: volume set to {float(vol) / 100.0}')
     else:
         bot.send_msg(tr('current_volume', volume=int(bot.volume_helper.plain_volume_set * 100)), text)
@@ -697,15 +693,15 @@ def cmd_max_volume(bot, user, text, command, parameter):
     
     if parameter and parameter.isdigit() and 0 <= int(parameter) <= 100:
         max_vol = float(parameter) / 100.0
-        var.db.set('bot', 'max_volume', float(parameter) / 100.0)
+        bot.db.set('bot', 'max_volume', float(parameter) / 100.0)
         bot.send_msg(tr('change_max_volume', max=parameter, user=bot.mumble.users[text.actor]['name']), text)
         if int(bot.volume_helper.plain_volume_set) > max_vol:
             bot.volume_helper.set_volume(max_vol)
         log.info(f'cmd: max volume set to {max_vol}')
     else:
-        max_vol = var.config.getfloat('bot', 'max_volume') * 100.0
-        if var.db.has_option('bot', 'max_volume'):
-            max_vol = var.db.getfloat('bot', 'max_volume') * 100.0
+        max_vol = bot.config.getfloat('bot', 'max_volume') * 100.0
+        if bot.db.has_option('bot', 'max_volume'):
+            max_vol = bot.db.getfloat('bot', 'max_volume') * 100.0
         bot.send_msg(tr('current_max_volume', max=int(max_vol)), text)
         
 def cmd_ducking(bot, user, text, command, parameter):
@@ -713,7 +709,7 @@ def cmd_ducking(bot, user, text, command, parameter):
 
     if parameter == "" or parameter == "on":
         bot.is_ducking = True
-        var.db.set('bot', 'ducking', True)
+        bot.db.set('bot', 'ducking', True)
         bot.mumble.callbacks.set_callback(pymumble.constants.PYMUMBLE_CLBK_SOUNDRECEIVED, bot.ducking_sound_received)
         bot.mumble.set_receive_sound(True)
         log.info('cmd: ducking is on')
@@ -722,7 +718,7 @@ def cmd_ducking(bot, user, text, command, parameter):
     elif parameter == "off":
         bot.is_ducking = False
         bot.mumble.set_receive_sound(False)
-        var.db.set('bot', 'ducking', False)
+        bot.db.set('bot', 'ducking', False)
         msg = "Ducking off."
         log.info('cmd: ducking is off')
         bot.send_msg(msg, text)
@@ -733,7 +729,7 @@ def cmd_ducking_threshold(bot, user, text, command, parameter):
 
     if parameter and parameter.isdigit():
         bot.ducking_threshold = int(parameter)
-        var.db.set('bot', 'ducking_threshold', str(bot.ducking_threshold))
+        bot.db.set('bot', 'ducking_threshold', str(bot.ducking_threshold))
         msg = f"Ducking threshold set to {bot.ducking_threshold}."
         bot.send_msg(msg, text)
     else:
@@ -748,7 +744,7 @@ def cmd_ducking_volume(bot, user, text, command, parameter):
     if parameter and parameter.isdigit() and 0 <= int(parameter) <= 100:
         bot.volume_helper.set_ducking_volume(float(parameter) / 100.0)
         bot.send_msg(tr('change_ducking_volume', volume=parameter, user=bot.mumble.users[text.actor]['name']), text)
-        var.db.set('bot', 'ducking_volume', float(parameter) / 100.0)
+        bot.db.set('bot', 'ducking_volume', float(parameter) / 100.0)
         log.info(f'cmd: volume on ducking set to {parameter}')
     else:
         bot.send_msg(tr('current_ducking_volume', volume=int(bot.volume_helper.plain_ducking_volume_set * 100)), text)
@@ -757,8 +753,8 @@ def cmd_ducking_volume(bot, user, text, command, parameter):
 def cmd_current_music(bot, user, text, command, parameter):
     global log
 
-    if len(var.playlist) > 0:
-        bot.send_msg(var.playlist.current_item().format_current_playing(), text)
+    if len(bot.playlist) > 0:
+        bot.send_msg(bot.playlist.current_item().format_current_playing(), text)
     else:
         bot.send_msg(tr('not_playing'), text)
 
@@ -769,19 +765,19 @@ def cmd_skip(bot, user, text, command, parameter):
     if not bot.is_pause:
         bot.interrupt()
     else:
-        var.playlist.next()
+        bot.playlist.next()
         bot.wait_for_ready = True
 
-    if len(var.playlist) == 0:
+    if len(bot.playlist) == 0:
         bot.send_msg(tr('queue_empty'), text)
 
 
 def cmd_last(bot, user, text, command, parameter):
     global log
 
-    if len(var.playlist) > 0:
+    if len(bot.playlist) > 0:
         bot.interrupt()
-        var.playlist.point_to(len(var.playlist) - 1 - 1)
+        bot.playlist.point_to(len(bot.playlist) - 1 - 1)
     else:
         bot.send_msg(tr('queue_empty'), text)
 
@@ -790,30 +786,30 @@ def cmd_remove(bot, user, text, command, parameter):
     global log
 
     # Allow to remove specific music into the queue with a number
-    if parameter and parameter.isdigit() and 0 < int(parameter) <= len(var.playlist):
+    if parameter and parameter.isdigit() and 0 < int(parameter) <= len(bot.playlist):
 
         index = int(parameter) - 1
 
-        if index == var.playlist.current_index:
-            removed = var.playlist[index]
+        if index == bot.playlist.current_index:
+            removed = bot.playlist[index]
             bot.send_msg(tr('removing_item',
                                       item=removed.format_title()), text)
             log.info("cmd: delete from playlist: " + removed.format_debug_string())
 
-            var.playlist.remove(index)
+            bot.playlist.remove(index)
 
-            if index < len(var.playlist):
+            if index < len(bot.playlist):
                 if not bot.is_pause:
                     bot.interrupt()
-                    var.playlist.current_index -= 1
+                    bot.playlist.current_index -= 1
                     # then the bot will move to next item
 
             else:  # if item deleted is the last item of the queue
-                var.playlist.current_index -= 1
+                bot.playlist.current_index -= 1
                 if not bot.is_pause:
                     bot.interrupt()
         else:
-            var.playlist.remove(index)
+            bot.playlist.remove(index)
 
     else:
         bot.send_msg(tr('bad_parameter', command=command), text)
@@ -822,7 +818,7 @@ def cmd_remove(bot, user, text, command, parameter):
 def cmd_list_file(bot, user, text, command, parameter):
     global song_shortlist
 
-    files = var.music_db.query_music(Condition()
+    files = bot.music_db.query_music(Condition()
                                      .and_equal('type', 'file')
                                      .order_by('path'))
 
@@ -859,16 +855,16 @@ def cmd_list_file(bot, user, text, command, parameter):
 def cmd_queue(bot, user, text, command, parameter):
     global log
 
-    if len(var.playlist) == 0:
+    if len(bot.playlist) == 0:
         msg = tr('queue_empty')
         bot.send_msg(msg, text)
     else:
         msgs = [tr('queue_contents')]
-        for i, music in enumerate(var.playlist):
+        for i, music in enumerate(bot.playlist):
             tags = ''
             if len(music.item().tags) > 0:
                 tags = "<sup>{}</sup>".format(", ".join(music.item().tags))
-            if i == var.playlist.current_index:
+            if i == bot.playlist.current_index:
                 newline = "<b style='color:orange'>{} ({}) {} </b> {}".format(i + 1, music.display_type(),
                                                                               music.format_title(), tags)
             else:
@@ -884,7 +880,7 @@ def cmd_random(bot, user, text, command, parameter):
     global log
 
     bot.interrupt()
-    var.playlist.randomize()
+    bot.playlist.randomize()
 
 
 def cmd_repeat(bot, user, text, command, parameter):
@@ -894,11 +890,11 @@ def cmd_repeat(bot, user, text, command, parameter):
     if parameter and parameter.isdigit():
         repeat = int(parameter)
 
-    music = var.playlist.current_item()
+    music = bot.playlist.current_item()
     if music:
         for _ in range(repeat):
-            var.playlist.insert(
-                var.playlist.current_index + 1,
+            bot.playlist.insert(
+                bot.playlist.current_index + 1,
                 music
             )
             log.info("bot: add to playlist: " + music.format_debug_string())
@@ -912,15 +908,15 @@ def cmd_mode(bot, user, text, command, parameter):
     global log
 
     if not parameter:
-        bot.send_msg(tr("current_mode", mode=var.playlist.mode), text)
+        bot.send_msg(tr("current_mode", mode=bot.playlist.mode), text)
         return
     if parameter not in ["one-shot", "repeat", "random", "autoplay"]:
         bot.send_msg(tr('unknown_mode', mode=parameter), text)
     else:
-        var.db.set('playlist', 'playback_mode', parameter)
-        var.playlist = media.playlist.get_playlist(parameter, var.playlist)
+        bot.db.set('playlist', 'playback_mode', parameter)
+        bot.playlist = media.playlist.get_playlist(parameter, bot.cache, bot.db, bot.music_db, bot.config, bot.send_channel_msg, bot.playlist)
         log.info(f"command: playback mode changed to {parameter}.")
-        bot.send_msg(tr("change_mode", mode=var.playlist.mode,
+        bot.send_msg(tr("change_mode", mode=bot.playlist.mode,
                                   user=bot.mumble.users[text.actor]['name']), text)
         if parameter == "random":
             bot.interrupt()
@@ -936,7 +932,7 @@ def cmd_play_tags(bot, user, text, command, parameter):
 
     tags = parameter.split(",")
     tags = list(map(lambda t: t.strip(), tags))
-    music_wrappers = get_cached_wrappers_by_tags(tags, user)
+    music_wrappers = bot.cache.get_cached_wrappers_by_tags(tags, user)
     for music_wrapper in music_wrappers:
         count += 1
         log.info("cmd: add to playlist: " + music_wrapper.format_debug_string())
@@ -944,7 +940,7 @@ def cmd_play_tags(bot, user, text, command, parameter):
 
     if count != 0:
         msgs.append("</ul>")
-        var.playlist.extend(music_wrappers)
+        bot.playlist.extend(music_wrappers)
         send_multi_lines_in_channel(bot, msgs, "")
     else:
         bot.send_msg(tr("no_file"), text)
@@ -964,20 +960,20 @@ def cmd_add_tag(bot, user, text, command, parameter):
         index = "*"
         tags = list(map(lambda t: t.strip(), params[1].split(",")))
     else:
-        index = str(var.playlist.current_index + 1)
+        index = str(bot.playlist.current_index + 1)
         tags = list(map(lambda t: t.strip(), parameter.split(",")))
 
     if tags[0]:
-        if index.isdigit() and 1 <= int(index) <= len(var.playlist):
-            var.playlist[int(index) - 1].add_tags(tags)
-            log.info(f"cmd: add tags {', '.join(tags)} to song {var.playlist[int(index) - 1].format_debug_string()}")
+        if index.isdigit() and 1 <= int(index) <= len(bot.playlist):
+            bot.playlist[int(index) - 1].add_tags(tags)
+            log.info(f"cmd: add tags {', '.join(tags)} to song {bot.playlist[int(index) - 1].format_debug_string()}")
             bot.send_msg(tr("added_tags",
                                       tags=", ".join(tags),
-                                      song=var.playlist[int(index) - 1].format_title()), text)
+                                      song=bot.playlist[int(index) - 1].format_title()), text)
             return
 
         elif index == "*":
-            for item in var.playlist:
+            for item in bot.playlist:
                 item.add_tags(tags)
                 log.info(f"cmd: add tags {', '.join(tags)} to song {item.format_debug_string()}")
             bot.send_msg(tr("added_tags_to_all", tags=", ".join(tags)), text)
@@ -1000,34 +996,34 @@ def cmd_remove_tag(bot, user, text, command, parameter):
         index = "*"
         tags = list(map(lambda t: t.strip(), params[1].split(",")))
     else:
-        index = str(var.playlist.current_index + 1)
+        index = str(bot.playlist.current_index + 1)
         tags = list(map(lambda t: t.strip(), parameter.split(",")))
 
     if tags[0]:
-        if index.isdigit() and 1 <= int(index) <= len(var.playlist):
+        if index.isdigit() and 1 <= int(index) <= len(bot.playlist):
             if tags[0] != "*":
-                var.playlist[int(index) - 1].remove_tags(tags)
-                log.info(f"cmd: remove tags {', '.join(tags)} from song {var.playlist[int(index) - 1].format_debug_string()}")
+                bot.playlist[int(index) - 1].remove_tags(tags)
+                log.info(f"cmd: remove tags {', '.join(tags)} from song {bot.playlist[int(index) - 1].format_debug_string()}")
                 bot.send_msg(tr("removed_tags",
                                           tags=", ".join(tags),
-                                          song=var.playlist[int(index) - 1].format_title()), text)
+                                          song=bot.playlist[int(index) - 1].format_title()), text)
                 return
             else:
-                var.playlist[int(index) - 1].clear_tags()
-                log.info(f"cmd: clear tags from song {var.playlist[int(index) - 1].format_debug_string()}")
+                bot.playlist[int(index) - 1].clear_tags()
+                log.info(f"cmd: clear tags from song {bot.playlist[int(index) - 1].format_debug_string()}")
                 bot.send_msg(tr("cleared_tags",
-                                          song=var.playlist[int(index) - 1].format_title()), text)
+                                          song=bot.playlist[int(index) - 1].format_title()), text)
                 return
 
         elif index == "*":
             if tags[0] != "*":
-                for item in var.playlist:
+                for item in bot.playlist:
                     item.remove_tags(tags)
                     log.info(f"cmd: remove tags {', '.join(tags)} from song {item.format_debug_string()}")
                 bot.send_msg(tr("removed_tags_from_all", tags=", ".join(tags)), text)
                 return
             else:
-                for item in var.playlist:
+                for item in bot.playlist:
                     item.clear_tags()
                     log.info(f"cmd: clear tags from song {item.format_debug_string()}")
                 bot.send_msg(tr("cleared_tags_from_all"), text)
@@ -1049,11 +1045,11 @@ def cmd_find_tagged(bot, user, text, command, parameter):
     tags = parameter.split(",")
     tags = list(map(lambda t: t.strip(), tags))
 
-    music_dicts = var.music_db.query_music_by_tags(tags)
+    music_dicts = bot.music_db.query_music_by_tags(tags)
     song_shortlist = music_dicts
 
     for i, music_dict in enumerate(music_dicts):
-        item = dict_to_item(music_dict)
+        item = bot.cache.dict_to_item(music_dict)
         count += 1
         if count > ITEMS_PER_PAGE:
             break
@@ -1084,16 +1080,16 @@ def cmd_search_library(bot, user, text, command, parameter):
         if kw:
             keywords.append(kw)
 
-    music_dicts = var.music_db.query_music_by_keywords(keywords)
+    music_dicts = bot.music_db.query_music_by_keywords(keywords)
     if music_dicts:
-        items = dicts_to_items(music_dicts)
+        items = bot.cache.dicts_to_items(music_dicts)
         song_shortlist = music_dicts
 
         if len(items) == 1:
-            music_wrapper = get_cached_wrapper(items[0], user)
-            var.playlist.append(music_wrapper)
+            music_wrapper = bot.cache.get_cached_wrapper(items[0], user)
+            bot.playlist.append(music_wrapper)
             log.info("cmd: add to playlist: " + music_wrapper.format_debug_string())
-            send_item_added_message(bot, music_wrapper, len(var.playlist) - 1, text)
+            send_item_added_message(bot, music_wrapper, len(bot.playlist) - 1, text)
         else:
             for item in items:
                 count += 1
@@ -1123,12 +1119,12 @@ def cmd_shortlist(bot, user, text, command, parameter):
         music_wrappers = []
         for kwargs in song_shortlist:
             kwargs['user'] = user
-            music_wrapper = get_cached_wrapper_from_scrap(**kwargs)
+            music_wrapper = bot.cache.get_cached_wrapper_from_scrap(**kwargs)
             music_wrappers.append(music_wrapper)
             log.info("cmd: add to playlist: " + music_wrapper.format_debug_string())
             msgs.append("<li>[{}] <b>{}</b></li>".format(music_wrapper.item().type, music_wrapper.item().title))
 
-        var.playlist.extend(music_wrappers)
+        bot.playlist.extend(music_wrappers)
 
         msgs.append("</ul>")
         send_multi_lines_in_channel(bot, msgs, "")
@@ -1147,16 +1143,16 @@ def cmd_shortlist(bot, user, text, command, parameter):
             if 1 <= index <= len(song_shortlist):
                 kwargs = song_shortlist[index - 1]
                 kwargs['user'] = user
-                music_wrapper = get_cached_wrapper_from_scrap(**kwargs)
+                music_wrapper = bot.cache.get_cached_wrapper_from_scrap(**kwargs)
                 music_wrappers.append(music_wrapper)
                 log.info("cmd: add to playlist: " + music_wrapper.format_debug_string())
                 msgs.append("<li>[{}] <b>{}</b></li>".format(music_wrapper.item().type, music_wrapper.item().title))
             else:
-                var.playlist.extend(music_wrappers)
+                bot.playlist.extend(music_wrappers)
                 bot.send_msg(tr('bad_parameter', command=command), text)
                 return
 
-        var.playlist.extend(music_wrappers)
+        bot.playlist.extend(music_wrappers)
 
         msgs.append("</ul>")
         send_multi_lines_in_channel(bot, msgs, "")
@@ -1166,10 +1162,10 @@ def cmd_shortlist(bot, user, text, command, parameter):
         if 1 <= index <= len(song_shortlist):
             kwargs = song_shortlist[index - 1]
             kwargs['user'] = user
-            music_wrapper = get_cached_wrapper_from_scrap(**kwargs)
-            var.playlist.append(music_wrapper)
+            music_wrapper = bot.cache.get_cached_wrapper_from_scrap(**kwargs)
+            bot.playlist.append(music_wrapper)
             log.info("cmd: add to playlist: " + music_wrapper.format_debug_string())
-            send_item_added_message(bot, music_wrapper, len(var.playlist) - 1, text)
+            send_item_added_message(bot, music_wrapper, len(bot.playlist) - 1, text)
             return
 
     bot.send_msg(tr('bad_parameter', command=command), text)
@@ -1178,7 +1174,7 @@ def cmd_shortlist(bot, user, text, command, parameter):
 def cmd_delete_from_library(bot, user, text, command, parameter):
     global song_shortlist, log
 
-    if not var.config.getboolean("bot", "delete_allowed"):
+    if not bot.config.getboolean("bot", "delete_allowed"):
         bot.mumble.users[text.actor].send_text_message(tr('not_admin'))
         return
 
@@ -1195,11 +1191,11 @@ def cmd_delete_from_library(bot, user, text, command, parameter):
             if 1 <= index <= len(song_shortlist):
                 music_dict = song_shortlist[index - 1]
                 if 'id' in music_dict:
-                    music_wrapper = get_cached_wrapper_by_id(music_dict['id'], user)
+                    music_wrapper = bot.cache.get_cached_wrapper_by_id(music_dict['id'], user)
                     log.info("cmd: remove from library: " + music_wrapper.format_debug_string())
                     msgs.append("<li>[{}] <b>{}</b></li>".format(music_wrapper.item().type, music_wrapper.item().title))
-                    var.playlist.remove_by_id(music_dict['id'])
-                    var.cache.free_and_delete(music_dict['id'])
+                    bot.playlist.remove_by_id(music_dict['id'])
+                    bot.cache.free_and_delete(music_dict['id'])
                     count += 1
             else:
                 bot.send_msg(tr('bad_parameter', command=command), text)
@@ -1217,11 +1213,11 @@ def cmd_delete_from_library(bot, user, text, command, parameter):
         if 1 <= index <= len(song_shortlist):
             music_dict = song_shortlist[index - 1]
             if 'id' in music_dict:
-                music_wrapper = get_cached_wrapper_by_id(music_dict['id'], user)
+                music_wrapper = bot.cache.get_cached_wrapper_by_id(music_dict['id'], user)
                 bot.send_msg(tr('file_deleted', item=music_wrapper.format_song_string()), text)
                 log.info("cmd: remove from library: " + music_wrapper.format_debug_string())
-                var.playlist.remove_by_id(music_dict['id'])
-                var.cache.free_and_delete(music_dict['id'])
+                bot.playlist.remove_by_id(music_dict['id'])
+                bot.cache.free_and_delete(music_dict['id'])
                 return
 
     bot.send_msg(tr('bad_parameter', command=command), text)
@@ -1231,10 +1227,10 @@ def cmd_drop_database(bot, user, text, command, parameter):
     global log
 
     if bot.is_admin(user):
-        var.db.drop_table()
-        var.db = SettingsDatabase(var.settings_db_path)
-        var.music_db.drop_table()
-        var.music_db = MusicDatabase(var.settings_db_path)
+        bot.db.drop_table()
+        bot.db = SettingsDatabase(bot.settings_db_path)
+        bot.music_db.drop_table()
+        bot.music_db = MusicDatabase(bot.settings_db_path)
         log.info("command: database dropped.")
         bot.send_msg(tr('database_dropped'), text)
     else:
@@ -1244,7 +1240,7 @@ def cmd_drop_database(bot, user, text, command, parameter):
 def cmd_refresh_cache(bot, user, text, command, parameter):
     global log
     if bot.is_admin(user):
-        var.cache.build_dir_cache()
+        bot.cache.build_dir_cache()
         log.info("command: Local file cache refreshed.")
         bot.send_msg(tr('cache_refreshed'), text)
     else:
@@ -1252,27 +1248,27 @@ def cmd_refresh_cache(bot, user, text, command, parameter):
 
 
 def cmd_web_access(bot, user, text, command, parameter):
-    auth_method = var.config.get("webinterface", "auth_method")
+    auth_method = bot.config.get("webinterface", "auth_method")
 
     if auth_method == 'token':
         interface.banned_ip = []
         interface.bad_access_count = {}
 
-        user_info = var.db.get("user", user, fallback='{}')
+        user_info = bot.db.get("user", user, fallback='{}')
         user_dict = json.loads(user_info)
         if 'token' in user_dict:
-            var.db.remove_option("web_token", user_dict['token'])
+            bot.db.remove_option("web_token", user_dict['token'])
 
         token = secrets.token_urlsafe(5)
         user_dict['token'] = token
         user_dict['token_created'] = str(datetime.datetime.now())
         user_dict['last_ip'] = ''
-        var.db.set("web_token", token, user)
-        var.db.set("user", user, json.dumps(user_dict))
+        bot.db.set("web_token", token, user)
+        bot.db.set("user", user, json.dumps(user_dict))
 
-        access_address = var.config.get("webinterface", "access_address") + "/?token=" + token
+        access_address = bot.config.get("webinterface", "access_address") + "/?token=" + token
     else:
-        access_address = var.config.get("webinterface", "access_address")
+        access_address = bot.config.get("webinterface", "access_address")
 
     bot.send_msg(tr('webpage_address', address=access_address), text)
 
@@ -1282,11 +1278,11 @@ def cmd_user_password(bot, user, text, command, parameter):
         bot.send_msg(tr('bad_parameter', command=command), text)
         return
 
-    user_info = var.db.get("user", user, fallback='{}')
+    user_info = bot.db.get("user", user, fallback='{}')
     user_dict = json.loads(user_info)
     user_dict['password'], user_dict['salt'] = util.get_salted_password_hash(parameter)
 
-    var.db.set("user", user, json.dumps(user_dict))
+    bot.db.set("user", user, json.dumps(user_dict))
 
     bot.send_msg(tr('user_password_set'), text)
 
@@ -1296,13 +1292,13 @@ def cmd_web_user_add(bot, user, text, command, parameter):
         bot.send_msg(tr('bad_parameter', command=command), text)
         return
 
-    auth_method = var.config.get("webinterface", "auth_method")
+    auth_method = bot.config.get("webinterface", "auth_method")
 
     if auth_method == 'password':
-        web_users = json.loads(var.db.get("privilege", "web_access", fallback='[]'))
+        web_users = json.loads(bot.db.get("privilege", "web_access", fallback='[]'))
         if parameter not in web_users:
             web_users.append(parameter)
-        var.db.set("privilege", "web_access", json.dumps(web_users))
+        bot.db.set("privilege", "web_access", json.dumps(web_users))
         bot.send_msg(tr('web_user_list', users=", ".join(web_users)), text)
     else:
         bot.send_msg(tr('command_disabled', command=command), text)
@@ -1313,23 +1309,23 @@ def cmd_web_user_remove(bot, user, text, command, parameter):
         bot.send_msg(tr('bad_parameter', command=command), text)
         return
 
-    auth_method = var.config.get("webinterface", "auth_method")
+    auth_method = bot.config.get("webinterface", "auth_method")
 
     if auth_method == 'password':
-        web_users = json.loads(var.db.get("privilege", "web_access", fallback='[]'))
+        web_users = json.loads(bot.db.get("privilege", "web_access", fallback='[]'))
         if parameter in web_users:
             web_users.remove(parameter)
-        var.db.set("privilege", "web_access", json.dumps(web_users))
+        bot.db.set("privilege", "web_access", json.dumps(web_users))
         bot.send_msg(tr('web_user_list', users=", ".join(web_users)), text)
     else:
         bot.send_msg(tr('command_disabled', command=command), text)
 
 
 def cmd_web_user_list(bot, user, text, command, parameter):
-    auth_method = var.config.get("webinterface", "auth_method")
+    auth_method = bot.config.get("webinterface", "auth_method")
 
     if auth_method == 'password':
-        web_users = json.loads(var.db.get("privilege", "web_access", fallback='[]'))
+        web_users = json.loads(bot.db.get("privilege", "web_access", fallback='[]'))
         bot.send_msg(tr('web_user_list', users=", ".join(web_users)), text)
     else:
         bot.send_msg(tr('command_disabled', command=command), text)
@@ -1349,4 +1345,4 @@ def cmd_loop_state(bot, user, text, command, parameter):
 
 
 def cmd_item(bot, user, text, command, parameter):
-    var.playlist._debug_print()
+    bot.playlist._debug_print()

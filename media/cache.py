@@ -3,14 +3,13 @@ import os
 import threading
 
 import util
-import variables as var
 from database import MusicDatabase, Condition
 from media.item import BaseItem
 
 
 def _item_classes():
     # Lazy import to break the circular dependency:
-    # media.file -> util -> variables -> media.cache -> media.file
+    # media.file -> util -> media.cache -> media.file
     from media.file import FileItem
     from media.url import URLItem
     from media.radio import RadioItem
@@ -18,33 +17,18 @@ def _item_classes():
     return FileItem, URLItem, RadioItem, PlaylistURLItem
 
 
-def dict_to_item(d: dict) -> BaseItem:
-    FileItem, URLItem, RadioItem, PlaylistURLItem = _item_classes()
-    match d['type']:
-        case 'file':
-            return FileItem.from_dict(d)
-        case 'url':
-            return URLItem.from_dict(d)
-        case 'url_from_playlist':
-            return PlaylistURLItem.from_dict(d)
-        case 'radio':
-            return RadioItem.from_dict(d)
-        case _:
-            raise ValueError(f"Unknown item type: {d['type']}")
-
-
-def dicts_to_items(dicts: list) -> list:
-    return [dict_to_item(d) for d in dicts]
-
-
 class ItemNotCachedError(Exception):
     pass
 
 
 class MusicCache(dict):
-    def __init__(self, db: MusicDatabase):
+    def __init__(self, music_db: MusicDatabase, settings_db, config, music_folder: str):
         super().__init__()
-        self.db = db
+        self.music_db = music_db
+        self.settings_db = settings_db
+        self.config = config
+        self.music_folder = music_folder
+        self.tmp_folder = util.solve_filepath(config.get('bot', 'tmp_folder'))
         self.log = logging.getLogger("bot")
         self.dir_lock = threading.Lock()
 
@@ -60,8 +44,6 @@ class MusicCache(dict):
             return item
         else:
             return None
-            # print(id)
-            # raise KeyError("Unable to fetch item from the database! Please try to refresh the cache by !recache.")
 
     def get_item(self, **kwargs):
         # kwargs should provide type and other parameters to build the item if not in the library.
@@ -94,19 +76,20 @@ class MusicCache(dict):
             return item
 
         # if not in the database, build one
-        temp_folder = util.solve_filepath(var.config.get('bot', 'tmp_folder'))
         match item_type:
             case 'file':
-                self[id] = FileItem(kwargs['path'])
+                self[id] = FileItem(kwargs['path'], self.music_folder)
             case 'url':
-                self[id] = URLItem(kwargs['url'], temp_folder)
+                self[id] = URLItem(kwargs['url'], self.tmp_folder, self.config, self.settings_db)
             case 'url_from_playlist':
                 self[id] = PlaylistURLItem(
                     kwargs['url'],
                     kwargs.get('title', ''),
                     kwargs['playlist_url'],
                     kwargs['playlist_title'],
-                    temp_folder,
+                    self.tmp_folder,
+                    self.config,
+                    self.settings_db,
                 )
             case 'radio':
                 self[id] = RadioItem(kwargs['url'], kwargs.get('name', ''))
@@ -116,28 +99,45 @@ class MusicCache(dict):
         return self[id]
 
     def get_items_by_tags(self, tags):
-        music_dicts = self.db.query_music_by_tags(tags)
+        music_dicts = self.music_db.query_music_by_tags(tags)
         items = []
         if music_dicts:
             for music_dict in music_dicts:
                 id = music_dict['id']
-                self[id] = dict_to_item(music_dict)
+                self[id] = self.dict_to_item(music_dict)
                 items.append(self[id])
 
         return items
 
     def fetch(self, id):
-        music_dict = self.db.query_music_by_id(id)
+        music_dict = self.music_db.query_music_by_id(id)
         if music_dict:
-            self[id] = dict_to_item(music_dict)
+            self[id] = self.dict_to_item(music_dict)
             return self[id]
         else:
             return None
 
+    def dict_to_item(self, d: dict) -> BaseItem:
+        FileItem, URLItem, RadioItem, PlaylistURLItem = _item_classes()
+        match d['type']:
+            case 'file':
+                return FileItem.from_dict(d, self.music_folder)
+            case 'url':
+                return URLItem.from_dict(d, self.tmp_folder, self.config, self.settings_db)
+            case 'url_from_playlist':
+                return PlaylistURLItem.from_dict(d, self.tmp_folder, self.config, self.settings_db)
+            case 'radio':
+                return RadioItem.from_dict(d)
+            case _:
+                raise ValueError(f"Unknown item type: {d['type']}")
+
+    def dicts_to_items(self, dicts: list) -> list:
+        return [self.dict_to_item(d) for d in dicts]
+
     def save(self, id):
         self.log.debug("library: music save into database: %s" % self[id].format_debug_string())
-        self.db.insert_music(self[id].to_dict())
-        self.db.manage_special_tags()
+        self.music_db.insert_music(self[id].to_dict())
+        self.music_db.manage_special_tags()
 
     def free_and_delete(self, id):
         item = self.get_item_by_id(id)
@@ -150,7 +150,7 @@ class MusicCache(dict):
 
             if item.id in self:
                 del self[item.id]
-            self.db.delete_music(Condition().and_equal("id", item.id))
+            self.music_db.delete_music(Condition().and_equal("id", item.id))
 
     def free(self, id):
         if id in self:
@@ -164,27 +164,75 @@ class MusicCache(dict):
     def build_dir_cache(self):
         self.dir_lock.acquire()
         self.log.info("library: rebuild directory cache")
-        files = util.get_recursive_file_list_sorted(var.music_folder)
+        files = util.get_recursive_file_list_sorted(self.music_folder, self.config)
 
         # remove deleted files
-        results = self.db.query_music(Condition().or_equal('type', 'file'))
+        results = self.music_db.query_music(Condition().or_equal('type', 'file'))
         for result in results:
             if result['path'] not in files:
                 self.log.debug("library: music file missed: %s, delete from library." % result['path'])
-                self.db.delete_music(Condition().and_equal('id', result['id']))
+                self.music_db.delete_music(Condition().and_equal('id', result['id']))
             else:
                 files.remove(result['path'])
 
         FileItem, _, _, _ = _item_classes()
         for file in files:
-            results = self.db.query_music(Condition().and_equal('path', file))
+            results = self.music_db.query_music(Condition().and_equal('path', file))
             if not results:
-                item = FileItem(file)
+                item = FileItem(file, self.music_folder)
                 self.log.debug("library: music save into database: %s" % item.format_debug_string())
-                self.db.insert_music(item.to_dict())
+                self.music_db.insert_music(item.to_dict())
 
-        self.db.manage_special_tags()
+        self.music_db.manage_special_tags()
         self.dir_lock.release()
+
+    # -------------------------
+    # Cached wrapper helpers
+    # -------------------------
+
+    def get_cached_wrapper(self, item, user):
+        if item:
+            self[item.id] = item
+            return CachedItemWrapper(self, item.id, item.type, user)
+        return None
+
+    def get_cached_wrappers(self, items, user):
+        wrappers = []
+        for item in items:
+            if item:
+                wrappers.append(self.get_cached_wrapper(item, user))
+        return wrappers
+
+    def get_cached_wrapper_from_scrap(self, **kwargs):
+        item = self.get_item(**kwargs)
+        if 'user' not in kwargs:
+            raise KeyError("Which user added this song?")
+        return CachedItemWrapper(self, item.id, kwargs['type'], kwargs['user'])
+
+    def get_cached_wrapper_from_dict(self, dict_from_db, user):
+        if dict_from_db:
+            item = self.dict_to_item(dict_from_db)
+            return self.get_cached_wrapper(item, user)
+        return None
+
+    def get_cached_wrappers_from_dicts(self, dicts_from_db, user):
+        items = []
+        for dict_from_db in dicts_from_db:
+            if dict_from_db:
+                items.append(self.get_cached_wrapper_from_dict(dict_from_db, user))
+        return items
+
+    def get_cached_wrapper_by_id(self, id, user):
+        item = self.get_item_by_id(id)
+        if item:
+            return CachedItemWrapper(self, item.id, item.type, user)
+
+    def get_cached_wrappers_by_tags(self, tags, user):
+        items = self.get_items_by_tags(tags)
+        ret = []
+        for item in items:
+            ret.append(CachedItemWrapper(self, item.id, item.type, user))
+        return ret
 
 
 class CachedItemWrapper:
@@ -262,51 +310,3 @@ class CachedItemWrapper:
 
     def display_type(self):
         return self.item().display_type()
-
-
-# Remember!!! Get wrapper functions will automatically add items into the cache!
-def get_cached_wrapper(item, user):
-    if item:
-        var.cache[item.id] = item
-        return CachedItemWrapper(var.cache, item.id, item.type, user)
-    return None
-
-def get_cached_wrappers(items, user):
-    wrappers = []
-    for item in items:
-        if item:
-            wrappers.append(get_cached_wrapper(item, user))
-
-    return wrappers
-
-def get_cached_wrapper_from_scrap(**kwargs):
-    item = var.cache.get_item(**kwargs)
-    if 'user' not in kwargs:
-        raise KeyError("Which user added this song?")
-    return CachedItemWrapper(var.cache, item.id, kwargs['type'], kwargs['user'])
-
-def get_cached_wrapper_from_dict(dict_from_db, user):
-    if dict_from_db:
-        item = dict_to_item(dict_from_db)
-        return get_cached_wrapper(item, user)
-    return None
-
-def get_cached_wrappers_from_dicts(dicts_from_db, user):
-    items = []
-    for dict_from_db in dicts_from_db:
-        if dict_from_db:
-            items.append(get_cached_wrapper_from_dict(dict_from_db, user))
-
-    return items
-
-def get_cached_wrapper_by_id(id, user):
-    item = var.cache.get_item_by_id(id)
-    if item:
-        return CachedItemWrapper(var.cache, item.id, item.type, user)
-
-def get_cached_wrappers_by_tags(tags, user):
-    items = var.cache.get_items_by_tags(tags)
-    ret = []
-    for item in items:
-        ret.append(CachedItemWrapper(var.cache, item.id, item.type, user))
-    return ret
