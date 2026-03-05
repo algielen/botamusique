@@ -44,8 +44,9 @@ Predicted functionalities will be those people would expect from any classic mus
 
 ### Dependencies
 1. Install python. We require a python version of 3.14 or higher.
-2. Install [Opus Codec](https://www.opus-codec.org/) (which should be already installed if you installed Mumble or Murmur, or you may try to install `opus-tools` with your package manager).
-3. Install ffmpeg. If ffmpeg isn't in your package manager, you may need to find another source. I personally use [this repository](http://repozytorium.mati75.eu/) on my raspberry.
+2. Install [uv](https://docs.astral.sh/uv/getting-started/installation/)
+3. Install [Opus Codec](https://www.opus-codec.org/) (which should be already installed if you installed Mumble or Murmur, or you may try to install `opus-tools` with your package manager).
+4. Install ffmpeg. If ffmpeg isn't in your package manager, you may need to find another source. I personally use [this repository](http://repozytorium.mati75.eu/) on my raspberry.
 
 
 ### Docker
@@ -56,8 +57,6 @@ Latest docker image is available on [Docker Hub](https://hub.docker.com/r/algiel
 ### Manual install
 
 **Stable release (recommended)**
-
-You will need uv, which is available at https://docs.astral.sh/uv/getting-started/installation/
 
 This is the current stable version. To install the stable release, download the source from the latest release and run these lines in your terminal:
 ```
