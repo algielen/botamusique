@@ -2,7 +2,7 @@
 
 This is a fork of the abandoned Botamusique, fixed for my own usage.
 
--- Lamba
+-- algielen
 
 -----
 
@@ -14,7 +14,7 @@ Predicted functionalities will be those people would expect from any classic mus
 
 1. **Support multiple music sources:**
     - Music files in local folders (which can be uploaded through the web interface).
-    - Youtube/Soundcloud URLs and playlists (everything supported by youtube-dl).
+    - Youtube/Soundcloud URLs and playlists (everything supported by yt-dlp).
     - Radio stations from URL and http://www.radio-browser.info API.
 2. **Modern and powerful web remote control interface.** Powered by Flask. Which supports:
     - Playlist management.
@@ -33,37 +33,38 @@ Predicted functionalities will be those people would expect from any classic mus
 -----
 ## Quick Start Guide
 1. [Installation](#installation)
-1. [Configuration](#configuration)
-1. [Run the bot](#run-the-bot)
-1. [Operate the bot](#operate-the-bot)
-1. [Update](#update)
-1. [Known issues](#known-issues)
-1. [Contributors](#contributors)
+2. [Configuration](#configuration)
+3. [Run the bot](#run-the-bot)
+4. [Operate the bot](#operate-the-bot)
+5. [Update](#update)
+6. [Known issues](#known-issues)
+7. [Contributors](#contributors)
 
 ## Installation
 
 ### Dependencies
-1. Install python. We require a python version of 3.6 or higher.
-1. Install [Opus Codec](https://www.opus-codec.org/) (which should be already installed if you installed Mumble or Murmur, or you may try to install `opus-tools` with your package manager).
-1. Install ffmpeg. If ffmpeg isn't in your package manager, you may need to find another source. I personally use [this repository](http://repozytorium.mati75.eu/) on my raspberry.
+1. Install python. We require a python version of 3.14 or higher.
+2. Install [Opus Codec](https://www.opus-codec.org/) (which should be already installed if you installed Mumble or Murmur, or you may try to install `opus-tools` with your package manager).
+3. Install ffmpeg. If ffmpeg isn't in your package manager, you may need to find another source. I personally use [this repository](http://repozytorium.mati75.eu/) on my raspberry.
 
 
 ### Docker
-See https://github.com/azlux/botamusique/wiki/Docker-install
+See https://github.com/algielen/botamusique/wiki/Docker-install
 
-Both stable and nightly (developing) builds are available!
+Latest docker image is available on [Docker Hub](https://hub.docker.com/r/algielen/botamusique)
 
 ### Manual install
 
 **Stable release (recommended)**
 
-This is current stable version, with auto-update support. To install the stable release, download the source from the latest release and run these lines in your terminal:
+You will need uv, which is available at https://docs.astral.sh/uv/getting-started/installation/
+
+This is the current stable version. To install the stable release, download the source from the latest release and run these lines in your terminal:
 ```
 tar -xzf botamusique.tar.gz
 cd botamusique
-python3 -m venv venv
-venv/bin/pip install wheel
-venv/bin/pip install -r requirements.txt
+uv venv
+uv sync --no-dev
 ```
 
 **Build from source code**
@@ -77,11 +78,10 @@ If you have no idea what these descriptions mean to you, we recommend you instal
 ```
 git clone https://github.com/algielen/botamusique.git
 cd botamusique
-python3 -m venv venv
-venv/bin/pip install wheel
-venv/bin/pip install -r requirements.txt
+uv venv
+uv sync --no-dev
 (cd web && npm install && npm run build)
-venv/bin/python3 ./scripts/translate_templates.py --lang-dir lang/ --template-dir web/templates/
+uv run --no-dev scripts/translate_templates.py --lang-dir lang/ --template-dir web/templates/
 ```
 </details>
 
@@ -143,9 +143,9 @@ Available translations can be found inside `lang/` folder. Currently, options ar
  - `ja_JP`, Japanese
  - `zh_CN`, Chinese
 
-5. Generate a certificate (Optional, but recommended)
+5. Generate a certificate (Optional but recommended)
 
-By default, murmur server uses certificates to identify users. Without a valid certificate, you wouldn't able to register the bot into your Murmur server. Some server even refused users without a certificate. Therefore, it is recommended to generate a certificate for the bot. If you have a certificate (for say, `botmusique.pem` in the folder of the bot), you can specify its location in
+By default, murmur server uses certificates to identify users. Without a valid certificate, you wouldn't be able to register the bot into your Murmur server. Some server even refused users without a certificate. Therefore, it is recommended to generate a certificate for the bot. If you have a certificate (for say, `botmusique.pem` in the folder of the bot), you can specify its location in
 ```
 [server]
 certificate=botamusique.pem
@@ -156,7 +156,7 @@ If you don't have a certificate, you may generate one by:
 
 
 ### Sections explained
-- `server`: configuration about the server. Will be overridden by the `./mumbleBot.py` parameters.
+- `server`: configuration about the server. Will be overridden by the `src/main.py` parameters.
 - `bot`: basic configuration of the bot, eg. name, comment, folder, default volume, etc.
 - `webinterface`: basic configuration about the web interface.
 - `commands`: you can customize the command you want for each action (eg. put `help = helpme` , the bot will respond to `!helpme`)
@@ -166,22 +166,22 @@ If you don't have a certificate, you may generate one by:
 
 ## Run the bot
 If you have set up everything in your `configuration.ini`, you can
-`venv/bin/python mumbleBot.py --config configuration.ini`
+`uv run src/main.py --config configuration.ini`
 
 Or you can
-`venv/bin/python mumbleBot.py -s HOST -u BOTNAME -P PASSWORD -p PORT -c CHANNEL -C /path/to/botamusique.pem`
+`uv run src/main.py -s HOST -u BOTNAME -P PASSWORD -p PORT -c CHANNEL -C /path/to/botamusique.pem`
 
-If you want information about auto-starting and auto-restarting of the bot, you can check out the wiki page [Run botamusique as a daemon In the background](https://github.com/azlux/botamusique/wiki/Run-botamusique-as-a-daemon-In-the-background).
+If you want information about auto-starting and auto-restarting of the bot, you can check out the wiki page [Run botamusique as a daemon In the background](https://github.com/algielen/botamusique/wiki/Run-botamusique-as-a-daemon-In-the-background).
 
-**For the detailed manual of using botamusique, please see the [wiki](https://github.com/azlux/botamusique/wiki).**
+**For the detailed manual of using botamusique, please see the [wiki](https://github.com/algielen/botamusique/wiki).**
 
 ## Operate the bot
 
 You can control the bot by both commands sent by text message and the web interface.
 
-By default, all commands start with `!`. You can type `!help` in the text message to see the full list of commands supported, or see the examples on the [wiki page](https://github.com/azlux/botamusique/wiki/Command-Help-and-Examples).
+By default, all commands start with `!`. You can type `!help` in the text message to see the full list of commands supported, or see the examples on the [wiki page](https://github.com/algielen/botamusique/wiki/Command-Help-and-Examples).
 
-The web interface can be used if you'd like an intuitive way of interacting with the bot. Through it is fairly straightforward, a walk-through can be found on the [wiki page](https://github.com/azlux/botamusique/wiki/Web-interface-walk-through).
+The web interface can be used if you'd like an intuitive way of interacting with the bot. Through it is fairly straightforward, a walk-through can be found on the [wiki page](https://github.com/algielen/botamusique/wiki/Web-interface-walk-through).
 
 ## Update
 
@@ -191,26 +191,25 @@ If you are using the recommended install, you can send `!update` to the bot (com
 If you are using git, you need to update manually:
 ```
 git pull --all
-git submodule update
-venv/bin/pip install --upgrade -r requirements.txt
+uv sync --no-dev
 ```
 
 
 ## Known issues
 
-1. During installation, you may encounter the following error:
+### During installation, you may encounter the following error:
 ```
 ImportError: libtiff.so.5: cannot open shared object file: No such file or directory
 ```
 You need to install a missing library: `apt install libtiff5`
 
-2. In the beginning, you may encounter the following error even if you have installed all requirements:
+### In the beginning, you may encounter the following error even if you have installed all requirements:
 ```
 Exception: Could not find opus library. Make sure it is installed.
 ```
 You need to install the opus codec (not embedded in all system): `apt install libopus0`
 
-3. MacOS Users may encounter the following error:
+### MacOS Users may encounter the following error:
 ```
 ImportError: failed to find libmagic.  Check your installation
 ```
@@ -221,12 +220,12 @@ brew install libmagic
 ```
 One may also install `python-magic-bin` instead of `python-magic`.
 
-5. If you have a large amount of music files (>1000), it may take some time for the bot to boot, since
+### If you have a large amount of music files (>1000), it may take some time for the bot to boot, since
 it will build up the cache for the music library on booting. You may want to disable this auto-scanning by
 setting ``refresh_cache_on_startup=False`` in `[bot]` section and control the scanning manually by
 ``!rescan`` command and the *Rescan Files* button on the web interface.
 
-6. Alpine Linux requires some extra dependencies during the installation (in order to compile Pillow):
+### Alpine Linux requires some extra dependencies during the installation (in order to compile Pillow):
 ```
 python3-dev musl-lib libmagic jpeg-dev zlib-dev gcc
 ```
