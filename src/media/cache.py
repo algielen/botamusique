@@ -192,6 +192,11 @@ class MusicCache(dict):
 
     def get_recursive_file_list_sorted(self, path):
         filelist = []
+
+        if not os.access(path, os.R_OK):
+            self.log.error(f"Unable to list files at {path}. Verify it exists and traverse permission is granted for all parent paths.")
+            return filelist
+
         for root, dirs, files in os.walk(path, topdown=True, onerror=None, followlinks=True):
             relroot = root.replace(path, '', 1)
             if relroot != '' and relroot in self.config.get('bot', 'ignored_folders'):
@@ -206,7 +211,7 @@ class MusicCache(dict):
 
                 try:
                     mime = magic.from_file(fullpath, mime=True)
-                    if 'audio' in mime or 'audio' in magic.from_file(fullpath).lower() or 'video' in mime:
+                    if 'audio' in mime or 'video' in mime:
                         filelist.append(os.path.join(relroot, file))
                 except:
                     pass
