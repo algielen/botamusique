@@ -530,7 +530,7 @@ class DatabaseMigration:
                 while current_version < SETTING_DB_VERSION:
                     log.debug(f"database: migrate step {current_version}/{SETTING_DB_VERSION - 1}")
                     current_version = self.settings_table_migrate_func[current_version](conn)
-                log.info(f"database: migration done.")
+                log.info("database: migration done.")
 
                 cursor.execute("UPDATE botamusique SET value=? "
                                "WHERE section='bot' AND option='db_version'", (SETTING_DB_VERSION,))
@@ -559,7 +559,7 @@ class DatabaseMigration:
                 while current_version < MUSIC_DB_VERSION:
                     log.debug(f"database: migrate step {current_version}/{MUSIC_DB_VERSION - 1}")
                     current_version = self.music_table_migrate_func[current_version](conn)
-                log.info(f"database: migration done.")
+                log.info("database: migration done.")
 
                 cursor.execute("UPDATE music SET title=? "
                                "WHERE id='info'", (MUSIC_DB_VERSION,))
@@ -623,10 +623,10 @@ class DatabaseMigration:
         cursor = conn.cursor()
         # move music database into a separated file
         if self.has_table('music', conn) and not os.path.exists(self.music_db.db_path):
-            log.info(f"database: move music db into separated file.")
+            log.info("database: move music db into separated file.")
             cursor.execute(f"ATTACH DATABASE '{self.music_db.db_path}' AS music_db")
-            cursor.execute(f"SELECT sql FROM sqlite_master "
-                           f"WHERE type='table' AND name='music'")
+            cursor.execute("SELECT sql FROM sqlite_master "
+                           "WHERE type='table' AND name='music'")
             sql_create_table = cursor.fetchone()[0]
             sql_create_table = sql_create_table.replace("music", "music_db.music")
             cursor.execute(sql_create_table)
