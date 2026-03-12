@@ -210,7 +210,7 @@ class MusicCache(dict):
                     continue
 
                 try:
-                    mime = magic.from_file(fullpath, mime=True)
+                    mime = magic.from_file(fullpath, mime=True).lower()
                     if 'audio' in mime or 'video' in mime:
                         filelist.append(os.path.join(relroot, file))
                 except:
