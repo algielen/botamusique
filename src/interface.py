@@ -9,7 +9,6 @@ import sqlite3
 import time
 from functools import wraps
 from pathlib import Path
-from typing import type
 
 from flask import Flask, render_template, request, redirect, send_file, Response, jsonify, abort, session
 
@@ -73,7 +72,8 @@ web = Flask(
     __name__,
     template_folder=root_dir.joinpath("web/templates"),
     static_folder=root_dir.joinpath("static"),
-)#web.config['TEMPLATES_AUTO_RELOAD'] = True
+)
+#web.config['TEMPLATES_AUTO_RELOAD'] = True
 log = logging.getLogger("bot")
 user = 'Remote Control'
 
@@ -274,7 +274,7 @@ def playlist():
         for tag in item_wrapper.item().tags:
             tag_tuples.append([tag, tags_color_lookup[tag]])
 
-        item: type[BaseItem] = item_wrapper.item()
+        item: BaseItem = item_wrapper.item()
 
         title = item.format_title()
         artist = "??"
