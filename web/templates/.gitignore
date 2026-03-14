@@ -1,0 +1,9 @@
+# this folder holds generated translation files (prior to running the bot)
+# generation is made by /scripts/translate_templates.py
+
+# exclude all files except template ones
+*.*
+!*template*
+
+# do not exclude this file - required
+!.gitignore
