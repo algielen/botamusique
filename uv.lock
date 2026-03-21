@@ -78,6 +78,7 @@ dependencies = [
     { name = "pycryptodome" },
     { name = "pyradios" },
     { name = "python-magic" },
+    { name = "python-magic-bin", marker = "sys_platform == 'win32'" },
     { name = "requests" },
     { name = "yt-dlp", extra = ["default"] },
 ]
@@ -89,7 +90,6 @@ build = [
 dev = [
     { name = "pip" },
     { name = "pytest" },
-    { name = "python-magic-bin", marker = "sys_platform == 'win32'" },
 ]
 
 [package.metadata]
@@ -104,6 +104,7 @@ requires-dist = [
     { name = "pycryptodome", specifier = ">=3.23.0" },
     { name = "pyradios", specifier = ">=2.1.1" },
     { name = "python-magic", specifier = ">=0.4.27" },
+    { name = "python-magic-bin", marker = "sys_platform == 'win32'", specifier = ">=0.4.14" },
     { name = "requests", specifier = ">=2.32.5" },
     { name = "yt-dlp", extras = ["default"], specifier = ">=2025.11.12" },
 ]
@@ -113,7 +114,6 @@ build = [{ name = "libsass", specifier = ">=0.23.0" }]
 dev = [
     { name = "pip", specifier = ">=25.0" },
     { name = "pytest", specifier = ">=9.0.1" },
-    { name = "python-magic-bin", marker = "sys_platform == 'win32'", specifier = ">=0.4.14" },
 ]
 
 [[package]]

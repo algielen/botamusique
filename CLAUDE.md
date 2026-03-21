@@ -28,8 +28,6 @@ uv run pytest
 # Run a specific test
 uv run pytest src/pymumble_py3/tests/test_crypto.py
 
-# Windows: install python-magic binary (needed for Windows dev)
-uv pip install python-magic-bin
 ```
 
 ### Web Frontend (Python/libsass)
