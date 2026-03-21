@@ -25,10 +25,11 @@ root = Path(__file__).parent.parent
 with open(root / "pyproject.toml", "rb") as f:
     _build_cfg = tomllib.load(f)["tool"]["botamusique"]["build"]
 
-BOOTSWATCH_VERSION = _build_cfg["bootswatch_version"]
-JQUERY_VERSION     = _build_cfg["jquery_version"]
-BOOTSTRAP_VERSION  = _build_cfg["bootstrap_version"]
-POPPERJS_VERSION   = _build_cfg["popperjs_version"]
+BOOTSWATCH_VERSION  = _build_cfg["bootswatch_version"]
+JQUERY_VERSION      = _build_cfg["jquery_version"]
+BOOTSTRAP_VERSION   = _build_cfg["bootstrap_version"]
+POPPERJS_VERSION    = _build_cfg["popperjs_version"]
+FONTAWESOME_VERSION = _build_cfg["fontawesome_version"]
 
 THEMES = {
     "main": "flatly",
@@ -48,12 +49,14 @@ JS_VENDOR_TARBALLS = {
 
 vendor_dir = root / "web" / "vendor" / "css"
 static_css_dir = root / "static" / "css"
+static_webfonts_dir = root / "static" / "webfonts"
 js_src_dir = root / "web" / "js"
 js_dst_dir = root / "static" / "js"
 js_vendor_dir = root / "static" / "js" / "vendor"
 
 vendor_dir.mkdir(parents=True, exist_ok=True)
 static_css_dir.mkdir(parents=True, exist_ok=True)
+static_webfonts_dir.mkdir(parents=True, exist_ok=True)
 js_dst_dir.mkdir(parents=True, exist_ok=True)
 js_vendor_dir.mkdir(parents=True, exist_ok=True)
 
@@ -109,6 +112,26 @@ for filename, url in JS_VENDOR_FILES.items():
 
 for name, (url, subdir) in JS_VENDOR_TARBALLS.items():
     extract_tarball_subdir_if_missing(url, subdir, js_vendor_dir)
+
+# --- Font Awesome ---
+fa_css_dest = static_css_dir / "font-awesome.min.css"
+if not fa_css_dest.exists():
+    fa_url = (
+        f"https://registry.npmjs.org/@fortawesome/fontawesome-free"
+        f"/-/fontawesome-free-{FONTAWESOME_VERSION}.tgz"
+    )
+    print(f"Downloading and extracting Font Awesome {FONTAWESOME_VERSION} ...")
+    with urllib.request.urlopen(fa_url) as response:
+        data = response.read()
+    with tarfile.open(fileobj=io.BytesIO(data), mode="r:gz") as tar:
+        for member in tar.getmembers():
+            if not member.isfile():
+                continue
+            if member.name == "package/css/all.min.css":
+                fa_css_dest.write_bytes(tar.extractfile(member).read())
+            elif member.name.startswith("package/webfonts/"):
+                filename = member.name[len("package/webfonts/"):]
+                (static_webfonts_dir / filename).write_bytes(tar.extractfile(member).read())
 
 # --- JS ---
 print("Copying JS modules to static/js/ ...")

@@ -25,6 +25,7 @@ bootswatch_version = "5.3.8"
 jquery_version = "4.0.0"
 bootstrap_version = "5.3.8"
 popperjs_version = "2.11.8"
+fontawesome_version = "6.7.2"
 
 [dependency-groups]
 dev = [
