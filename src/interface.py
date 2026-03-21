@@ -8,7 +8,7 @@ import os.path
 import sqlite3
 import time
 from functools import wraps
-from typing import Type
+from pathlib import Path
 
 from flask import Flask, render_template, request, redirect, send_file, Response, jsonify, abort, session
 
@@ -67,8 +67,12 @@ class ReverseProxied(object):
         return self.app(environ, start_response)
 
 
-root_dir = os.path.dirname(__file__)
-web = Flask(__name__, template_folder=os.path.join(root_dir, "../web/templates"))
+root_dir = Path(__file__).parent.parent
+web = Flask(
+    __name__,
+    template_folder=root_dir.joinpath("web/templates"),
+    static_folder=root_dir.joinpath("static"),
+)
 #web.config['TEMPLATES_AUTO_RELOAD'] = True
 log = logging.getLogger("bot")
 user = 'Remote Control'
@@ -228,10 +232,15 @@ def get_all_dirs():
     return dirs
 
 
-@web.route("/", methods=['GET'])
+@web.route("/", methods=["GET"])
 @requires_auth
 def index():
-    return open(os.path.join(root_dir, f"web/templates/index.{_bot.config.get('bot', 'language')}.html"), "r").read()
+    return open(
+        root_dir.joinpath(
+            f"web/templates/index.{_bot.config.get('bot', 'language')}.html"
+        ),
+        "r",
+    ).read()
 
 
 @web.route("/playlist", methods=['GET'])
@@ -265,7 +274,7 @@ def playlist():
         for tag in item_wrapper.item().tags:
             tag_tuples.append([tag, tags_color_lookup[tag]])
 
-        item: Type[BaseItem] = item_wrapper.item()
+        item: BaseItem = item_wrapper.item()
 
         title = item.format_title()
         artist = "??"
