@@ -14,12 +14,22 @@ import shutil
 import subprocess
 import sys
 import tarfile
+import tomllib
 import urllib.request
 from pathlib import Path
 
 import sass  # libsass-python
 
-BOOTSWATCH_VERSION = "5.3.8"
+root = Path(__file__).parent.parent
+
+with open(root / "pyproject.toml", "rb") as f:
+    _build_cfg = tomllib.load(f)["tool"]["botamusique"]["build"]
+
+BOOTSWATCH_VERSION = _build_cfg["bootswatch_version"]
+JQUERY_VERSION     = _build_cfg["jquery_version"]
+BOOTSTRAP_VERSION  = _build_cfg["bootstrap_version"]
+POPPERJS_VERSION   = _build_cfg["popperjs_version"]
+
 THEMES = {
     "main": "flatly",
     "dark": "darkly",
@@ -27,16 +37,15 @@ THEMES = {
 
 # Single-file ESM downloads (self-contained bundles)
 JS_VENDOR_FILES = {
-    "jquery.module.min.js": "https://cdn.jsdelivr.net/npm/jquery@4.0.0/dist-module/jquery.module.min.js",
-    "bootstrap.esm.min.js": "https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.esm.min.js",
+    "jquery.module.min.js": f"https://cdn.jsdelivr.net/npm/jquery@{JQUERY_VERSION}/dist-module/jquery.module.min.js",
+    "bootstrap.esm.min.js": f"https://cdn.jsdelivr.net/npm/bootstrap@{BOOTSTRAP_VERSION}/dist/js/bootstrap.esm.min.js",
 }
 
 # Packages whose entire dist/esm/ tree must be extracted (they use relative imports)
 JS_VENDOR_TARBALLS = {
-    "popper": ("https://registry.npmjs.org/@popperjs/core/-/core-2.11.8.tgz", "dist/esm/"),
+    "popper": (f"https://registry.npmjs.org/@popperjs/core/-/core-{POPPERJS_VERSION}.tgz", "dist/esm/"),
 }
 
-root = Path(__file__).parent.parent
 vendor_dir = root / "web" / "vendor" / "css"
 static_css_dir = root / "static" / "css"
 js_src_dir = root / "web" / "js"

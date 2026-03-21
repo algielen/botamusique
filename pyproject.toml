@@ -20,6 +20,12 @@ dependencies = [
     "libsass>=0.23.0",
 ]
 
+[tool.botamusique.build]
+bootswatch_version = "5.3.8"
+jquery_version = "4.0.0"
+bootstrap_version = "5.3.8"
+popperjs_version = "2.11.8"
+
 [dependency-groups]
 dev = [
     "pytest>=9.0.1",
