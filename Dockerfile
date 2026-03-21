@@ -20,7 +20,7 @@ RUN apt-get update && \
     apt-get install --no-install-recommends -y opus-tools ffmpeg libmagic-dev curl tar && \
     rm -rf /var/lib/apt/lists/*
 
-COPY --from=docker.io/denoland/deno:bin-2.6.8 /deno /usr/local/bin/deno
+COPY --from=docker.io/denoland/deno:bin-2.7.7 /deno /usr/local/bin/deno
 RUN chmod +x /usr/local/bin/deno
 RUN deno --version
 # check quickjs as alternative : https://github.com/yt-dlp/yt-dlp/wiki/EJS#quickjs--quickjs-ng
