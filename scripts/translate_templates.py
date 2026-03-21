@@ -13,7 +13,7 @@ template_dir = ""
 
 
 def load_lang(lang):
-    with open(os.path.join(lang_dir, f"{lang}.json"), "r") as f:
+    with open(os.path.join(lang_dir, f"{lang}.json"), "r", encoding="utf-8") as f:
         return json.load(f)
 
 
@@ -50,7 +50,7 @@ if __name__ == "__main__":
 
         print(f"Populating {html_file} with translations...")
         basename = match[1]
-        with open(os.path.join(template_dir, f"{html_file}"), "r") as f:
+        with open(os.path.join(template_dir, f"{html_file}"), "r", encoding="utf-8") as f:
             html = f.read()
 
         lang_files = os.listdir(lang_dir)
@@ -70,6 +70,6 @@ if __name__ == "__main__":
             lang_dict = load_lang(lang)
 
             with open(os.path.join(template_dir, f"{basename}.{lang}.html"),
-                      "w") as f:
+                      "w", encoding="utf-8") as f:
                 f.write(template.render(tr=tr))
     print("Done.")
