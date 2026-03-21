@@ -79,7 +79,7 @@ git clone https://github.com/algielen/botamusique.git
 cd botamusique
 uv venv
 uv sync --no-dev
-uv run --no-dev scripts/build.py
+uv run --group build scripts/build.py
 ```
 </details>
 

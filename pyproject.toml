@@ -17,7 +17,6 @@ dependencies = [
     "python-magic>=0.4.27",
     "requests>=2.32.5",
     "yt-dlp[default]>=2025.11.12",
-    "libsass>=0.23.0",
 ]
 
 [tool.botamusique.build]
@@ -28,6 +27,9 @@ popperjs_version = "2.11.8"
 fontawesome_version = "6.7.2"
 
 [dependency-groups]
+build = [
+    "libsass>=0.23.0",
+]
 dev = [
     "pytest>=9.0.1",
     "python-magic-bin>=0.4.14; sys_platform == 'win32'",

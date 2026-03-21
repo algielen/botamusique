@@ -37,7 +37,7 @@ uv pip install python-magic-bin
 Build assets and translate templates in one step. No Node.js required.
 
 ```bash
-uv run scripts/build.py
+uv run --group build scripts/build.py
 ```
 
 This downloads pre-built Bootswatch theme CSS (cached in `web/vendor/`), compiles the custom SCSS, copies JS modules to `static/`, and translates Jinja2 templates for all supported languages.
