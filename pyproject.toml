@@ -1,6 +1,6 @@
 [project]
 name = "botamusique"
-version = "8.5.0"
+version = "8.6.0"
 description = "Bot to play youtube / soundcloud / radio / local music on Mumble (using pymumble)"
 readme = "README.md"
 requires-python = ">=3.14"
@@ -15,13 +15,23 @@ dependencies = [
     "pycryptodome>=3.23.0",
     "pyradios>=2.1.1",
     "python-magic>=0.4.27",
+    "python-magic-bin>=0.4.14; sys_platform == 'win32'",
     "requests>=2.32.5",
     "yt-dlp[default]>=2025.11.12",
 ]
 
+[tool.botamusique.build]
+bootswatch_version = "5.3.8"
+jquery_version = "4.0.0"
+bootstrap_version = "5.3.8"
+popperjs_version = "2.11.8"
+fontawesome_version = "6.7.2"
+
 [dependency-groups]
+build = [
+    "libsass>=0.23.0",
+]
 dev = [
     "pytest>=9.0.1",
-    "python-magic-bin>=0.4.14; sys_platform == 'win32'",
     "pip>=25.0", # PyCharm uses it for its package management
 ]

@@ -79,8 +79,7 @@ git clone https://github.com/algielen/botamusique.git
 cd botamusique
 uv venv
 uv sync --no-dev
-(cd web && npm install && npm run build)
-uv run --no-dev scripts/translate_templates.py --lang-dir lang/ --template-dir web/templates/
+uv run --group build scripts/build.py
 ```
 </details>
 

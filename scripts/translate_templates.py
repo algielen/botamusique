@@ -5,42 +5,25 @@ import json
 import re
 import jinja2
 
-default_lang_dict = {}
-lang_dict = {}
 
-lang_dir = ""
-template_dir = ""
+def translate(lang_dir: str, template_dir: str) -> None:
+    default_lang_dict = {}
+    lang_dict = {}
 
+    def load_lang(lang):
+        with open(os.path.join(lang_dir, f"{lang}.json"), "r", encoding="utf-8") as f:
+            return json.load(f)
 
-def load_lang(lang):
-    with open(os.path.join(lang_dir, f"{lang}.json"), "r", encoding="utf-8") as f:
-        return json.load(f)
-
-
-def tr(option):
-    try:
-        if option in lang_dict['web'] and lang_dict['web'][option]:
-            string = lang_dict['web'][option]
-        else:
-            string = default_lang_dict['web'][option]
-        return string
-    except KeyError:
-        raise KeyError("Missed strings in language file: '{string}'. "
-                       .format(string=option))
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Populate html templates with translation strings.")
-
-    parser.add_argument("--lang-dir", dest="lang_dir",
-                        type=str, help="Directory of the lang files.")
-    parser.add_argument("--template-dir", dest="template_dir",
-                        type=str, help="Directory of the template files.")
-
-    args = parser.parse_args()
-    lang_dir = args.lang_dir
-    template_dir = args.template_dir
+    def tr(option):
+        try:
+            if option in lang_dict['web'] and lang_dict['web'][option]:
+                string = lang_dict['web'][option]
+            else:
+                string = default_lang_dict['web'][option]
+            return string
+        except KeyError:
+            raise KeyError("Missed strings in language file: '{string}'. "
+                           .format(string=option))
 
     html_files = os.listdir(template_dir)
     for html_file in html_files:
@@ -73,3 +56,16 @@ if __name__ == "__main__":
                       "w", encoding="utf-8") as f:
                 f.write(template.render(tr=tr))
     print("Done.")
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Populate html templates with translation strings.")
+
+    parser.add_argument("--lang-dir", dest="lang_dir",
+                        type=str, help="Directory of the lang files.")
+    parser.add_argument("--template-dir", dest="template_dir",
+                        type=str, help="Directory of the template files.")
+
+    args = parser.parse_args()
+    translate(args.lang_dir, args.template_dir)
