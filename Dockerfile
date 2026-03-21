@@ -9,8 +9,7 @@ RUN apt-get update \
 
 COPY . /botamusique
 RUN uv venv --clear \
-    && uv sync --no-dev \
-    && uv run --no-dev scripts/build.py
+    && uv sync --no-dev
 
 
 FROM ghcr.io/astral-sh/uv:python3.14-trixie-slim
