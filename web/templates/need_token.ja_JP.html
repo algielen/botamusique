@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta charset="UTF-8">
+
+    <title>botamusiqueウェブインタフェイス</title>
+
+    <link rel="icon" href="static/image/favicon.ico" />
+
+    <link rel="stylesheet" href="static/css/main.css">
+</head>
+
+<body>
+    <div class="container" style="max-width: 800px">
+        <div class="col-8" style="margin: auto; padding-top: 50px;">
+            <div class="card">
+                <div class="card-header">
+                    トークンが必要です
+                </div>
+                <div class="card-body">
+                    <h3>トークンが必要です</h3>
+                    このページは{{ name }}のウェブインタフェイスです。
+設定によって、ログオンするにはトークンが必要になります。<br />
+ "{{ command }}" を送信してトークンを取得してください。
+                    <form action="." method="get">
+                        <div class="form-group mt-3">
+                            <label for="token_input">トークン</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control me-2" id="token_input" name="token" placeholder="xxxxxxx">
+                                <button type="submit" class="btn btn-primary">送信</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+</html>

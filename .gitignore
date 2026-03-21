@@ -113,6 +113,7 @@ configuration.ini
 
 music_folder/
 tmp/
+web/vendor/
 
 *.db
 
@@ -120,3 +121,5 @@ templates/*.html
 
 # Pycharm
 .idea/
+
+.claude

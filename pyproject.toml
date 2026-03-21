@@ -1,6 +1,6 @@
 [project]
 name = "botamusique"
-version = "8.5.0"
+version = "8.6.0"
 description = "Bot to play youtube / soundcloud / radio / local music on Mumble (using pymumble)"
 readme = "README.md"
 requires-python = ">=3.14"
@@ -17,6 +17,7 @@ dependencies = [
     "python-magic>=0.4.27",
     "requests>=2.32.5",
     "yt-dlp[default]>=2025.11.12",
+    "libsass>=0.23.0",
 ]
 
 [dependency-groups]

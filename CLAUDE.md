@@ -32,20 +32,17 @@ uv run pytest src/pymumble_py3/tests/test_crypto.py
 uv pip install python-magic-bin
 ```
 
-### Web Frontend (Node/webpack)
+### Web Frontend (Python/libsass)
 
-The web interface JS/CSS must be built separately from the Python code.
+Build assets and translate templates in one step. No Node.js required.
 
 ```bash
-cd web
-npm install
-npm run build      # webpack bundle
-npm run lint       # eslint on js/
+uv run scripts/build.py
 ```
 
-### Template Translation
+This downloads pre-built Bootswatch theme CSS (cached in `web/vendor/`), compiles the custom SCSS, copies JS modules to `static/`, and translates Jinja2 templates for all supported languages.
 
-After building the web frontend, translate Jinja2 templates for all supported languages:
+To run the translation step on its own (e.g. after editing a `lang/*.json` file):
 
 ```bash
 uv run scripts/translate_templates.py --lang-dir lang/ --template-dir web/templates/

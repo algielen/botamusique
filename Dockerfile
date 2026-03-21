@@ -9,23 +9,8 @@ RUN apt-get update \
 
 COPY . /botamusique
 RUN uv venv --clear \
-    && uv sync --no-dev
-
-
-FROM node:24-trixie-slim AS node-builder
-ENV DEBIAN_FRONTEND=noninteractive
-WORKDIR /botamusique/web
-COPY --from=python-builder /botamusique/web .
-RUN npm ci \
-    && npm run build
-
-
-FROM ghcr.io/astral-sh/uv:python3.14-trixie-slim AS template-builder
-ENV DEBIAN_FRONTEND=noninteractive
-WORKDIR /botamusique
-COPY --from=python-builder /botamusique .
-COPY --from=node-builder /botamusique/templates templates
-RUN uv run --no-dev scripts/translate_templates.py --lang-dir /botamusique/lang --template-dir /botamusique/web/templates
+    && uv sync --no-dev \
+    && uv run --no-dev scripts/build.py
 
 
 FROM ghcr.io/astral-sh/uv:python3.14-trixie-slim
@@ -40,8 +25,6 @@ RUN chmod +x /usr/local/bin/deno
 RUN deno --version
 # check quickjs as alternative : https://github.com/yt-dlp/yt-dlp/wiki/EJS#quickjs--quickjs-ng
 COPY --from=python-builder /botamusique /botamusique
-COPY --from=node-builder /botamusique/static /botamusique/static
-COPY --from=template-builder /botamusique/web/templates /botamusique/web/templates
 WORKDIR /botamusique
 
 RUN groupadd -g 568 usergroup
