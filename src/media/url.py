@@ -5,13 +5,16 @@ import logging
 import os
 import threading
 import traceback
+from configparser import ConfigParser
 from io import BytesIO
+from typing import Any
 
 import yt_dlp as youtube_dl
 from PIL import Image
 
 import util
 from constants import tr_cli as tr
+from database import SettingsDatabase
 from media.item import BaseItem, ValidationFailedError, PreparationFailedError
 from util import format_time
 
@@ -19,7 +22,7 @@ log = logging.getLogger("bot")
 
 
 class URLItem(BaseItem):
-    def __init__(self, url: str, temp_folder: str, config, settings_db):
+    def __init__(self, url: str, temp_folder: str, config: ConfigParser, settings_db: SettingsDatabase):
         super().__init__()
         self.validating_lock = threading.Lock()
         self.temp_folder = temp_folder
@@ -36,7 +39,7 @@ class URLItem(BaseItem):
         self.type = "url"
 
     @classmethod
-    def from_dict(cls, d: dict, tmp_folder: str, config, settings_db) -> 'URLItem':
+    def from_dict(cls, d: dict[str, Any], tmp_folder: str, config: ConfigParser, settings_db: SettingsDatabase) -> 'URLItem':
         instance = cls.__new__(cls)
         BaseItem.__init__(instance)
         instance._load_base_from_dict(d)
@@ -54,10 +57,10 @@ class URLItem(BaseItem):
     def generate_id(url: str) -> str:
         return hashlib.md5(url.encode()).hexdigest()
 
-    def uri(self):
+    def uri(self) -> str:
         return self.path
 
-    def is_ready(self):
+    def is_ready(self) -> bool:
         if self.downloading or self.ready != 'yes':
             return False
         if self.ready == 'yes' and not os.path.exists(self.path):
@@ -68,7 +71,7 @@ class URLItem(BaseItem):
 
         return True
 
-    def validate(self):
+    def validate(self) -> bool:
         try:
             self.validating_lock.acquire()
             if self.ready in ['yes', 'validated']:
@@ -106,7 +109,7 @@ class URLItem(BaseItem):
             self.validating_lock.release()
 
     # Run in a other thread
-    def prepare(self):
+    def prepare(self) -> bool:
         if not self.downloading:
             assert self.ready == 'validated'
             return self._download()
@@ -114,7 +117,7 @@ class URLItem(BaseItem):
             assert self.ready == 'yes'
             return True
 
-    def _get_info_from_url(self):
+    def _get_info_from_url(self) -> bool | None:
         self.log.info("url: fetching metadata of url %s " % self.url)
         ydl_opts = {
             'noplaylist': True
@@ -149,7 +152,7 @@ class URLItem(BaseItem):
             self.log.error("url: error while fetching info from the URL")
             raise ValidationFailedError(tr('unable_download', item=self.format_title()))
 
-    def _download(self):
+    def _download(self) -> bool:
         util.clear_tmp_folder(self.temp_folder, self.config.getint('bot', 'tmp_folder_max_size'))
 
         self.downloading = True
@@ -212,19 +215,19 @@ class URLItem(BaseItem):
                 self.downloading = False
                 raise PreparationFailedError(tr('unable_download', item=self.format_title()))
 
-    def _read_thumbnail_from_file(self, path_thumbnail):
+    def _read_thumbnail_from_file(self, path_thumbnail: str) -> None:
         if os.path.isfile(path_thumbnail):
             im = Image.open(path_thumbnail)
             self.thumbnail = self._prepare_thumbnail(im)
 
-    def _prepare_thumbnail(self, im):
+    def _prepare_thumbnail(self, im: Image.Image) -> str:
         im.thumbnail((100, 100), Image.LANCZOS)
         buffer = BytesIO()
         im = im.convert('RGB')
         im.save(buffer, format="JPEG")
         return base64.b64encode(buffer.getvalue()).decode('utf-8')
 
-    def to_dict(self):
+    def to_dict(self) -> dict[str, Any]:
         dict = super().to_dict()
         dict['type'] = 'url'
         dict['url'] = self.url
@@ -235,13 +238,13 @@ class URLItem(BaseItem):
 
         return dict
 
-    def format_debug_string(self):
+    def format_debug_string(self) -> str:
         return "[url] {title} ({url})".format(
             title=self.title,
             url=self.url
         )
 
-    def format_song_string(self, user):
+    def format_song_string(self, user: str) -> str:
         if self.ready in ['validated', 'yes']:
             return tr("url_item",
                       title=self.title if self.title else "??",
@@ -249,7 +252,7 @@ class URLItem(BaseItem):
                       user=user)
         return self.url
 
-    def format_current_playing(self, user):
+    def format_current_playing(self, user: str) -> str:
         display = tr("now_playing", item=self.format_song_string(user))
 
         if self.thumbnail:
@@ -259,8 +262,8 @@ class URLItem(BaseItem):
 
         return display
 
-    def format_title(self):
+    def format_title(self) -> str:
         return self.title if self.title else self.url
 
-    def display_type(self):
+    def display_type(self) -> str:
         return tr("url")

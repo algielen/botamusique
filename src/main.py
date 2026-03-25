@@ -19,7 +19,7 @@ from media.cache import MusicCache
 from mumbleBot import MumbleBot, start_web_interface
 
 
-def main():
+def main() -> None:
     # Set defaults from environment variables
     env_config: str = os.getenv('BAM_CONFIG_FILE', 'configuration.ini')
     env_db: str | None = os.getenv('BAM_DB')

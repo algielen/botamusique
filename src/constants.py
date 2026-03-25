@@ -1,11 +1,13 @@
 import os
 import json
+from configparser import ConfigParser
+from typing import Any
 
-default_lang_dict = {}
-lang_dict = {}
+default_lang_dict: dict[str, Any] = {}
+lang_dict: dict[str, Any] = {}
 
 
-def load_lang(lang):
+def load_lang(lang: str) -> None:
     global lang_dict, default_lang_dict
     root_dir = os.path.dirname(__file__)
     with open(os.path.join(root_dir, "../lang/en_US.json"), "r") as f:
@@ -14,7 +16,7 @@ def load_lang(lang):
         lang_dict = json.load(f)
 
 
-def tr_cli(option, *argv, **kwargs):
+def tr_cli(option: str, *argv: Any, **kwargs: Any) -> str:
     try:
         if option in lang_dict['cli'] and lang_dict['cli'][option]:
             string = lang_dict['cli'][option]
@@ -25,7 +27,7 @@ def tr_cli(option, *argv, **kwargs):
     return _tr(string, *argv, **kwargs)
 
 
-def tr_web(option, *argv, **kwargs):
+def tr_web(option: str, *argv: Any, **kwargs: Any) -> str:
     try:
         if option in lang_dict['web'] and lang_dict['web'][option]:
             string = lang_dict['web'][option]
@@ -36,7 +38,7 @@ def tr_web(option, *argv, **kwargs):
     return _tr(string, *argv, **kwargs)
 
 
-def _tr(string, *argv, **kwargs):
+def _tr(string: str, *argv: Any, **kwargs: Any) -> str:
     if argv or kwargs:
         try:
             formatted = string.format(*argv, **kwargs)
@@ -53,7 +55,7 @@ def _tr(string, *argv, **kwargs):
         return string
 
 
-def commands(command, config):
+def commands(command: str, config: ConfigParser) -> str:
     try:
         string = config.get("commands", command)
         return string

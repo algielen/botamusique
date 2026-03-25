@@ -1,9 +1,12 @@
 # coding=utf-8
+from __future__ import annotations
+
 import datetime
 import json
 import logging
 import re
 import secrets
+from typing import TYPE_CHECKING, Any
 
 from pyradios import RadioBrowser
 
@@ -14,12 +17,16 @@ import util
 from constants import commands
 from constants import tr_cli as tr
 from database import SettingsDatabase, MusicDatabase, Condition
+from media.cache import CachedItemWrapper
 from media.url_from_playlist import get_playlist_info
+
+if TYPE_CHECKING:
+    from mumbleBot import MumbleBot
 
 log = logging.getLogger("bot")
 
 
-def register_all_commands(bot):
+def register_all_commands(bot: MumbleBot) -> None:
     bot.register_command(commands('add_from_shortlist', bot.config), cmd_shortlist)
     bot.register_command(commands('add_tag', bot.config), cmd_add_tag)
     bot.register_command(commands('change_user_password', bot.config), cmd_user_password, no_partial_match=True)
@@ -84,7 +91,7 @@ def register_all_commands(bot):
     # bot.register_command('item', cmd_item, True)
 
 
-def send_multi_lines(bot, lines, text, linebreak="<br />"):
+def send_multi_lines(bot: MumbleBot, lines: list[str], text: Any, linebreak: str = "<br />") -> None:
     global log
 
     msg = ""
@@ -101,7 +108,7 @@ def send_multi_lines(bot, lines, text, linebreak="<br />"):
     bot.send_msg(msg, text)
 
 
-def send_multi_lines_in_channel(bot, lines, linebreak="<br />"):
+def send_multi_lines_in_channel(bot: MumbleBot, lines: list[str], linebreak: str = "<br />") -> None:
     global log
 
     msg = ""
@@ -118,7 +125,7 @@ def send_multi_lines_in_channel(bot, lines, linebreak="<br />"):
     bot.send_channel_msg(msg)
 
 
-def send_item_added_message(bot, wrapper, index, text):
+def send_item_added_message(bot: MumbleBot, wrapper: CachedItemWrapper, index: int, text: Any) -> None:
     if index == bot.playlist.current_index + 1:
         bot.send_msg(tr('file_added', item=wrapper.format_song_string()) +
                      tr('position_in_the_queue', position=tr('next_to_play')), text)
@@ -139,14 +146,14 @@ song_shortlist = []
 
 # ---------------- Commands ------------------
 
-def cmd_joinme(bot, user, text, command, parameter):
+def cmd_joinme(bot: MumbleBot, user: str, text: Any, command: str, parameter: str) -> None:
     global log
 
     bot.mumble.users.myself.move_in(
         bot.mumble.users[text.actor]['channel_id'], token=parameter)
 
 
-def cmd_user_ban(bot, user, text, command, parameter):
+def cmd_user_ban(bot: MumbleBot, user: str, text: Any, command: str, parameter: str) -> None:
     global log
 
     if parameter:
@@ -160,7 +167,7 @@ def cmd_user_ban(bot, user, text, command, parameter):
         bot.send_msg(tr("user_ban_list", list=ban_list), text)
 
 
-def cmd_user_unban(bot, user, text, command, parameter):
+def cmd_user_unban(bot: MumbleBot, user: str, text: Any, command: str, parameter: str) -> None:
     global log
 
     if parameter and bot.db.has_option("user_ban", parameter):
@@ -168,7 +175,7 @@ def cmd_user_unban(bot, user, text, command, parameter):
         bot.send_msg(tr("user_unban_success", user=parameter), text)
 
 
-def cmd_url_ban(bot, user, text, command, parameter):
+def cmd_url_ban(bot: MumbleBot, user: str, text: Any, command: str, parameter: str) -> None:
     global log
 
     url = util.get_url_from_input(parameter)
@@ -196,7 +203,7 @@ def cmd_url_ban(bot, user, text, command, parameter):
     bot.send_msg(tr("url_ban_success", url=url), text)
 
 
-def cmd_url_ban_list(bot, user, text, command, parameter):
+def cmd_url_ban_list(bot: MumbleBot, user: str, text: Any, command: str, parameter: str) -> None:
     ban_list = "<ul>"
     for i in bot.db.items("url_ban"):
         ban_list += "<li>" + i[0] + "</li>"
@@ -205,7 +212,7 @@ def cmd_url_ban_list(bot, user, text, command, parameter):
     bot.send_msg(tr("url_ban_list", list=ban_list), text)
 
 
-def cmd_url_unban(bot, user, text, command, parameter):
+def cmd_url_unban(bot: MumbleBot, user: str, text: Any, command: str, parameter: str) -> None:
     url = util.get_url_from_input(parameter)
     if url:
         bot.db.remove_option("url_ban", url)
@@ -214,7 +221,7 @@ def cmd_url_unban(bot, user, text, command, parameter):
         bot.send_msg(tr('bad_parameter', command=command), text)
 
 
-def cmd_url_whitelist(bot, user, text, command, parameter):
+def cmd_url_whitelist(bot: MumbleBot, user: str, text: Any, command: str, parameter: str) -> None:
     url = util.get_url_from_input(parameter)
     if url:
         # Unban first
@@ -230,7 +237,7 @@ def cmd_url_whitelist(bot, user, text, command, parameter):
         bot.send_msg(tr('bad_parameter', command=command), text)
 
 
-def cmd_url_whitelist_list(bot, user, text, command, parameter):
+def cmd_url_whitelist_list(bot: MumbleBot, user: str, text: Any, command: str, parameter: str) -> None:
     ban_list = "<ul>"
     for i in bot.db.items("url_whitelist"):
         ban_list += "<li>" + i[0] + "</li>"
@@ -239,7 +246,7 @@ def cmd_url_whitelist_list(bot, user, text, command, parameter):
     bot.send_msg(tr("url_whitelist_list", list=ban_list), text)
 
 
-def cmd_url_unwhitelist(bot, user, text, command, parameter):
+def cmd_url_unwhitelist(bot: MumbleBot, user: str, text: Any, command: str, parameter: str) -> None:
     url = util.get_url_from_input(parameter)
     if url:
         bot.db.remove_option("url_whitelist", url)
@@ -248,7 +255,7 @@ def cmd_url_unwhitelist(bot, user, text, command, parameter):
         bot.send_msg(tr('bad_parameter', command=command), text)
 
 
-def cmd_play(bot, user, text, command, parameter):
+def cmd_play(bot: MumbleBot, user: str, text: Any, command: str, parameter: str) -> None:
     global log
 
     params = parameter.split()
@@ -281,14 +288,14 @@ def cmd_play(bot, user, text, command, parameter):
         bot.send_msg(tr('queue_empty'), text)
 
 
-def cmd_pause(bot, user, text, command, parameter):
+def cmd_pause(bot: MumbleBot, user: str, text: Any, command: str, parameter: str) -> None:
     global log
 
     bot.pause()
     bot.send_channel_msg(tr('paused'))
 
 
-def cmd_play_file(bot, user, text, command, parameter, do_not_refresh_cache=False):
+def cmd_play_file(bot: MumbleBot, user: str, text: Any, command: str, parameter: str, do_not_refresh_cache: bool = False) -> None:
     global log, song_shortlist
 
     # assume parameter is a path
@@ -342,7 +349,7 @@ def cmd_play_file(bot, user, text, command, parameter, do_not_refresh_cache=Fals
         cmd_play_file(bot, user, text, command, parameter, do_not_refresh_cache=True)
 
 
-def cmd_play_file_match(bot, user, text, command, parameter, do_not_refresh_cache=False):
+def cmd_play_file_match(bot: MumbleBot, user: str, text: Any, command: str, parameter: str, do_not_refresh_cache: bool = False) -> None:
     global log
 
     if parameter:
@@ -385,7 +392,7 @@ def cmd_play_file_match(bot, user, text, command, parameter, do_not_refresh_cach
         bot.send_msg(tr('bad_parameter', command=command), text)
 
 
-def cmd_play_url(bot, user, text, command, parameter):
+def cmd_play_url(bot: MumbleBot, user: str, text: Any, command: str, parameter: str) -> None:
     global log
 
     url = util.get_url_from_input(parameter)
@@ -403,7 +410,7 @@ def cmd_play_url(bot, user, text, command, parameter):
         bot.send_msg(tr('bad_parameter', command=command), text)
 
 
-def cmd_play_playlist(bot, user, text, command, parameter):
+def cmd_play_playlist(bot: MumbleBot, user: str, text: Any, command: str, parameter: str) -> None:
     global log
 
     offset = 0  # if you want to start the playlist at a specific index
@@ -426,7 +433,7 @@ def cmd_play_playlist(bot, user, text, command, parameter):
         bot.send_msg(tr('bad_parameter', command=command), text)
 
 
-def cmd_play_radio(bot, user, text, command, parameter):
+def cmd_play_radio(bot: MumbleBot, user: str, text: Any, command: str, parameter: str) -> None:
     global log
 
     if not parameter:
@@ -453,7 +460,7 @@ def cmd_play_radio(bot, user, text, command, parameter):
             bot.send_msg(tr('bad_url'), text)
 
 
-def cmd_rb_query(bot, user, text, command, parameter):
+def cmd_rb_query(bot: MumbleBot, user: str, text: Any, command: str, parameter: str) -> None:
     global log
 
     log.info('cmd: Querying radio stations')
@@ -511,7 +518,7 @@ def cmd_rb_query(bot, user, text, command, parameter):
                         bot.send_msg('Query result too long to post (> 5000 characters), please try another query.', text)
 
 
-def cmd_rb_play(bot, user, text, command, parameter):
+def cmd_rb_play(bot: MumbleBot, user: str, text: Any, command: str, parameter: str) -> None:
     global log
 
     log.debug('cmd: Play a station by ID')
@@ -552,7 +559,7 @@ yt_last_result = []
 yt_last_page = 0  # TODO: if we keep adding global variables, we need to consider sealing all commands up into classes.
 
 
-def cmd_yt_search(bot, user, text, command, parameter):
+def cmd_yt_search(bot: MumbleBot, user: str, text: Any, command: str, parameter: str) -> None:
     global log, yt_last_result, yt_last_page, song_shortlist
     item_per_page = 5
 
@@ -596,7 +603,7 @@ def _yt_format_result(results, start, count):
     return msg
 
 
-def cmd_yt_play(bot, user, text, command, parameter):
+def cmd_yt_play(bot: MumbleBot, user: str, text: Any, command: str, parameter: str) -> None:
     global log, yt_last_result, yt_last_page
 
     if parameter:
@@ -612,14 +619,14 @@ def cmd_yt_play(bot, user, text, command, parameter):
         bot.send_msg(tr('bad_parameter', command=command), text)
 
 
-def cmd_help(bot, user, text, command, parameter):
+def cmd_help(bot: MumbleBot, user: str, text: Any, command: str, parameter: str) -> None:
     global log
     bot.send_msg(tr('help'), text)
     if bot.is_admin(user):
         bot.send_msg(tr('admin_help'), text)
 
 
-def cmd_stop(bot, user, text, command, parameter):
+def cmd_stop(bot: MumbleBot, user: str, text: Any, command: str, parameter: str) -> None:
     global log
 
     if bot.config.getboolean("bot", "clear_when_stop_in_oneshot") \
@@ -630,21 +637,21 @@ def cmd_stop(bot, user, text, command, parameter):
     bot.send_msg(tr('stopped'), text)
 
 
-def cmd_clear(bot, user, text, command, parameter):
+def cmd_clear(bot: MumbleBot, user: str, text: Any, command: str, parameter: str) -> None:
     global log
 
     bot.clear()
     bot.send_msg(tr('cleared'), text)
 
 
-def cmd_kill(bot, user, text, command, parameter):
+def cmd_kill(bot: MumbleBot, user: str, text: Any, command: str, parameter: str) -> None:
     global log
 
     bot.pause()
     bot.exit = True
 
 
-def cmd_update(bot, user, text, command, parameter):
+def cmd_update(bot: MumbleBot, user: str, text: Any, command: str, parameter: str) -> None:
     global log
 
     if bot.is_admin(user):
@@ -657,7 +664,7 @@ def cmd_update(bot, user, text, command, parameter):
             tr('not_admin'))
 
 
-def cmd_stop_and_getout(bot, user, text, command, parameter):
+def cmd_stop_and_getout(bot: MumbleBot, user: str, text: Any, command: str, parameter: str) -> None:
     global log
 
     bot.stop()
@@ -667,7 +674,7 @@ def cmd_stop_and_getout(bot, user, text, command, parameter):
     bot.join_channel()
 
 
-def cmd_volume(bot, user, text, command, parameter):
+def cmd_volume(bot: MumbleBot, user: str, text: Any, command: str, parameter: str) -> None:
     global log
 
     # The volume is a percentage
@@ -687,7 +694,7 @@ def cmd_volume(bot, user, text, command, parameter):
     else:
         bot.send_msg(tr('current_volume', volume=int(bot.volume_helper.plain_volume_set * 100)), text)
 
-def cmd_max_volume(bot, user, text, command, parameter):
+def cmd_max_volume(bot: MumbleBot, user: str, text: Any, command: str, parameter: str) -> None:
     global log
     
     if parameter and parameter.isdigit() and 0 <= int(parameter) <= 100:
@@ -703,7 +710,7 @@ def cmd_max_volume(bot, user, text, command, parameter):
             max_vol = bot.db.getfloat('bot', 'max_volume') * 100.0
         bot.send_msg(tr('current_max_volume', max=int(max_vol)), text)
         
-def cmd_ducking(bot, user, text, command, parameter):
+def cmd_ducking(bot: MumbleBot, user: str, text: Any, command: str, parameter: str) -> None:
     global log
 
     if parameter == "" or parameter == "on":
@@ -723,7 +730,7 @@ def cmd_ducking(bot, user, text, command, parameter):
         bot.send_msg(msg, text)
 
 
-def cmd_ducking_threshold(bot, user, text, command, parameter):
+def cmd_ducking_threshold(bot: MumbleBot, user: str, text: Any, command: str, parameter: str) -> None:
     global log
 
     if parameter and parameter.isdigit():
@@ -736,7 +743,7 @@ def cmd_ducking_threshold(bot, user, text, command, parameter):
         bot.send_msg(msg, text)
 
 
-def cmd_ducking_volume(bot, user, text, command, parameter):
+def cmd_ducking_volume(bot: MumbleBot, user: str, text: Any, command: str, parameter: str) -> None:
     global log
 
     # The volume is a percentage
@@ -749,7 +756,7 @@ def cmd_ducking_volume(bot, user, text, command, parameter):
         bot.send_msg(tr('current_ducking_volume', volume=int(bot.volume_helper.plain_ducking_volume_set * 100)), text)
 
 
-def cmd_current_music(bot, user, text, command, parameter):
+def cmd_current_music(bot: MumbleBot, user: str, text: Any, command: str, parameter: str) -> None:
     global log
 
     if len(bot.playlist) > 0:
@@ -758,7 +765,7 @@ def cmd_current_music(bot, user, text, command, parameter):
         bot.send_msg(tr('not_playing'), text)
 
 
-def cmd_skip(bot, user, text, command, parameter):
+def cmd_skip(bot: MumbleBot, user: str, text: Any, command: str, parameter: str) -> None:
     global log
 
     if not bot.is_pause:
@@ -771,7 +778,7 @@ def cmd_skip(bot, user, text, command, parameter):
         bot.send_msg(tr('queue_empty'), text)
 
 
-def cmd_last(bot, user, text, command, parameter):
+def cmd_last(bot: MumbleBot, user: str, text: Any, command: str, parameter: str) -> None:
     global log
 
     if len(bot.playlist) > 0:
@@ -781,7 +788,7 @@ def cmd_last(bot, user, text, command, parameter):
         bot.send_msg(tr('queue_empty'), text)
 
 
-def cmd_remove(bot, user, text, command, parameter):
+def cmd_remove(bot: MumbleBot, user: str, text: Any, command: str, parameter: str) -> None:
     global log
 
     # Allow to remove specific music into the queue with a number
@@ -814,7 +821,7 @@ def cmd_remove(bot, user, text, command, parameter):
         bot.send_msg(tr('bad_parameter', command=command), text)
 
 
-def cmd_list_file(bot, user, text, command, parameter):
+def cmd_list_file(bot: MumbleBot, user: str, text: Any, command: str, parameter: str) -> None:
     global song_shortlist
 
     files = bot.music_db.query_music(Condition()
@@ -851,7 +858,7 @@ def cmd_list_file(bot, user, text, command, parameter):
         bot.send_msg(msg, text)
 
 
-def cmd_queue(bot, user, text, command, parameter):
+def cmd_queue(bot: MumbleBot, user: str, text: Any, command: str, parameter: str) -> None:
     global log
 
     if len(bot.playlist) == 0:
@@ -875,14 +882,14 @@ def cmd_queue(bot, user, text, command, parameter):
         send_multi_lines(bot, msgs, text)
 
 
-def cmd_random(bot, user, text, command, parameter):
+def cmd_random(bot: MumbleBot, user: str, text: Any, command: str, parameter: str) -> None:
     global log
 
     bot.interrupt()
     bot.playlist.randomize()
 
 
-def cmd_repeat(bot, user, text, command, parameter):
+def cmd_repeat(bot: MumbleBot, user: str, text: Any, command: str, parameter: str) -> None:
     global log
 
     repeat = 1
@@ -903,7 +910,7 @@ def cmd_repeat(bot, user, text, command, parameter):
         bot.send_msg(tr("queue_empty"), text)
 
 
-def cmd_mode(bot, user, text, command, parameter):
+def cmd_mode(bot: MumbleBot, user: str, text: Any, command: str, parameter: str) -> None:
     global log
 
     if not parameter:
@@ -921,7 +928,7 @@ def cmd_mode(bot, user, text, command, parameter):
             bot.interrupt()
 
 
-def cmd_play_tags(bot, user, text, command, parameter):
+def cmd_play_tags(bot: MumbleBot, user: str, text: Any, command: str, parameter: str) -> None:
     if not parameter:
         bot.send_msg(tr('bad_parameter', command=command), text)
         return
@@ -945,7 +952,7 @@ def cmd_play_tags(bot, user, text, command, parameter):
         bot.send_msg(tr("no_file"), text)
 
 
-def cmd_add_tag(bot, user, text, command, parameter):
+def cmd_add_tag(bot: MumbleBot, user: str, text: Any, command: str, parameter: str) -> None:
     global log
 
     params = parameter.split(" ", 1)
@@ -981,7 +988,7 @@ def cmd_add_tag(bot, user, text, command, parameter):
     bot.send_msg(tr('bad_parameter', command=command), text)
 
 
-def cmd_remove_tag(bot, user, text, command, parameter):
+def cmd_remove_tag(bot: MumbleBot, user: str, text: Any, command: str, parameter: str) -> None:
     global log
 
     params = parameter.split(" ", 1)
@@ -1031,7 +1038,7 @@ def cmd_remove_tag(bot, user, text, command, parameter):
     bot.send_msg(tr('bad_parameter', command=command), text)
 
 
-def cmd_find_tagged(bot, user, text, command, parameter):
+def cmd_find_tagged(bot: MumbleBot, user: str, text: Any, command: str, parameter: str) -> None:
     global song_shortlist
 
     if not parameter:
@@ -1064,7 +1071,7 @@ def cmd_find_tagged(bot, user, text, command, parameter):
         bot.send_msg(tr("no_file"), text)
 
 
-def cmd_search_library(bot, user, text, command, parameter):
+def cmd_search_library(bot: MumbleBot, user: str, text: Any, command: str, parameter: str) -> None:
     global song_shortlist
     if not parameter:
         bot.send_msg(tr('bad_parameter', command=command), text)
@@ -1111,7 +1118,7 @@ def cmd_search_library(bot, user, text, command, parameter):
         bot.send_msg(tr("no_file"), text)
 
 
-def cmd_shortlist(bot, user, text, command, parameter):
+def cmd_shortlist(bot: MumbleBot, user: str, text: Any, command: str, parameter: str) -> None:
     global song_shortlist, log
     if parameter.strip() == "*":
         msgs = [tr('multiple_file_added') + "<ul>"]
@@ -1170,7 +1177,7 @@ def cmd_shortlist(bot, user, text, command, parameter):
     bot.send_msg(tr('bad_parameter', command=command), text)
 
 
-def cmd_delete_from_library(bot, user, text, command, parameter):
+def cmd_delete_from_library(bot: MumbleBot, user: str, text: Any, command: str, parameter: str) -> None:
     global song_shortlist, log
 
     if not bot.config.getboolean("bot", "delete_allowed"):
@@ -1222,7 +1229,7 @@ def cmd_delete_from_library(bot, user, text, command, parameter):
     bot.send_msg(tr('bad_parameter', command=command), text)
 
 
-def cmd_drop_database(bot, user, text, command, parameter):
+def cmd_drop_database(bot: MumbleBot, user: str, text: Any, command: str, parameter: str) -> None:
     global log
 
     if bot.is_admin(user):
@@ -1236,7 +1243,7 @@ def cmd_drop_database(bot, user, text, command, parameter):
         bot.mumble.users[text.actor].send_text_message(tr('not_admin'))
 
 
-def cmd_refresh_cache(bot, user, text, command, parameter):
+def cmd_refresh_cache(bot: MumbleBot, user: str, text: Any, command: str, parameter: str) -> None:
     global log
     if bot.is_admin(user):
         bot.cache.build_dir_cache()
@@ -1246,7 +1253,7 @@ def cmd_refresh_cache(bot, user, text, command, parameter):
         bot.mumble.users[text.actor].send_text_message(tr('not_admin'))
 
 
-def cmd_web_access(bot, user, text, command, parameter):
+def cmd_web_access(bot: MumbleBot, user: str, text: Any, command: str, parameter: str) -> None:
     auth_method = bot.config.get("webinterface", "auth_method")
 
     if auth_method == 'token':
@@ -1272,7 +1279,7 @@ def cmd_web_access(bot, user, text, command, parameter):
     bot.send_msg(tr('webpage_address', address=access_address), text)
 
 
-def cmd_user_password(bot, user, text, command, parameter):
+def cmd_user_password(bot: MumbleBot, user: str, text: Any, command: str, parameter: str) -> None:
     if not parameter:
         bot.send_msg(tr('bad_parameter', command=command), text)
         return
@@ -1286,7 +1293,7 @@ def cmd_user_password(bot, user, text, command, parameter):
     bot.send_msg(tr('user_password_set'), text)
 
 
-def cmd_web_user_add(bot, user, text, command, parameter):
+def cmd_web_user_add(bot: MumbleBot, user: str, text: Any, command: str, parameter: str) -> None:
     if not parameter:
         bot.send_msg(tr('bad_parameter', command=command), text)
         return
@@ -1303,7 +1310,7 @@ def cmd_web_user_add(bot, user, text, command, parameter):
         bot.send_msg(tr('command_disabled', command=command), text)
 
 
-def cmd_web_user_remove(bot, user, text, command, parameter):
+def cmd_web_user_remove(bot: MumbleBot, user: str, text: Any, command: str, parameter: str) -> None:
     if not parameter:
         bot.send_msg(tr('bad_parameter', command=command), text)
         return
@@ -1320,7 +1327,7 @@ def cmd_web_user_remove(bot, user, text, command, parameter):
         bot.send_msg(tr('command_disabled', command=command), text)
 
 
-def cmd_web_user_list(bot, user, text, command, parameter):
+def cmd_web_user_list(bot: MumbleBot, user: str, text: Any, command: str, parameter: str) -> None:
     auth_method = bot.config.get("webinterface", "auth_method")
 
     if auth_method == 'password':
@@ -1330,18 +1337,18 @@ def cmd_web_user_list(bot, user, text, command, parameter):
         bot.send_msg(tr('command_disabled', command=command), text)
 
 
-def cmd_version(bot, user, text, command, parameter):
+def cmd_version(bot: MumbleBot, user: str, text: Any, command: str, parameter: str) -> None:
     bot.send_msg(tr('report_version', version=bot.get_version()), text)
 
 
 # Just for debug use
-def cmd_real_time_rms(bot, user, text, command, parameter):
+def cmd_real_time_rms(bot: MumbleBot, user: str, text: Any, command: str, parameter: str) -> None:
     bot._display_rms = not bot._display_rms
 
 
-def cmd_loop_state(bot, user, text, command, parameter):
+def cmd_loop_state(bot: MumbleBot, user: str, text: Any, command: str, parameter: str) -> None:
     print(bot._loop_status)
 
 
-def cmd_item(bot, user, text, command, parameter):
+def cmd_item(bot: MumbleBot, user: str, text: Any, command: str, parameter: str) -> None:
     bot.playlist._debug_print()

@@ -2,6 +2,7 @@ import base64
 import hashlib
 import os
 from io import BytesIO
+from typing import Any
 
 import mutagen
 from PIL import Image
@@ -39,7 +40,7 @@ class FileItem(BaseItem):
         self.keywords = self.title + " " + self.artist
 
     @classmethod
-    def from_dict(cls, d: dict, music_folder: str) -> 'FileItem':
+    def from_dict(cls, d: dict[str, Any], music_folder: str) -> 'FileItem':
         instance = cls.__new__(cls)
         BaseItem.__init__(instance)
         instance._load_base_from_dict(d)
@@ -57,13 +58,13 @@ class FileItem(BaseItem):
     def generate_id(path: str) -> str:
         return hashlib.md5(path.encode()).hexdigest()
 
-    def uri(self):
+    def uri(self) -> str:
         return self.music_folder + self.path if self.path[0] != "/" else self.path
 
-    def is_ready(self):
+    def is_ready(self) -> bool:
         return True
 
-    def validate(self):
+    def validate(self) -> bool:
         if not os.path.exists(self.uri()):
             self.log.info(
                 "file: music file missed for %s" % self.format_debug_string())
@@ -75,7 +76,7 @@ class FileItem(BaseItem):
         self.ready = "yes"
         return True
 
-    def _get_info_from_tag(self):
+    def _get_info_from_tag(self) -> None:
         path, file_name_ext = os.path.split(self.uri())
         file_name, ext = os.path.splitext(file_name_ext)
 
@@ -148,14 +149,14 @@ class FileItem(BaseItem):
             self.title = file_name
 
     @staticmethod
-    def _prepare_thumbnail(im):
+    def _prepare_thumbnail(im: Image.Image) -> str:
         im.thumbnail((100, 100), Image.LANCZOS)
         buffer = BytesIO()
         im = im.convert('RGB')
         im.save(buffer, format="JPEG")
         return base64.b64encode(buffer.getvalue()).decode('utf-8')
 
-    def to_dict(self):
+    def to_dict(self) -> dict[str, Any]:
         dict = super().to_dict()
         dict['type'] = 'file'
         dict['path'] = self.path
@@ -164,20 +165,20 @@ class FileItem(BaseItem):
         dict['thumbnail'] = self.thumbnail
         return dict
 
-    def format_debug_string(self):
+    def format_debug_string(self) -> str:
         return "[file] {descrip} ({path})".format(
             descrip=self.format_title(),
             path=self.path
         )
 
-    def format_song_string(self, user):
+    def format_song_string(self, user: str) -> str:
         return tr("file_item",
                   title=self.title,
                   artist=self.artist if self.artist else '??',
                   user=user
                   )
 
-    def format_current_playing(self, user):
+    def format_current_playing(self, user: str) -> str:
         display = tr("now_playing", item=self.format_song_string(user))
         if self.thumbnail:
             thumbnail_html = '<img width="80" src="data:image/jpge;base64,' + \
@@ -186,12 +187,12 @@ class FileItem(BaseItem):
 
         return display
 
-    def format_title(self):
+    def format_title(self) -> str:
         title = self.title if self.title else self.path
         if self.artist:
             return self.artist + " - " + title
         else:
             return title
 
-    def display_type(self):
+    def display_type(self) -> str:
         return tr("file")

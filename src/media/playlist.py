@@ -3,13 +3,17 @@ import logging
 import random
 import threading
 import time
+from configparser import ConfigParser
+from typing import Callable, Any, Self
 
-from database import Condition
-from media.cache import CachedItemWrapper, ItemNotCachedError
+from database import Condition, MusicDatabase, SettingsDatabase
+from media.cache import CachedItemWrapper, ItemNotCachedError, MusicCache
 from media.item import ValidationFailedError
 
+SendMsgCallback = Callable[[str], None]
 
-def get_playlist(mode, cache, settings_db, music_db, config, send_channel_msg, _list=None, _index=None):
+
+def get_playlist(mode: str, cache: MusicCache, settings_db: SettingsDatabase, music_db: MusicDatabase, config: ConfigParser, send_channel_msg: SendMsgCallback, _list: 'BasePlaylist | None' = None, _index: int | None = None) -> 'BasePlaylist':
     index = -1
     if _list and _index is None:
         index = _list.current_index
@@ -36,7 +40,7 @@ def get_playlist(mode, cache, settings_db, music_db, config, send_channel_msg, _
 
 
 class BasePlaylist(list):
-    def __init__(self, cache, settings_db, music_db, config, send_channel_msg=None):
+    def __init__(self, cache: MusicCache, settings_db: SettingsDatabase, music_db: MusicDatabase, config: ConfigParser, send_channel_msg: SendMsgCallback | None = None) -> None:
         super().__init__()
         self.cache = cache
         self.settings_db = settings_db
@@ -51,10 +55,10 @@ class BasePlaylist(list):
         self.validating_thread_lock = threading.Lock()
         self.playlist_lock = threading.RLock()
 
-    def is_empty(self):
+    def is_empty(self) -> bool:
         return True if len(self) == 0 else False
 
-    def from_list(self, _list, current_index):
+    def from_list(self, _list: list[CachedItemWrapper], current_index: int) -> Self:
         self.version += 1
         super().clear()
         self.extend(_list)
@@ -62,7 +66,7 @@ class BasePlaylist(list):
 
         return self
 
-    def append(self, item: CachedItemWrapper):
+    def append(self, item: CachedItemWrapper) -> CachedItemWrapper:
         with self.playlist_lock:
             self.version += 1
             super().append(item)
@@ -72,7 +76,7 @@ class BasePlaylist(list):
 
         return item
 
-    def insert(self, index, item):
+    def insert(self, index: int, item: CachedItemWrapper) -> CachedItemWrapper:
         with self.playlist_lock:
             self.version += 1
             if index == -1:
@@ -89,7 +93,7 @@ class BasePlaylist(list):
 
         return item
 
-    def extend(self, items):
+    def extend(self, items: list[CachedItemWrapper]) -> list[CachedItemWrapper]:
         with self.playlist_lock:
             self.version += 1
             super().extend(items)
@@ -98,7 +102,7 @@ class BasePlaylist(list):
         self.async_validate()
         return items
 
-    def next(self):
+    def next(self) -> CachedItemWrapper | bool:
         with self.playlist_lock:
             if len(self) == 0:
                 return False
@@ -109,22 +113,22 @@ class BasePlaylist(list):
             else:
                 return False
 
-    def point_to(self, index):
+    def point_to(self, index: int) -> None:
         with self.playlist_lock:
             if -1 <= index < len(self):
                 self.current_index = index
 
-    def find(self, id):
+    def find(self, id: str) -> int | None:
         with self.playlist_lock:
             for index, wrapper in enumerate(self):
                 if wrapper.item.id == id:
                     return index
         return None
 
-    def __delitem__(self, key):
+    def __delitem__(self, key: int) -> CachedItemWrapper | bool:
         return self.remove(key)
 
-    def remove(self, index):
+    def remove(self, index: int) -> CachedItemWrapper | bool:
         with self.playlist_lock:
             self.version += 1
             if index > len(self) - 1:
@@ -146,7 +150,7 @@ class BasePlaylist(list):
             self.cache.free(removed.id)
         return removed
 
-    def remove_by_id(self, id):
+    def remove_by_id(self, id: str) -> None:
         to_be_removed = []
         for index, wrapper in enumerate(self):
             if wrapper.id == id:
@@ -158,34 +162,34 @@ class BasePlaylist(list):
         for index in to_be_removed:
             self.remove(index)
 
-    def current_item(self):
+    def current_item(self) -> CachedItemWrapper | bool:
         with self.playlist_lock:
             if len(self) == 0:
                 return False
 
             return self[self.current_index]
 
-    def next_index(self):
+    def next_index(self) -> int | bool:
         with self.playlist_lock:
             if self.current_index < len(self) - 1:
                 return self.current_index + 1
 
         return False
 
-    def next_item(self):
+    def next_item(self) -> CachedItemWrapper | bool:
         with self.playlist_lock:
             if self.current_index < len(self) - 1:
                 return self[self.current_index + 1]
 
         return False
 
-    def randomize(self):
+    def randomize(self) -> None:
         with self.playlist_lock:
             random.shuffle(self)
             self.current_index = -1
             self.version += 1
 
-    def clear(self):
+    def clear(self) -> None:
         with self.playlist_lock:
             self.version += 1
             self.current_index = -1
@@ -193,7 +197,7 @@ class BasePlaylist(list):
 
         self.cache.free_all()
 
-    def save(self):
+    def save(self) -> None:
         with self.playlist_lock:
             self.settings_db.remove_section("playlist_item")
             assert self.current_index is not None
@@ -202,7 +206,7 @@ class BasePlaylist(list):
             for index, music in enumerate(self):
                 self.settings_db.set("playlist_item", str(index), json.dumps({'id': music.id, 'user': music.user}))
 
-    def load(self):
+    def load(self) -> None:
         current_index = self.settings_db.getint("playlist", "current_index", fallback=-1)
         if current_index == -1:
             return
@@ -218,7 +222,7 @@ class BasePlaylist(list):
                     music_wrappers.append(music_wrapper)
             self.from_list(music_wrappers, current_index)
 
-    def _debug_print(self):
+    def _debug_print(self) -> None:
         print("===== Playlist(%d) =====" % self.current_index)
         for index, item_wrapper in enumerate(self):
             if index == self.current_index:
@@ -227,14 +231,14 @@ class BasePlaylist(list):
                 print("%d %s" % (index, item_wrapper.format_debug_string()))
         print("=====     End     =====")
 
-    def async_validate(self):
+    def async_validate(self) -> None:
         if not self.validating_thread_lock.locked():
             time.sleep(0.1)  # Just avoid validation finishes too fast and delete songs while something is reading it.
             th = threading.Thread(target=self._check_valid, name="Validating")
             th.daemon = True
             th.start()
 
-    def _check_valid(self):
+    def _check_valid(self) -> None:
         self.log.debug("playlist: start validating...")
         self.validating_thread_lock.acquire()
         while len(self.pending_items) > 0:
@@ -268,12 +272,12 @@ class BasePlaylist(list):
 
 
 class OneshotPlaylist(BasePlaylist):
-    def __init__(self, cache, settings_db, music_db, config, send_channel_msg=None):
+    def __init__(self, cache: MusicCache, settings_db: SettingsDatabase, music_db: MusicDatabase, config: ConfigParser, send_channel_msg: SendMsgCallback | None = None) -> None:
         super().__init__(cache, settings_db, music_db, config, send_channel_msg)
         self.mode = "one-shot"
         self.current_index = -1
 
-    def current_item(self):
+    def current_item(self) -> CachedItemWrapper | bool:
         with self.playlist_lock:
             if len(self) == 0:
                 self.current_index = -1
@@ -284,7 +288,7 @@ class OneshotPlaylist(BasePlaylist):
 
             return self[self.current_index]
 
-    def from_list(self, _list, current_index):
+    def from_list(self, _list: list[CachedItemWrapper], current_index: int) -> Self:
         with self.playlist_lock:
             if len(_list) > 0:
                 if current_index > -1:
@@ -294,7 +298,7 @@ class OneshotPlaylist(BasePlaylist):
                 return super().from_list(_list, -1)
             return self
 
-    def next(self):
+    def next(self) -> CachedItemWrapper | bool:
         with self.playlist_lock:
             if len(self) > 0:
                 self.version += 1
@@ -311,19 +315,19 @@ class OneshotPlaylist(BasePlaylist):
                 self.current_index = -1
                 return False
 
-    def next_index(self):
+    def next_index(self) -> int | bool:
         if len(self) > 1:
             return 1
         else:
             return False
 
-    def next_item(self):
+    def next_item(self) -> CachedItemWrapper | bool:
         if len(self) > 1:
             return self[1]
         else:
             return False
 
-    def point_to(self, index):
+    def point_to(self, index: int) -> None:
         with self.playlist_lock:
             self.version += 1
             self.current_index = -1
@@ -332,11 +336,11 @@ class OneshotPlaylist(BasePlaylist):
 
 
 class RepeatPlaylist(BasePlaylist):
-    def __init__(self, cache, settings_db, music_db, config, send_channel_msg=None):
+    def __init__(self, cache: MusicCache, settings_db: SettingsDatabase, music_db: MusicDatabase, config: ConfigParser, send_channel_msg: SendMsgCallback | None = None) -> None:
         super().__init__(cache, settings_db, music_db, config, send_channel_msg)
         self.mode = "repeat"
 
-    def next(self):
+    def next(self) -> CachedItemWrapper | bool:
         with self.playlist_lock:
             if len(self) == 0:
                 return False
@@ -348,30 +352,30 @@ class RepeatPlaylist(BasePlaylist):
                 self.current_index = 0
                 return self[0]
 
-    def next_index(self):
+    def next_index(self) -> int:
         with self.playlist_lock:
             if self.current_index < len(self) - 1:
                 return self.current_index + 1
             else:
                 return 0
 
-    def next_item(self):
+    def next_item(self) -> CachedItemWrapper | bool:
         if len(self) == 0:
             return False
         return self[self.next_index()]
 
 
 class RandomPlaylist(BasePlaylist):
-    def __init__(self, cache, settings_db, music_db, config, send_channel_msg=None):
+    def __init__(self, cache: MusicCache, settings_db: SettingsDatabase, music_db: MusicDatabase, config: ConfigParser, send_channel_msg: SendMsgCallback | None = None) -> None:
         super().__init__(cache, settings_db, music_db, config, send_channel_msg)
         self.mode = "random"
 
-    def from_list(self, _list, current_index):
+    def from_list(self, _list: list[CachedItemWrapper], current_index: int) -> Self:
         self.version += 1
         random.shuffle(_list)
         return super().from_list(_list, -1)
 
-    def next(self):
+    def next(self) -> CachedItemWrapper | bool:
         with self.playlist_lock:
             if len(self) == 0:
                 return False
@@ -387,11 +391,11 @@ class RandomPlaylist(BasePlaylist):
 
 
 class AutoPlaylist(OneshotPlaylist):
-    def __init__(self, cache, settings_db, music_db, config, send_channel_msg=None):
+    def __init__(self, cache: MusicCache, settings_db: SettingsDatabase, music_db: MusicDatabase, config: ConfigParser, send_channel_msg: SendMsgCallback | None = None) -> None:
         super().__init__(cache, settings_db, music_db, config, send_channel_msg)
         self.mode = "autoplay"
 
-    def refresh(self):
+    def refresh(self) -> None:
         dicts = self.music_db.query_random_music(self.config.getint("bot", "autoplay_length"),
                                                  Condition().and_not_sub_condition(
                                                      Condition().and_like('tags', "%don't autoplay,%")))
@@ -400,11 +404,11 @@ class AutoPlaylist(OneshotPlaylist):
             _list = [self.cache.get_cached_wrapper_from_dict(_dict, "AutoPlay") for _dict in dicts]
             self.from_list(_list, -1)
 
-    def clear(self):
+    def clear(self) -> None:
         super().clear()
         self.refresh()
 
-    def next(self):
+    def next(self) -> CachedItemWrapper | bool:
         if len(self) == 0:
             self.refresh()
         return super().next()
