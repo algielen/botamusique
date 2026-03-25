@@ -3,6 +3,7 @@ import logging
 import os
 import re
 import sqlite3
+from typing import Any, Self
 
 log = logging.getLogger("bot")
 
@@ -12,17 +13,16 @@ class DatabaseError(Exception):
 
 
 class Condition:
-    def __init__(self):
-        self.filler = []
+    def __init__(self) -> None:
+        self.filler: list[Any] = []
         self._sql = ""
         self._limit = 0
         self._offset = 0
         self._order_by = ""
-        self._desc = ""
+        self._desc: bool = False
         self.has_regex = False
-        pass
 
-    def sql(self, conn: sqlite3.Connection = None):
+    def sql(self, conn: sqlite3.Connection | None = None) -> str:
         sql = self._sql
         if not self._sql:
             sql = "1"
@@ -40,13 +40,13 @@ class Condition:
         return sql
 
     @staticmethod
-    def _regexp(expr, item):
+    def _regexp(expr: str, item: str | None) -> bool:
         if not item:
             return False
         reg = re.compile(expr)
         return reg.search(item) is not None
 
-    def or_equal(self, column, equals_to, case_sensitive=True):
+    def or_equal(self, column: str, equals_to: str, case_sensitive: bool = True) -> Self:
         if not case_sensitive:
             column = f"LOWER({column})"
             equals_to = equals_to.lower()
@@ -60,7 +60,7 @@ class Condition:
 
         return self
 
-    def and_equal(self, column, equals_to, case_sensitive=True):
+    def and_equal(self, column: str, equals_to: str, case_sensitive: bool = True) -> Self:
         if not case_sensitive:
             column = f"LOWER({column})"
             equals_to = equals_to.lower()
@@ -74,7 +74,7 @@ class Condition:
 
         return self
 
-    def or_like(self, column, equals_to, case_sensitive=True):
+    def or_like(self, column: str, equals_to: str, case_sensitive: bool = True) -> Self:
         if not case_sensitive:
             column = f"LOWER({column})"
             equals_to = equals_to.lower()
@@ -88,7 +88,7 @@ class Condition:
 
         return self
 
-    def and_like(self, column, equals_to, case_sensitive=True):
+    def and_like(self, column: str, equals_to: str, case_sensitive: bool = True) -> Self:
         if not case_sensitive:
             column = f"LOWER({column})"
             equals_to = equals_to.lower()
@@ -102,7 +102,7 @@ class Condition:
 
         return self
 
-    def and_regexp(self, column, regex):
+    def and_regexp(self, column: str, regex: str) -> Self:
         self.has_regex = True
 
         if self._sql:
@@ -114,7 +114,7 @@ class Condition:
 
         return self
 
-    def or_regexp(self, column, regex):
+    def or_regexp(self, column: str, regex: str) -> Self:
         self.has_regex = True
 
         if self._sql:
@@ -126,7 +126,7 @@ class Condition:
 
         return self
 
-    def or_sub_condition(self, sub_condition):
+    def or_sub_condition(self, sub_condition: Self) -> Self:
         if sub_condition.has_regex:
             self.has_regex = True
 
@@ -138,7 +138,7 @@ class Condition:
 
         return self
 
-    def or_not_sub_condition(self, sub_condition):
+    def or_not_sub_condition(self, sub_condition: Self) -> Self:
         if sub_condition.has_regex:
             self.has_regex = True
 
@@ -150,7 +150,7 @@ class Condition:
 
         return self
 
-    def and_sub_condition(self, sub_condition):
+    def and_sub_condition(self, sub_condition: Self) -> Self:
         if sub_condition.has_regex:
             self.has_regex = True
 
@@ -162,7 +162,7 @@ class Condition:
 
         return self
 
-    def and_not_sub_condition(self, sub_condition):
+    def and_not_sub_condition(self, sub_condition: Self) -> Self:
         if sub_condition.has_regex:
             self.has_regex = True
 
@@ -174,17 +174,17 @@ class Condition:
 
         return self
 
-    def limit(self, limit):
+    def limit(self, limit: int) -> Self:
         self._limit = limit
 
         return self
 
-    def offset(self, offset):
+    def offset(self, offset: int) -> Self:
         self._offset = offset
 
         return self
 
-    def order_by(self, order_by, desc=False):
+    def order_by(self, order_by: str, desc: bool = False) -> Self:
         self._order_by = order_by
         self._desc = desc
 
@@ -196,10 +196,10 @@ MUSIC_DB_VERSION = 4
 
 
 class SettingsDatabase:
-    def __init__(self, db_path):
+    def __init__(self, db_path: str) -> None:
         self.db_path = db_path
 
-    def get(self, section, option, **kwargs):
+    def get(self, section: str, option: str, **kwargs: Any) -> str:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         result = cursor.execute("SELECT value FROM botamusique WHERE section=? AND option=?",
@@ -214,16 +214,16 @@ class SettingsDatabase:
             else:
                 raise DatabaseError("Item not found")
 
-    def getboolean(self, section, option, **kwargs):
+    def getboolean(self, section: str, option: str, **kwargs: Any) -> bool:
         return bool(int(self.get(section, option, **kwargs)))
 
-    def getfloat(self, section, option, **kwargs):
+    def getfloat(self, section: str, option: str, **kwargs: Any) -> float:
         return float(self.get(section, option, **kwargs))
 
-    def getint(self, section, option, **kwargs):
+    def getint(self, section: str, option: str, **kwargs: Any) -> int:
         return int(self.get(section, option, **kwargs))
 
-    def set(self, section, option, value):
+    def set(self, section: str, option: str, value: str) -> None:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         cursor.execute("INSERT OR REPLACE INTO botamusique (section, option, value) "
@@ -231,7 +231,7 @@ class SettingsDatabase:
         conn.commit()
         conn.close()
 
-    def has_option(self, section, option):
+    def has_option(self, section: str, option: str) -> bool:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         result = cursor.execute("SELECT value FROM botamusique WHERE section=? AND option=?",
@@ -242,21 +242,21 @@ class SettingsDatabase:
         else:
             return False
 
-    def remove_option(self, section, option):
+    def remove_option(self, section: str, option: str) -> None:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         cursor.execute("DELETE FROM botamusique WHERE section=? AND option=?", (section, option))
         conn.commit()
         conn.close()
 
-    def remove_section(self, section):
+    def remove_section(self, section: str) -> None:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         cursor.execute("DELETE FROM botamusique WHERE section=?", (section,))
         conn.commit()
         conn.close()
 
-    def items(self, section):
+    def items(self, section: str) -> list[tuple[str, str]]:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         results = cursor.execute("SELECT option, value FROM botamusique WHERE section=?", (section,)).fetchall()
@@ -267,7 +267,7 @@ class SettingsDatabase:
         else:
             return []
 
-    def drop_table(self):
+    def drop_table(self) -> None:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         cursor.execute("DROP TABLE botamusique")
@@ -275,10 +275,10 @@ class SettingsDatabase:
 
 
 class MusicDatabase:
-    def __init__(self, db_path):
+    def __init__(self, db_path: str) -> None:
         self.db_path = db_path
 
-    def insert_music(self, music_dict, _conn=None):
+    def insert_music(self, music_dict: dict[str, Any], _conn: sqlite3.Connection | None = None) -> None:
         conn = sqlite3.connect(self.db_path) if _conn is None else _conn
         cursor = conn.cursor()
 
@@ -327,7 +327,7 @@ class MusicDatabase:
             conn.commit()
             conn.close()
 
-    def query_music_ids(self, condition: Condition):
+    def query_music_ids(self, condition: Condition) -> list[str]:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         results = cursor.execute("SELECT id FROM music WHERE id != 'info' AND %s" %
@@ -335,7 +335,7 @@ class MusicDatabase:
         conn.close()
         return list(map(lambda i: i[0], results))
 
-    def query_all_paths(self):
+    def query_all_paths(self) -> list[str]:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         results = cursor.execute("SELECT path FROM music WHERE id != 'info' AND type = 'file'").fetchall()
@@ -347,7 +347,7 @@ class MusicDatabase:
 
         return paths
 
-    def query_all_tags(self):
+    def query_all_tags(self) -> list[str]:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         results = cursor.execute("SELECT tags FROM music WHERE id != 'info'").fetchall()
@@ -359,7 +359,7 @@ class MusicDatabase:
         conn.close()
         return tags
 
-    def query_music_count(self, condition: Condition):
+    def query_music_count(self, condition: Condition) -> int:
         filler = condition.filler
 
         conn = sqlite3.connect(self.db_path)
@@ -371,7 +371,7 @@ class MusicDatabase:
 
         return results[0][0]
 
-    def query_music(self, condition: Condition, _conn=None):
+    def query_music(self, condition: Condition, _conn: sqlite3.Connection | None = None) -> list[dict[str, Any]]:
         filler = condition.filler
 
         conn = sqlite3.connect(self.db_path) if _conn is None else _conn
@@ -384,7 +384,7 @@ class MusicDatabase:
 
         return self._result_to_dict(results)
 
-    def _query_music_by_plain_sql_cond(self, sql_cond, _conn=None):
+    def _query_music_by_plain_sql_cond(self, sql_cond: str, _conn: sqlite3.Connection | None = None) -> list[dict[str, Any]]:
         conn = sqlite3.connect(self.db_path) if _conn is None else _conn
         cursor = conn.cursor()
         results = cursor.execute("SELECT id, type, title, metadata, tags, path, keywords FROM music "
@@ -394,14 +394,14 @@ class MusicDatabase:
 
         return self._result_to_dict(results)
 
-    def query_music_by_id(self, _id, _conn=None):
+    def query_music_by_id(self, _id: str, _conn: sqlite3.Connection | None = None) -> dict[str, Any] | None:
         results = self.query_music(Condition().and_equal("id", _id), _conn)
         if results:
             return results[0]
         else:
             return None
 
-    def query_music_by_keywords(self, keywords, _conn=None):
+    def query_music_by_keywords(self, keywords: list[str], _conn: sqlite3.Connection | None = None) -> list[dict[str, Any]]:
         condition = Condition()
 
         for keyword in keywords:
@@ -409,7 +409,7 @@ class MusicDatabase:
 
         return self.query_music(condition, _conn)
 
-    def query_music_by_tags(self, tags, _conn=None):
+    def query_music_by_tags(self, tags: list[str], _conn: sqlite3.Connection | None = None) -> list[dict[str, Any]]:
         condition = Condition()
 
         for tag in tags:
@@ -417,7 +417,7 @@ class MusicDatabase:
 
         return self.query_music(condition, _conn)
 
-    def manage_special_tags(self):
+    def manage_special_tags(self) -> None:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         cursor.execute("UPDATE music SET tags=REPLACE(tags, 'recent added,', '') WHERE tags LIKE '%recent added,%' "
@@ -427,7 +427,7 @@ class MusicDatabase:
         conn.commit()
         conn.close()
 
-    def query_tags(self, condition: Condition):
+    def query_tags(self, condition: Condition) -> dict[str, list[str]]:
         # TODO: Can we keep a index of tags?
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
@@ -445,7 +445,7 @@ class MusicDatabase:
 
         return lookup
 
-    def query_random_music(self, count, condition: Condition = None):
+    def query_random_music(self, count: int, condition: Condition | None = None) -> list[dict[str, Any]]:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         results = []
@@ -461,7 +461,7 @@ class MusicDatabase:
 
         return self._result_to_dict(results)
 
-    def _result_to_dict(self, results):
+    def _result_to_dict(self, results: list[Any]) -> list[dict[str, Any]]:
         if len(results) > 0:
             music_dicts = []
             for result in results:
@@ -479,7 +479,7 @@ class MusicDatabase:
         else:
             return []
 
-    def delete_music(self, condition: Condition):
+    def delete_music(self, condition: Condition) -> None:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         cursor.execute("DELETE FROM music "
@@ -487,7 +487,7 @@ class MusicDatabase:
         conn.commit()
         conn.close()
 
-    def drop_table(self):
+    def drop_table(self) -> None:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         cursor.execute("DROP TABLE music")
@@ -507,11 +507,11 @@ class DatabaseMigration:
                                          }
 
 
-    def migrate(self):
+    def migrate(self) -> None:
         self.settings_database_migrate()
         self.music_database_migrate()
 
-    def settings_database_migrate(self):
+    def settings_database_migrate(self) -> None:
         conn = sqlite3.connect(self.settings_db.db_path)
         cursor = conn.cursor()
         if self.has_table('botamusique', conn):
@@ -542,7 +542,7 @@ class DatabaseMigration:
         conn.commit()
         conn.close()
 
-    def music_database_migrate(self):
+    def music_database_migrate(self) -> None:
         conn = sqlite3.connect(self.music_db.db_path)
         cursor = conn.cursor()
         if self.has_table('music', conn):
@@ -571,14 +571,14 @@ class DatabaseMigration:
         conn.commit()
         conn.close()
 
-    def has_table(self, table, conn):
+    def has_table(self, table: str, conn: sqlite3.Connection) -> bool:
         cursor = conn.cursor()
         tables = cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=?;", (table,)).fetchall()
         if len(tables) == 0:
             return False
         return True
 
-    def create_settings_table_version_2(self, conn):
+    def create_settings_table_version_2(self, conn: sqlite3.Connection) -> int:
         cursor = conn.cursor()
         cursor.execute("CREATE TABLE IF NOT EXISTS botamusique ("
                        "section TEXT, "
@@ -591,7 +591,7 @@ class DatabaseMigration:
 
         return 1
 
-    def create_music_table_version_1(self, conn):
+    def create_music_table_version_1(self, conn: sqlite3.Connection) -> None:
         cursor = conn.cursor()
 
         cursor.execute("CREATE TABLE music ("
@@ -609,17 +609,17 @@ class DatabaseMigration:
 
         conn.commit()
 
-    def create_music_table_version_4(self, conn):
+    def create_music_table_version_4(self, conn: sqlite3.Connection) -> None:
         self.create_music_table_version_1(conn)
 
-    def settings_table_migrate_from_0_to_1(self, conn):
+    def settings_table_migrate_from_0_to_1(self, conn: sqlite3.Connection) -> int:
         cursor = conn.cursor()
         cursor.execute("DROP TABLE botamusique")
         conn.commit()
         self.create_settings_table_version_2(conn)
         return 2  # return new version number
 
-    def settings_table_migrate_from_1_to_2(self, conn):
+    def settings_table_migrate_from_1_to_2(self, conn: sqlite3.Connection) -> int:
         cursor = conn.cursor()
         # move music database into a separated file
         if self.has_table('music', conn) and not os.path.exists(self.music_db.db_path):
@@ -640,7 +640,7 @@ class DatabaseMigration:
                        "WHERE section='bot' AND option='db_version'")
         return 2  # return new version number
 
-    def music_table_migrate_from_0_to_1(self, conn):
+    def music_table_migrate_from_0_to_1(self, conn: sqlite3.Connection) -> int:
         cursor = conn.cursor()
         cursor.execute("ALTER TABLE music RENAME TO music_old")
         conn.commit()
@@ -654,7 +654,7 @@ class DatabaseMigration:
 
         return 1  # return new version number
 
-    def music_table_migrate_from_1_to_2(self, conn):
+    def music_table_migrate_from_1_to_2(self, conn: sqlite3.Connection) -> int:
         items_to_update = self.music_db.query_music(Condition(), conn)
         for item in items_to_update:
             item['keywords'] = item['title']
@@ -672,7 +672,7 @@ class DatabaseMigration:
 
         return 2  # return new version number
 
-    def music_table_migrate_from_2_to_4(self, conn):
+    def music_table_migrate_from_2_to_4(self, conn: sqlite3.Connection) -> int:
         items_to_update = self.music_db.query_music(Condition(), conn)
         for item in items_to_update:
             if 'duration' not in item:

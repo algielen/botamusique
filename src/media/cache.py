@@ -2,8 +2,10 @@ import logging
 import magic
 import os
 import threading
+from configparser import ConfigParser
+from typing import Any
 
-from database import MusicDatabase, Condition
+from database import MusicDatabase, Condition, SettingsDatabase
 from media.file import FileItem
 from media.item import BaseItem
 from media.radio import RadioItem
@@ -29,7 +31,7 @@ def solve_filepath(path: str) -> str:
 
 
 class MusicCache(dict):
-    def __init__(self, music_db: MusicDatabase, settings_db, config, music_folder: str):
+    def __init__(self, music_db: MusicDatabase, settings_db: SettingsDatabase, config: ConfigParser, music_folder: str) -> None:
         super().__init__()
         self.music_db = music_db
         self.settings_db = settings_db
@@ -39,7 +41,7 @@ class MusicCache(dict):
         self.log = logging.getLogger("bot")
         self.dir_lock = threading.Lock()
 
-    def get_item_by_id(self, id):
+    def get_item_by_id(self, id: str) -> BaseItem | None:
         if id in self:
             return self[id]
 
@@ -52,7 +54,7 @@ class MusicCache(dict):
         else:
             return None
 
-    def get_item(self, **kwargs):
+    def get_item(self, **kwargs: Any) -> BaseItem:
         # kwargs should provide type and other parameters to build the item if not in the library.
         item_type = kwargs['type']
 
@@ -104,7 +106,7 @@ class MusicCache(dict):
 
         return self[id]
 
-    def get_items_by_tags(self, tags):
+    def get_items_by_tags(self, tags: list[str]) -> list[BaseItem]:
         music_dicts = self.music_db.query_music_by_tags(tags)
         items = []
         if music_dicts:
@@ -115,7 +117,7 @@ class MusicCache(dict):
 
         return items
 
-    def fetch(self, id):
+    def fetch(self, id: str) -> BaseItem | None:
         music_dict = self.music_db.query_music_by_id(id)
         if music_dict:
             self[id] = self.dict_to_item(music_dict)
@@ -123,7 +125,7 @@ class MusicCache(dict):
         else:
             return None
 
-    def dict_to_item(self, d: dict) -> BaseItem:
+    def dict_to_item(self, d: dict[str, Any]) -> BaseItem:
         match d['type']:
             case 'file':
                 return FileItem.from_dict(d, self.music_folder)
@@ -136,15 +138,15 @@ class MusicCache(dict):
             case _:
                 raise ValueError(f"Unknown item type: {d['type']}")
 
-    def dicts_to_items(self, dicts: list) -> list:
+    def dicts_to_items(self, dicts: list[dict[str, Any]]) -> list[BaseItem]:
         return [self.dict_to_item(d) for d in dicts]
 
-    def save(self, id):
+    def save(self, id: str) -> None:
         self.log.debug("library: music save into database: %s" % self[id].format_debug_string())
         self.music_db.insert_music(self[id].to_dict())
         self.music_db.manage_special_tags()
 
-    def free_and_delete(self, id):
+    def free_and_delete(self, id: str) -> None:
         item = self.get_item_by_id(id)
         if item:
             self.log.debug("library: DELETE item from the database: %s" % item.format_debug_string())
@@ -157,16 +159,16 @@ class MusicCache(dict):
                 del self[item.id]
             self.music_db.delete_music(Condition().and_equal("id", item.id))
 
-    def free(self, id):
+    def free(self, id: str) -> None:
         if id in self:
             self.log.debug("library: cache freed for item: %s" % self[id].format_debug_string())
             del self[id]
 
-    def free_all(self):
+    def free_all(self) -> None:
         self.log.debug("library: all cache freed")
         self.clear()
 
-    def build_dir_cache(self):
+    def build_dir_cache(self) -> None:
         self.dir_lock.acquire()
         self.log.info("library: rebuild directory cache")
         files = self.get_recursive_file_list_sorted(self.music_folder)
@@ -190,7 +192,7 @@ class MusicCache(dict):
         self.music_db.manage_special_tags()
         self.dir_lock.release()
 
-    def get_recursive_file_list_sorted(self, path):
+    def get_recursive_file_list_sorted(self, path: str) -> list[str]:
         filelist = []
 
         if not os.access(path, os.R_OK):
@@ -223,44 +225,44 @@ class MusicCache(dict):
     # Cached wrapper helpers
     # -------------------------
 
-    def get_cached_wrapper(self, item, user):
+    def get_cached_wrapper(self, item: BaseItem | None, user: str) -> 'CachedItemWrapper | None':
         if item:
             self[item.id] = item
             return CachedItemWrapper(self, item.id, item.type, user)
         return None
 
-    def get_cached_wrappers(self, items, user):
+    def get_cached_wrappers(self, items: list[BaseItem], user: str) -> 'list[CachedItemWrapper]':
         wrappers = []
         for item in items:
             if item:
                 wrappers.append(self.get_cached_wrapper(item, user))
         return wrappers
 
-    def get_cached_wrapper_from_scrap(self, **kwargs):
+    def get_cached_wrapper_from_scrap(self, **kwargs: Any) -> 'CachedItemWrapper':
         item = self.get_item(**kwargs)
         if 'user' not in kwargs:
             raise KeyError("Which user added this song?")
         return CachedItemWrapper(self, item.id, kwargs['type'], kwargs['user'])
 
-    def get_cached_wrapper_from_dict(self, dict_from_db, user):
+    def get_cached_wrapper_from_dict(self, dict_from_db: dict[str, Any] | None, user: str) -> 'CachedItemWrapper | None':
         if dict_from_db:
             item = self.dict_to_item(dict_from_db)
             return self.get_cached_wrapper(item, user)
         return None
 
-    def get_cached_wrappers_from_dicts(self, dicts_from_db, user):
+    def get_cached_wrappers_from_dicts(self, dicts_from_db: list[dict[str, Any]], user: str) -> 'list[CachedItemWrapper]':
         items = []
         for dict_from_db in dicts_from_db:
             if dict_from_db:
                 items.append(self.get_cached_wrapper_from_dict(dict_from_db, user))
         return items
 
-    def get_cached_wrapper_by_id(self, id, user):
+    def get_cached_wrapper_by_id(self, id: str, user: str) -> 'CachedItemWrapper | None':
         item = self.get_item_by_id(id)
         if item:
             return CachedItemWrapper(self, item.id, item.type, user)
 
-    def get_cached_wrappers_by_tags(self, tags, user):
+    def get_cached_wrappers_by_tags(self, tags: list[str], user: str) -> 'list[CachedItemWrapper]':
         items = self.get_items_by_tags(tags)
         ret = []
         for item in items:
@@ -269,7 +271,7 @@ class MusicCache(dict):
 
 
 class CachedItemWrapper:
-    def __init__(self, lib, id, type, user):
+    def __init__(self, lib: MusicCache, id: str, type: str, user: str) -> None:
         self.lib = lib
         self.id = id
         self.user = user
@@ -277,69 +279,69 @@ class CachedItemWrapper:
         self.log = logging.getLogger("bot")
         self.version = 0
 
-    def item(self):
+    def item(self) -> BaseItem:
         if self.id in self.lib:
             return self.lib[self.id]
         else:
             raise ItemNotCachedError(f"Uncached item of id {self.id}, type {self.type}.")
 
-    def to_dict(self):
+    def to_dict(self) -> dict[str, Any]:
         dict = self.item().to_dict()
         dict['user'] = self.user
         return dict
 
-    def validate(self):
+    def validate(self) -> bool:
         ret = self.item().validate()
         if ret and self.item().version > self.version:
             self.version = self.item().version
             self.lib.save(self.id)
         return ret
 
-    def prepare(self):
+    def prepare(self) -> bool:
         ret = self.item().prepare()
         if ret and self.item().version > self.version:
             self.version = self.item().version
             self.lib.save(self.id)
         return ret
 
-    def uri(self):
+    def uri(self) -> str:
         return self.item().uri()
 
-    def add_tags(self, tags):
+    def add_tags(self, tags: list[str]) -> None:
         self.item().add_tags(tags)
         if self.item().version > self.version:
             self.version = self.item().version
             self.lib.save(self.id)
 
-    def remove_tags(self, tags):
+    def remove_tags(self, tags: list[str]) -> None:
         self.item().remove_tags(tags)
         if self.item().version > self.version:
             self.version = self.item().version
             self.lib.save(self.id)
 
-    def clear_tags(self):
+    def clear_tags(self) -> None:
         self.item().clear_tags()
         if self.item().version > self.version:
             self.version = self.item().version
             self.lib.save(self.id)
 
-    def is_ready(self):
+    def is_ready(self) -> bool:
         return self.item().is_ready()
 
-    def is_failed(self):
+    def is_failed(self) -> bool:
         return self.item().is_failed()
 
-    def format_current_playing(self):
+    def format_current_playing(self) -> str:
         return self.item().format_current_playing(self.user)
 
-    def format_song_string(self):
+    def format_song_string(self) -> str:
         return self.item().format_song_string(self.user)
 
-    def format_title(self):
+    def format_title(self) -> str:
         return self.item().format_title()
 
-    def format_debug_string(self):
+    def format_debug_string(self) -> str:
         return self.item().format_debug_string()
 
-    def display_type(self):
+    def display_type(self) -> str:
         return self.item().display_type()

@@ -19,6 +19,8 @@ from typing import Any
 import requests
 import yt_dlp as youtube_dl
 
+from database import SettingsDatabase
+
 YT_PKG_NAME = 'yt-dlp'
 
 log = logging.getLogger("bot")
@@ -44,7 +46,7 @@ def solve_filepath(path: str) -> str:
 #       - prefix can be controlled by the caller
 #       - hash is a sha1 of the string representation of the directories' contents (which are
 #           zipped)
-def zipdir(files, temp_folder, config, zipname_prefix=None):
+def zipdir(files: list[str], temp_folder: str, config: ConfigParser, zipname_prefix: str | None = None) -> str:
     zipname = temp_folder
     if zipname_prefix and '../' not in zipname_prefix:
         zipname += zipname_prefix.strip().replace('/', '_') + '_'
@@ -70,14 +72,14 @@ def zipdir(files, temp_folder, config, zipname_prefix=None):
     return zipname
 
 
-def get_user_ban(settings_db):
+def get_user_ban(settings_db: SettingsDatabase) -> str:
     res = "List of ban hash"
     for i in settings_db.items("user_ban"):
         res += "<br/>" + i[0]
     return res
 
 
-def update(current_version, config):
+def update(current_version: str, config: ConfigParser) -> str:
     global log
 
     msg = ""
@@ -94,7 +96,7 @@ def update(current_version, config):
     return msg
 
 
-def pipe_no_wait():
+def pipe_no_wait() -> tuple[int, int] | tuple[None, None]:
     """ Generate a non-block pipe used to fetch the STDERR of ffmpeg.
     """
 
@@ -146,13 +148,13 @@ def pipe_no_wait():
 
 
 class Dir(object):
-    def __init__(self, path):
+    def __init__(self, path: str) -> None:
         self.name = os.path.basename(path.strip('/'))
         self.fullpath = path
-        self.subdirs = {}
-        self.files = []
+        self.subdirs: dict[str, 'Dir'] = {}
+        self.files: list[str] = []
 
-    def add_file(self, file):
+    def add_file(self, file: str) -> bool:
         if file.startswith(self.name + '/'):
             file = file.replace(self.name + '/', '', 1)
 
@@ -168,8 +170,8 @@ class Dir(object):
             self.files.append(file)
         return True
 
-    def get_subdirs(self, path=None):
-        subdirs = []
+    def get_subdirs(self, path: str | None = None) -> list[str] | dict[str, 'Dir']:
+        subdirs: list[str] | dict[str, 'Dir'] = []
         if path and path != '' and path != './':
             subdir = path.split('/')[0]
             if subdir in self.subdirs:
@@ -181,8 +183,8 @@ class Dir(object):
 
         return subdirs
 
-    def get_subdirs_recursively(self, path=None):
-        subdirs = []
+    def get_subdirs_recursively(self, path: str | None = None) -> list[str]:
+        subdirs: list[str] = []
         if path and path != '' and path != './':
             subdir = path.split('/')[0]
             if subdir in self.subdirs:
@@ -197,8 +199,8 @@ class Dir(object):
         subdirs.sort()
         return subdirs
 
-    def get_files(self, path=None):
-        files = []
+    def get_files(self, path: str | None = None) -> list[str]:
+        files: list[str] = []
         if path and path != '' and path != './':
             subdir = path.split('/')[0]
             if subdir in self.subdirs:
@@ -209,8 +211,8 @@ class Dir(object):
 
         return files
 
-    def get_files_recursively(self, path=None):
-        files = []
+    def get_files_recursively(self, path: str | None = None) -> list[str]:
+        files: list[str] = []
         if path and path != '' and path != './':
             subdir = path.split('/')[0]
             if subdir in self.subdirs:
@@ -224,7 +226,7 @@ class Dir(object):
 
         return files
 
-    def render_text(self, ident=0):
+    def render_text(self, ident: int = 0) -> None:
         print('{}{}/'.format(' ' * (ident * 4), self.name))
         for key, val in self.subdirs.items():
             val.render_text(ident + 1)
@@ -234,7 +236,7 @@ class Dir(object):
 
 # Parse the html from the message to get the URL
 
-def get_url_from_input(string):
+def get_url_from_input(string: str) -> str:
     string = string.strip()
     if not (string.startswith("http") or string.startswith("HTTP")):
         res = re.search('href="(.+?)"', string, flags=re.IGNORECASE)
@@ -252,7 +254,7 @@ def get_url_from_input(string):
         return ""
 
 
-def youtube_search(query, config):
+def youtube_search(query: str, config: ConfigParser) -> list[list[str]] | bool:
     global log
     import json
 
@@ -292,7 +294,7 @@ def youtube_search(query, config):
         return False
 
 
-def get_media_duration(path):
+def get_media_duration(path: str) -> float:
     command = ("ffprobe", "-v", "quiet", "-show_entries", "format=duration",
                "-of", "default=noprint_wrappers=1:nokey=1", path)
     process = sp.Popen(command, stdout=sp.PIPE, stderr=sp.PIPE)
@@ -307,7 +309,7 @@ def get_media_duration(path):
         return 0
 
 
-def parse_time(human):
+def parse_time(human: str) -> float:
     match = re.search("(?:(\\d\\d):)?(?:(\\d\\d):)?(\\d+(?:\\.\\d*)?)", human, flags=re.IGNORECASE)
     if match:
         if match[1] is None and match[2] is None:
@@ -320,7 +322,7 @@ def parse_time(human):
         raise ValueError("Invalid time string given.")
 
 
-def format_time(seconds):
+def format_time(seconds: float) -> str:
     hours = seconds // 3600
     seconds = seconds % 3600
     minutes = seconds // 60
@@ -328,7 +330,7 @@ def format_time(seconds):
     return f"{hours:d}:{minutes:02d}:{seconds:02d}"
 
 
-def parse_file_size(human):
+def parse_file_size(human: str) -> int:
     units = {"B": 1, "KB": 1024, "MB": 1024 * 1024, "GB": 1024 * 1024 * 1024, "TB": 1024 * 1024 * 1024 * 1024,
              "K": 1024, "M": 1024 * 1024, "G": 1024 * 1024 * 1024, "T": 1024 * 1024 * 1024 * 1024}
     match = re.search("(\\d+(?:\\.\\d*)?)\\s*([A-Za-z]+)", human, flags=re.IGNORECASE)
@@ -341,14 +343,14 @@ def parse_file_size(human):
     raise ValueError("Invalid file size given.")
 
 
-def get_salted_password_hash(password):
+def get_salted_password_hash(password: str) -> tuple[str, str]:
     salt = os.urandom(10)
     hashed = hashlib.pbkdf2_hmac('sha1', password.encode("utf-8"), salt, 100000)
 
     return hashed.hex(), salt.hex()
 
 
-def verify_password(password, salted_hash, salt):
+def verify_password(password: str, salted_hash: str, salt: str) -> bool:
     hashed = hashlib.pbkdf2_hmac('sha1', password.encode("utf-8"), bytearray.fromhex(salt), 100000)
     if hashed.hex() == salted_hash:
         return True
@@ -380,7 +382,7 @@ def set_logging_formatter(handler: logging.Handler, logging_level: int) -> None:
     handler.setFormatter(formatter)
 
 
-def get_snapshot_version():
+def get_snapshot_version() -> str:
     import subprocess
     wd = os.getcwd()
     root_dir = os.path.dirname(__file__)
@@ -403,42 +405,42 @@ def get_snapshot_version():
 
 
 class LoggerIOWrapper(io.TextIOWrapper):
-    def __init__(self, logger: logging.Logger, logging_level, fallback_io_buffer):
+    def __init__(self, logger: logging.Logger, logging_level: int, fallback_io_buffer: io.RawIOBase) -> None:
         super().__init__(fallback_io_buffer, write_through=True)
         self.logger = logger
         self.logging_level = logging_level
 
-    def write(self, text):
+    def write(self, text: str | bytes) -> int:
         if isinstance(text, bytes):
             msg = text.decode('utf-8').rstrip()
             self.logger.log(self.logging_level, msg)
-            super().write(msg + "\n")
+            return super().write(msg + "\n")
         else:
             self.logger.log(self.logging_level, text.rstrip())
-            super().write(text + "\n")
+            return super().write(text + "\n")
 
 
 class VolumeHelper:
-    def __init__(self, plain_volume=0, ducking_plain_volume=0):
-        self.plain_volume_set = 0
-        self.plain_ducking_volume_set = 0
-        self.volume_set = 0
-        self.ducking_volume_set = 0
+    def __init__(self, plain_volume: float = 0, ducking_plain_volume: float = 0) -> None:
+        self.plain_volume_set: float = 0
+        self.plain_ducking_volume_set: float = 0
+        self.volume_set: float = 0
+        self.ducking_volume_set: float = 0
 
-        self.real_volume = 0
+        self.real_volume: float = 0
 
         self.set_volume(plain_volume)
         self.set_ducking_volume(ducking_plain_volume)
 
-    def set_volume(self, plain_volume):
+    def set_volume(self, plain_volume: float) -> None:
         self.volume_set = self._convert_volume(plain_volume)
         self.plain_volume_set = plain_volume
 
-    def set_ducking_volume(self, plain_volume):
+    def set_ducking_volume(self, plain_volume: float) -> None:
         self.ducking_volume_set = self._convert_volume(plain_volume)
         self.plain_ducking_volume_set = plain_volume
 
-    def _convert_volume(self, volume):
+    def _convert_volume(self, volume: float) -> float:
         if volume == 0:
             return 0
 
@@ -449,7 +451,7 @@ class VolumeHelper:
         return (10 ** (dB / 20) - 10 ** (-35 / 20)) / (1 - 10 ** (-35 / 20))
 
 
-def get_size_folder(path):
+def get_size_folder(path: str) -> int:
     global log
 
     folder_size = 0
@@ -463,7 +465,7 @@ def get_size_folder(path):
     return int(folder_size / (1024 * 1024))
 
 
-def clear_tmp_folder(path, size):
+def clear_tmp_folder(path: str, size: int) -> None:
     global log
 
     if size == -1:
@@ -513,7 +515,7 @@ def check_extra_config(config: ConfigParser, template: ConfigParser) -> list[tup
     return extra
 
 
-def parse_cookie_file(cookiefile):
+def parse_cookie_file(cookiefile: str) -> dict[str, str]:
     # https://stackoverflow.com/a/54659484/1584825
 
     cookies = {}

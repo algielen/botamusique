@@ -1,4 +1,6 @@
 #!/usr/bin/python3
+from __future__ import annotations
+
 import errno
 import json
 import logging
@@ -9,6 +11,7 @@ import sqlite3
 import time
 from functools import wraps
 from pathlib import Path
+from typing import TYPE_CHECKING, Any, Callable
 
 from flask import Flask, render_template, request, redirect, send_file, Response, jsonify, abort, session
 
@@ -21,10 +24,13 @@ from media.radio import RadioItem
 from media.url import URLItem
 from media.url_from_playlist import PlaylistURLItem
 
-_bot = None
+if TYPE_CHECKING:
+    from mumbleBot import MumbleBot
+
+_bot: MumbleBot | None = None
 
 
-def set_bot(bot):
+def set_bot(bot: MumbleBot) -> None:
     global _bot
     _bot = bot
 
@@ -47,10 +53,10 @@ class ReverseProxied(object):
     :param app: the WSGI application
     """
 
-    def __init__(self, app):
+    def __init__(self, app: Any) -> None:
         self.app = app
 
-    def __call__(self, environ, start_response):
+    def __call__(self, environ: dict[str, Any], start_response: Any) -> Any:
         script_name = environ.get('HTTP_X_SCRIPT_NAME', '')
         if script_name:
             environ['SCRIPT_NAME'] = script_name
@@ -78,7 +84,7 @@ log = logging.getLogger("bot")
 user = 'Remote Control'
 
 
-def init_proxy():
+def init_proxy() -> None:
     global web
     if _bot.is_proxied:
         web.wsgi_app = ReverseProxied(web.wsgi_app)
@@ -87,7 +93,7 @@ def init_proxy():
 # https://stackoverflow.com/questions/29725217/password-protect-one-webpage-in-flask-app
 
 
-def check_auth(username, password):
+def check_auth(username: str, password: str) -> bool:
     """This function is called to check if a username /
     password combination is valid.
     """
@@ -105,7 +111,7 @@ def check_auth(username, password):
     return False
 
 
-def authenticate():
+def authenticate() -> Response:
     """Sends a 401 response that enables basic auth"""
     global log
     return Response('Could not verify your access level for that URL.\n'
@@ -117,7 +123,7 @@ bad_access_count = {}
 banned_ip = []
 
 
-def requires_auth(f):
+def requires_auth(f: Callable[..., Any]) -> Callable[..., Any]:
     @wraps(f)
     def decorated(*args, **kwargs):
         global log, user, bad_access_count, banned_ip
