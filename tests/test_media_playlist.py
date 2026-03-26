@@ -236,23 +236,6 @@ class TestRemove:
 # ---------------------------------------------------------------------------
 
 class TestFind:
-    def test_find_raises_attribute_error_due_to_bug(self, oneshot, mock_cache):
-        """
-        Confirms the bug in playlist.find(): it uses `wrapper.item.id` but
-        `CachedItemWrapper.item` is a method, not a property.
-        Accessing `.id` on a bound method raises AttributeError.
-
-        Fix needed in src/media/playlist.py:124:
-            Change `wrapper.item.id` → `wrapper.item().id`
-        """
-        _add_items(oneshot, mock_cache, 2)
-        with pytest.raises(AttributeError):
-            oneshot.find("any-id")
-
-    @pytest.mark.xfail(
-        reason="Bug: playlist.find() uses wrapper.item.id instead of wrapper.item().id",
-        strict=True,
-    )
     def test_find_returns_correct_index(self, oneshot, mock_cache):
         """Expected behaviour once the bug is fixed."""
         wrappers = _add_items(oneshot, mock_cache, 2)
@@ -260,10 +243,7 @@ class TestFind:
         result = oneshot.find(target_id)
         assert result == 1
 
-    @pytest.mark.xfail(
-        reason="Bug: playlist.find() uses wrapper.item.id instead of wrapper.item().id",
-        strict=True,
-    )
+
     def test_find_returns_none_for_missing_id(self, oneshot, mock_cache):
         """Expected behaviour once the bug is fixed."""
         _add_items(oneshot, mock_cache, 1)
