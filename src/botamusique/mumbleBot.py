@@ -20,12 +20,13 @@ from typing import Callable, Any
 
 import audioop
 
-import util
-from constants import tr_cli as tr
-from database import SettingsDatabase, MusicDatabase
-from media.cache import MusicCache, CachedItemWrapper
-from media.item import ValidationFailedError, PreparationFailedError
-from media.playlist import BasePlaylist
+from botamusique import interface
+from botamusique import util
+from botamusique.constants import tr_cli as tr
+from botamusique.database import SettingsDatabase, MusicDatabase
+from botamusique.media.cache import MusicCache, CachedItemWrapper
+from botamusique.media.item import ValidationFailedError, PreparationFailedError
+from botamusique.media.playlist import BasePlaylist
 from pymumble_py3.mumble import Mumble
 from pymumble_py3.pymumble_constants import PYMUMBLE_CONN_STATE_FAILED, PYMUMBLE_CLBK_TEXTMESSAGERECEIVED, \
     PYMUMBLE_CLBK_SOUNDRECEIVED, PYMUMBLE_CLBK_USERREMOVED, PYMUMBLE_CLBK_USERUPDATED, \
@@ -805,7 +806,6 @@ class MumbleBot:
 
 def start_web_interface(addr: str, port: int, bot: MumbleBot) -> None:
     global formatter
-    import interface
 
     # setup logger
     werkzeug_logger = logging.getLogger('werkzeug')
@@ -823,6 +823,7 @@ def start_web_interface(addr: str, port: int, bot: MumbleBot) -> None:
             handler.close()
     werkzeug_logger.addHandler(handler)
 
+    interface.init_app()
     interface.set_bot(bot)
     interface.init_proxy()
     interface.web.secret_key = bot.config.get('webinterface', 'flask_secret')

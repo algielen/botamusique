@@ -13,7 +13,7 @@ from functools import wraps
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable
 
-from flask import Flask, render_template, request, redirect, send_file, Response, jsonify, abort, session
+from flask import Flask, Blueprint, render_template, request, redirect, send_file, Response, jsonify, abort, session
 
 from botamusique import media
 from botamusique import util
@@ -74,14 +74,20 @@ class ReverseProxied(object):
 
 
 root_dir = Path(__file__).parent
-web = Flask(
-    __name__,
-    template_folder=root_dir.joinpath("web/templates"),
-    static_folder=root_dir.joinpath("static"),
-)
-#web.config['TEMPLATES_AUTO_RELOAD'] = True
+web: Flask | None = None
+bp = Blueprint('main', __name__)
 log = logging.getLogger("bot")
 user = 'Remote Control'
+
+
+def init_app() -> None:
+    global web
+    web = Flask(
+        __name__,
+        template_folder=root_dir.joinpath("web/templates"),
+        static_folder=root_dir.joinpath("static"),
+    )
+    web.register_blueprint(bp)
 
 
 def init_proxy() -> None:
@@ -238,7 +244,7 @@ def get_all_dirs():
     return dirs
 
 
-@web.route("/", methods=["GET"])
+@bp.route("/", methods=["GET"])
 @requires_auth
 def index():
     return open(
@@ -249,7 +255,7 @@ def index():
     ).read()
 
 
-@web.route("/playlist", methods=['GET'])
+@bp.route("/playlist", methods=['GET'])
 @requires_auth
 def playlist():
     if len(_bot.playlist) == 0:
@@ -349,7 +355,7 @@ def status():
                         })
 
 
-@web.route("/post", methods=['POST'])
+@bp.route("/post", methods=['POST'])
 @requires_auth
 def post():
     global log
@@ -569,7 +575,7 @@ def build_library_query_condition(form):
         abort(400)
 
 
-@web.route("/library/info", methods=['GET'])
+@bp.route("/library/info", methods=['GET'])
 @requires_auth
 def library_info():
     global log
@@ -589,7 +595,7 @@ def library_info():
     ))
 
 
-@web.route("/library", methods=['POST'])
+@bp.route("/library", methods=['POST'])
 @requires_auth
 def library():
     global log
@@ -699,7 +705,7 @@ def library():
         abort(400)
 
 
-@web.route('/upload', methods=["POST"])
+@bp.route('/upload', methods=["POST"])
 @requires_auth
 def upload():
     global log
@@ -751,7 +757,7 @@ def upload():
     return '', 200
 
 
-@web.route('/download', methods=["GET"])
+@bp.route('/download', methods=["GET"])
 @requires_auth
 def download():
     global log
