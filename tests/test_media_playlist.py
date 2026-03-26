@@ -5,9 +5,9 @@ async_validate() is patched to a no-op throughout to avoid background threads.
 import pytest
 from unittest.mock import MagicMock
 
-from media.cache import CachedItemWrapper
-from media.playlist import OneshotPlaylist, RepeatPlaylist, RandomPlaylist, get_playlist
-from media.radio import RadioItem
+from botamusique.media.cache import CachedItemWrapper
+from botamusique.media.playlist import OneshotPlaylist, RepeatPlaylist, RandomPlaylist, get_playlist
+from botamusique.media.radio import RadioItem
 
 
 URL_BASE = "http://example.com/stream"

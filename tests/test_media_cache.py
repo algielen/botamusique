@@ -2,8 +2,8 @@
 import pytest
 from unittest.mock import MagicMock
 
-from media.cache import MusicCache, CachedItemWrapper, ItemNotCachedError
-from media.radio import RadioItem
+from botamusique.media.cache import ItemNotCachedError
+from botamusique.media.radio import RadioItem
 
 URL = "http://example.com/stream"
 NAME = "Test Radio"

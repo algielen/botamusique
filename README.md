@@ -58,12 +58,19 @@ Latest docker image is available on [Docker Hub](https://hub.docker.com/r/algiel
 
 **Stable release (recommended)**
 
-This is the current stable version. To install the stable release, download the source from the latest release and run these lines in your terminal:
+Download the latest release from the [GitHub Releases page](https://github.com/algielen/botamusique/releases).
+
+Each release provides:
+- A source archive (`.tar.gz`) — extract and run directly
+- A wheel (`.whl`) — install into an existing Python environment with `uv pip install botamusique-*.whl`
+
+To run from the source archive:
 ```
-tar -xzf botamusique.tar.gz
-cd botamusique
+tar -xzf botamusique-*.tar.gz
+cd botamusique-*
 uv venv
 uv sync --no-dev
+uv run botamusique --config configuration.ini
 ```
 
 **Build from source code**
@@ -154,7 +161,7 @@ If you don't have a certificate, you may generate one by:
 
 
 ### Sections explained
-- `server`: configuration about the server. Will be overridden by the `src/main.py` parameters.
+- `server`: configuration about the server. Will be overridden by the `src/botamusique/main.py` parameters.
 - `bot`: basic configuration of the bot, eg. name, comment, folder, default volume, etc.
 - `webinterface`: basic configuration about the web interface.
 - `commands`: you can customize the command you want for each action (eg. put `help = helpme` , the bot will respond to `!helpme`)
@@ -164,10 +171,10 @@ If you don't have a certificate, you may generate one by:
 
 ## Run the bot
 If you have set up everything in your `configuration.ini`, you can
-`uv run src/main.py --config configuration.ini`
+`uv run botamusique --config configuration.ini`
 
 Or you can
-`uv run src/main.py -s HOST -u BOTNAME -P PASSWORD -p PORT -c CHANNEL -C /path/to/botamusique.pem`
+`uv run botamusique -s HOST -u BOTNAME -P PASSWORD -p PORT -c CHANNEL -C /path/to/botamusique.pem`
 
 If you want information about auto-starting and auto-restarting of the bot, you can check out the wiki page [Run botamusique as a daemon In the background](https://github.com/algielen/botamusique/wiki/Run-botamusique-as-a-daemon-In-the-background).
 
@@ -207,17 +214,6 @@ Exception: Could not find opus library. Make sure it is installed.
 ```
 You need to install the opus codec (not embedded in all system): `apt install libopus0`
 
-### MacOS Users may encounter the following error:
-```
-ImportError: failed to find libmagic.  Check your installation
-```
-This is caused by missing `libmagic` binaries and can be solved by
-```bash
-brew install libmagic
-
-```
-One may also install `python-magic-bin` instead of `python-magic`.
-
 ### If you have a large amount of music files (>1000), it may take some time for the bot to boot, since
 it will build up the cache for the music library on booting. You may want to disable this auto-scanning by
 setting ``refresh_cache_on_startup=False`` in `[bot]` section and control the scanning manually by
@@ -225,7 +221,7 @@ setting ``refresh_cache_on_startup=False`` in `[bot]` section and control the sc
 
 ### Alpine Linux requires some extra dependencies during the installation (in order to compile Pillow):
 ```
-python3-dev musl-lib libmagic jpeg-dev zlib-dev gcc
+python3-dev musl-lib jpeg-dev zlib-dev gcc
 ```
 For more information, see [#122](https://github.com/azlux/botamusique/issues/122).
 

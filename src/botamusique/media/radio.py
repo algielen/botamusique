@@ -6,8 +6,8 @@ import traceback
 import hashlib
 from typing import Any
 
-from media.item import BaseItem
-from constants import tr_cli as tr
+from botamusique.media.item import BaseItem
+from botamusique.constants import tr_cli as tr
 
 log = logging.getLogger("bot")
 

@@ -56,13 +56,15 @@ JS_VENDOR_TARBALLS = {
     ),
 }
 
+pkg_dir = root / "src" / "botamusique"
 vendor_dir = root / "web" / "vendor" / "css"
 cache_file = root / "web" / "vendor" / "build_cache.json"
-static_css_dir = root / "static" / "css"
-static_webfonts_dir = root / "static" / "webfonts"
+static_css_dir = pkg_dir / "static" / "css"
+static_webfonts_dir = pkg_dir / "static" / "webfonts"
 js_src_dir = root / "web" / "js"
-js_dst_dir = root / "static" / "js"
-js_vendor_dir = root / "static" / "js" / "vendor"
+js_dst_dir = pkg_dir / "static" / "js"
+js_vendor_dir = pkg_dir / "static" / "js" / "vendor"
+templates_out_dir = pkg_dir / "web" / "templates"
 
 vendor_dir.mkdir(parents=True, exist_ok=True)
 static_css_dir.mkdir(parents=True, exist_ok=True)
@@ -216,6 +218,7 @@ for src_file in js_src_dir.rglob("*.mjs"):
 subprocess.run(
     [sys.executable, root / "scripts" / "translate_templates.py",
      "--lang-dir", root / "lang",
-     "--template-dir", root / "web" / "templates"],
+     "--template-dir", root / "web" / "templates",
+     "--output-dir", templates_out_dir],
     check=True,
 )

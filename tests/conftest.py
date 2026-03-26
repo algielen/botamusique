@@ -22,9 +22,9 @@ import pytest
 from configparser import ConfigParser
 from unittest.mock import MagicMock
 
-from media.cache import MusicCache, CachedItemWrapper
-from media.radio import RadioItem
-from media.playlist import OneshotPlaylist
+from botamusique.media.cache import MusicCache, CachedItemWrapper
+from botamusique.media.radio import RadioItem
+from botamusique.media.playlist import OneshotPlaylist
 
 
 @pytest.fixture()

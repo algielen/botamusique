@@ -1,7 +1,7 @@
 """Tests for the translation system in constants.py."""
 import pytest
-import constants
-from constants import load_lang, tr_cli, tr_web, _tr
+from botamusique import constants
+from botamusique.constants import load_lang, tr_cli, tr_web, _tr
 
 
 @pytest.fixture(autouse=True)

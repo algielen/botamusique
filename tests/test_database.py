@@ -1,7 +1,6 @@
 """Tests for the Condition SQL query builder in database.py."""
 import sqlite3
-import pytest
-from database import Condition
+from botamusique.database import Condition
 
 
 def test_empty_condition():

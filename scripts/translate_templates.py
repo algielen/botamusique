@@ -6,7 +6,9 @@ import re
 import jinja2
 
 
-def translate(lang_dir: str, template_dir: str) -> None:
+def translate(lang_dir: str, template_dir: str, output_dir: str | None = None) -> None:
+    if output_dir is None:
+        output_dir = template_dir
     default_lang_dict = {}
     lang_dict = {}
 
@@ -52,7 +54,8 @@ def translate(lang_dir: str, template_dir: str) -> None:
             print(f" - Populating {lang}...")
             lang_dict = load_lang(lang)
 
-            with open(os.path.join(template_dir, f"{basename}.{lang}.html"),
+            os.makedirs(output_dir, exist_ok=True)
+            with open(os.path.join(output_dir, f"{basename}.{lang}.html"),
                       "w", encoding="utf-8") as f:
                 f.write(template.render(tr=tr))
     print("Done.")
@@ -66,6 +69,9 @@ if __name__ == "__main__":
                         type=str, help="Directory of the lang files.")
     parser.add_argument("--template-dir", dest="template_dir",
                         type=str, help="Directory of the template files.")
+    parser.add_argument("--output-dir", dest="output_dir",
+                        type=str, default=None,
+                        help="Directory to write translated templates (defaults to --template-dir).")
 
     args = parser.parse_args()
-    translate(args.lang_dir, args.template_dir)
+    translate(args.lang_dir, args.template_dir, args.output_dir)

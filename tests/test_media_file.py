@@ -3,9 +3,9 @@ import hashlib
 import pytest
 from unittest.mock import patch
 
-from media.file import FileItem
-from media.item import ValidationFailedError
-from constants import load_lang
+from botamusique.media.file import FileItem
+from botamusique.media.file import ValidationFailedError
+from botamusique.constants import load_lang
 
 # Ensure lang strings are available (FileItem.validate() calls tr())
 load_lang("en_US")
@@ -79,7 +79,7 @@ def test_is_ready_always_true():
 
 def test_validate_raises_when_file_missing():
     item = FileItem("/nonexistent/song.mp3", MUSIC_FOLDER)
-    with patch("media.file.os.path.exists", return_value=False):
+    with patch("botamusique.media.file.os.path.exists", return_value=False):
         with pytest.raises(ValidationFailedError):
             item.validate()
 
@@ -87,8 +87,8 @@ def test_validate_raises_when_file_missing():
 def test_validate_succeeds_when_file_exists():
     item = FileItem("/nonexistent/song.mp3", MUSIC_FOLDER)
     item.duration = 0
-    with patch("media.file.os.path.exists", return_value=True), \
-         patch("media.file.util.get_media_duration", return_value=120):
+    with patch("botamusique.media.file.os.path.exists", return_value=True), \
+         patch("botamusique.media.file.util.get_media_duration", return_value=120):
         result = item.validate()
     assert result is True
     assert item.ready == "yes"
@@ -98,8 +98,8 @@ def test_validate_succeeds_when_file_exists():
 def test_validate_skips_duration_when_already_set():
     item = FileItem("/nonexistent/song.mp3", MUSIC_FOLDER)
     item.duration = 60
-    with patch("media.file.os.path.exists", return_value=True), \
-         patch("media.file.util.get_media_duration") as mock_dur:
+    with patch("botamusique.media.file.os.path.exists", return_value=True), \
+         patch("botamusique.media.file.util.get_media_duration") as mock_dur:
         item.validate()
     mock_dur.assert_not_called()
 
@@ -108,8 +108,8 @@ def test_validate_increments_version_when_duration_computed():
     item = FileItem("/nonexistent/song.mp3", MUSIC_FOLDER)
     item.duration = 0
     v = item.version
-    with patch("media.file.os.path.exists", return_value=True), \
-         patch("media.file.util.get_media_duration", return_value=180):
+    with patch("botamusique.media.file.os.path.exists", return_value=True), \
+         patch("botamusique.media.file.util.get_media_duration", return_value=180):
         item.validate()
     assert item.version > v
 
@@ -135,7 +135,7 @@ def _make_file_dict(path="/absolute/song.mp3"):
 
 def test_from_dict_restores_fields():
     d = _make_file_dict()
-    with patch("media.file.os.path.exists", return_value=True):
+    with patch("botamusique.media.file.os.path.exists", return_value=True):
         item = FileItem.from_dict(d, MUSIC_FOLDER)
     assert item.id == d["id"]
     assert item.title == d["title"]

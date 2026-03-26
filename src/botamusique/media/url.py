@@ -12,11 +12,11 @@ from typing import Any
 import yt_dlp as youtube_dl
 from PIL import Image
 
-import util
-from constants import tr_cli as tr
-from database import SettingsDatabase
-from media.item import BaseItem, ValidationFailedError, PreparationFailedError
-from util import format_time
+from botamusique import util
+from botamusique.constants import tr_cli as tr
+from botamusique.database import SettingsDatabase
+from botamusique.media.item import BaseItem, ValidationFailedError, PreparationFailedError
+from botamusique.util import format_time
 
 log = logging.getLogger("bot")
 

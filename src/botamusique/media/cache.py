@@ -1,16 +1,17 @@
 import logging
-import magic
 import os
 import threading
 from configparser import ConfigParser
 from typing import Any
 
-from database import MusicDatabase, Condition, SettingsDatabase
-from media.file import FileItem
-from media.item import BaseItem
-from media.radio import RadioItem
-from media.url import URLItem
-from media.url_from_playlist import PlaylistURLItem
+import filetype
+
+from botamusique.database import MusicDatabase, Condition, SettingsDatabase
+from botamusique.media.file import FileItem
+from botamusique.media.item import BaseItem
+from botamusique.media.radio import RadioItem
+from botamusique.media.url import URLItem
+from botamusique.media.url_from_playlist import PlaylistURLItem
 
 
 class ItemNotCachedError(Exception):
@@ -212,8 +213,8 @@ class MusicCache(dict):
                     continue
 
                 try:
-                    mime = magic.from_file(fullpath, mime=True).lower()
-                    if 'audio' in mime or 'video' in mime:
+                    mime = filetype.guess_mime(fullpath)
+                    if mime and ('audio' in mime or 'video' in mime):
                         filelist.append(os.path.join(relroot, file))
                 except:
                     pass

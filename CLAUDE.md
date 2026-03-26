@@ -20,7 +20,7 @@ uv sync
 uv sync --dev
 
 # Run the bot
-uv run src/main.py --config configuration.ini
+uv run src/botamusique/main.py --config configuration.ini
 
 # Run tests
 uv run pytest
@@ -52,9 +52,9 @@ Copy `configuration.example.ini` to `configuration.ini` and edit it. Do **not** 
 
 ## Architecture
 
-### Startup flow (`src/main.py`)
+### Startup flow (`src/botamusique/main.py`)
 
-`src/main.py` is the entry point. It:
+`src/botamusique/main.py` is the entry point. It:
 1. Parses CLI args and environment variables (`BAM_*` env vars mirror all CLI flags).
 2. Loads and validates `configuration.ini` against `configuration.default.ini`.
 3. Initializes two SQLite databases: a **settings DB** (`settings-<username>.db`) and a **music library DB** (`music.db`).
@@ -93,7 +93,7 @@ Items go through states: `pending → validated → yes` (or `failed`). `MusicCa
 
 ### Web interface (`src/interface.py`)
 
-A Flask app served on a daemon thread. Holds a module-level `_bot` reference set via `set_bot(bot)`, called from `start_web_interface(addr, port, bot)` in `src/main.py`. Supports reverse-proxy deployment via `X-Script-Name` / `X-Forwarded-For` headers (`ReverseProxied` middleware).
+A Flask app served on a daemon thread. Holds a module-level `_bot` reference set via `set_bot(bot)`, called from `start_web_interface(addr, port, bot)` in `src/botamusique/main.py`. Supports reverse-proxy deployment via `X-Script-Name` / `X-Forwarded-For` headers (`ReverseProxied` middleware).
 
 ### Translation (`src/constants.py`)
 
