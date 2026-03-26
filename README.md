@@ -58,12 +58,19 @@ Latest docker image is available on [Docker Hub](https://hub.docker.com/r/algiel
 
 **Stable release (recommended)**
 
-This is the current stable version. To install the stable release, download the source from the latest release and run these lines in your terminal:
+Download the latest release from the [GitHub Releases page](https://github.com/algielen/botamusique/releases).
+
+Each release provides:
+- A source archive (`.tar.gz`) — extract and run directly
+- A wheel (`.whl`) — install into an existing Python environment with `uv pip install botamusique-*.whl`
+
+To run from the source archive:
 ```
-tar -xzf botamusique.tar.gz
-cd botamusique
+tar -xzf botamusique-*.tar.gz
+cd botamusique-*
 uv venv
 uv sync --no-dev
+uv run botamusique --config configuration.ini
 ```
 
 **Build from source code**
