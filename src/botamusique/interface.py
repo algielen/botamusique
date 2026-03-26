@@ -15,14 +15,14 @@ from typing import TYPE_CHECKING, Any, Callable
 
 from flask import Flask, render_template, request, redirect, send_file, Response, jsonify, abort, session
 
-import media
-import util
-from database import Condition
-from media.file import FileItem
-from media.item import BaseItem
-from media.radio import RadioItem
-from media.url import URLItem
-from media.url_from_playlist import PlaylistURLItem
+from botamusique import media
+from botamusique import util
+from botamusique.database import Condition
+from botamusique.media.file import FileItem
+from botamusique.media.item import BaseItem
+from botamusique.media.radio import RadioItem
+from botamusique.media.url import URLItem
+from botamusique.media.url_from_playlist import PlaylistURLItem
 
 if TYPE_CHECKING:
     from mumbleBot import MumbleBot
@@ -73,7 +73,7 @@ class ReverseProxied(object):
         return self.app(environ, start_response)
 
 
-root_dir = Path(__file__).parent.parent
+root_dir = Path(__file__).parent
 web = Flask(
     __name__,
     template_folder=root_dir.joinpath("web/templates"),

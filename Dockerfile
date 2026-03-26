@@ -3,20 +3,21 @@ ENV DEBIAN_FRONTEND=noninteractive
 WORKDIR /botamusique
 
 RUN apt-get update \
-    && apt-get install --no-install-recommends -y gcc g++ ffmpeg libjpeg-dev libmagic-dev opus-tools zlib1g-dev \
+    && apt-get install --no-install-recommends -y gcc g++ ffmpeg libjpeg-dev opus-tools zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
 
 
 COPY . /botamusique
 RUN uv venv --clear \
-    && uv sync --no-dev
+    && uv sync --no-dev \
+    && uv run --group build scripts/build.py
 
 
 FROM ghcr.io/astral-sh/uv:python3.14-trixie-slim
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && \
-    apt-get install --no-install-recommends -y opus-tools ffmpeg libmagic-dev curl tar && \
+    apt-get install --no-install-recommends -y opus-tools ffmpeg curl tar && \
     rm -rf /var/lib/apt/lists/*
 
 COPY --from=docker.io/denoland/deno:bin-2.7.7 /deno /usr/local/bin/deno
@@ -30,4 +31,4 @@ RUN groupadd -g 568 usergroup
 RUN useradd -u 568 -g usergroup -ms /bin/sh bota
 USER bota
 
-CMD ["uv", "run", "--locked", "--no-dev", "src/main.py"]
+CMD ["uv", "run", "--locked", "--no-dev", "botamusique"]

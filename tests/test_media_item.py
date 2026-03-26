@@ -1,6 +1,6 @@
 """Tests for BaseItem base class in media/item.py."""
 import pytest
-from media.item import BaseItem, ValidationFailedError, PreparationFailedError
+from botamusique.media.item import BaseItem, ValidationFailedError, PreparationFailedError
 
 
 class ConcreteItem(BaseItem):

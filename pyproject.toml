@@ -1,6 +1,6 @@
 [project]
 name = "botamusique"
-version = "8.6.0"
+version = "8.6.2"
 description = "Bot to play youtube / soundcloud / radio / local music on Mumble (using pymumble)"
 readme = "README.md"
 requires-python = ">=3.14"
@@ -14,11 +14,41 @@ dependencies = [
     "protobuf>=6.33.1",
     "pycryptodome>=3.23.0",
     "pyradios>=2.1.1",
-    "python-magic>=0.4.27",
-    "python-magic-bin>=0.4.14; sys_platform == 'win32'",
+    "filetype>=1.2",
     "requests>=2.32.5",
     "yt-dlp[default]>=2025.11.12",
 ]
+
+[project.scripts]
+botamusique = "botamusique.main:main"
+
+[build-system]
+requires = ["hatchling", "libsass>=0.23.0", "jinja2>=3.0"]
+build-backend = "hatchling.build"
+
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/botamusique", "src/pymumble_py3"]
+
+[tool.hatch.build.targets.sdist]
+exclude = [
+    "/.github",
+    "/.gitignore",
+    "/.gitmodules",
+    "/.dockerignore",
+    "/Dockerfile",
+    "/docker-compose.yaml",
+    "/dockerbuild.sh",
+    "/ideas.md",
+    "/CLAUDE.md",
+    "/uv.lock",
+    "/static",
+    "/tests"
+]
+
+[tool.hatch.build.hooks.custom]
+path = "scripts/hatch_build.py"
+
 
 [tool.botamusique.build]
 bootswatch_version = "5.3.8"

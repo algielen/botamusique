@@ -6,7 +6,7 @@ All tests use from_dict() to avoid network calls.
 import hashlib
 import pytest
 
-from media.radio import RadioItem
+from botamusique.media.radio import RadioItem
 
 URL = "http://example.com/stream"
 NAME = "Test Radio Station"
