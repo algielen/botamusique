@@ -1,0 +1,3 @@
+- Create release packages
+- Review auto-update mechanism
+- Dev test container

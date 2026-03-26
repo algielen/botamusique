@@ -121,7 +121,7 @@ class BasePlaylist(list):
     def find(self, id: str) -> int | None:
         with self.playlist_lock:
             for index, wrapper in enumerate(self):
-                if wrapper.item.id == id:
+                if wrapper.item().id == id:
                     return index
         return None
 
