@@ -6,10 +6,10 @@ from typing import Any
 
 import yt_dlp as youtube_dl
 
-from constants import tr_cli as tr
-from database import SettingsDatabase
-from media.item import BaseItem
-from media.url import URLItem
+from botamusique.constants import tr_cli as tr
+from botamusique.database import SettingsDatabase
+from botamusique.media.item import BaseItem
+from botamusique.media.url import URLItem
 
 log = logging.getLogger("bot")
 

@@ -4,11 +4,11 @@ import random
 import threading
 import time
 from configparser import ConfigParser
-from typing import Callable, Any, Self
+from typing import Callable, Self
 
-from database import Condition, MusicDatabase, SettingsDatabase
-from media.cache import CachedItemWrapper, ItemNotCachedError, MusicCache
-from media.item import ValidationFailedError
+from botamusique.database import Condition, MusicDatabase, SettingsDatabase
+from botamusique.media.cache import CachedItemWrapper, ItemNotCachedError, MusicCache
+from botamusique.media.item import ValidationFailedError
 
 SendMsgCallback = Callable[[str], None]
 

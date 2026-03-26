@@ -7,9 +7,9 @@ from typing import Any
 import mutagen
 from PIL import Image
 
-import util
-from constants import tr_cli as tr
-from media.item import BaseItem, ValidationFailedError
+from botamusique import util
+from botamusique.constants import tr_cli as tr
+from botamusique.media.item import BaseItem, ValidationFailedError
 
 '''
 type : file

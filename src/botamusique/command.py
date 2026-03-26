@@ -10,15 +10,15 @@ from typing import TYPE_CHECKING, Any
 
 from pyradios import RadioBrowser
 
-import interface
-import media
 import pymumble_py3 as pymumble
-import util
-from constants import commands
-from constants import tr_cli as tr
-from database import SettingsDatabase, MusicDatabase, Condition
-from media.cache import CachedItemWrapper
-from media.url_from_playlist import get_playlist_info
+from botamusique import interface
+from botamusique import media
+from botamusique import util
+from botamusique.constants import commands
+from botamusique.constants import tr_cli as tr
+from botamusique.database import SettingsDatabase, MusicDatabase, Condition
+from botamusique.media.cache import CachedItemWrapper
+from botamusique.media.url_from_playlist import get_playlist_info
 
 if TYPE_CHECKING:
     from mumbleBot import MumbleBot

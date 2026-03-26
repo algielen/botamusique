@@ -10,13 +10,13 @@ from logging.handlers import RotatingFileHandler
 from threading import Thread
 from typing import Any
 
-import command
-import constants
-import media.playlist
-import util
-from database import SettingsDatabase, MusicDatabase, DatabaseMigration
-from media.cache import MusicCache
-from mumbleBot import MumbleBot, start_web_interface
+from botamusique import command
+from botamusique import constants
+from botamusique import util
+from botamusique.database import SettingsDatabase, MusicDatabase, DatabaseMigration
+from botamusique.media.cache import MusicCache
+from botamusique.media.playlist import get_playlist
+from botamusique.mumbleBot import MumbleBot, start_web_interface
 
 
 def main() -> None:
@@ -118,14 +118,14 @@ def main() -> None:
     default_config: ConfigParser = configparser.ConfigParser(interpolation=None, allow_no_value=True)
 
     if len(default_config.read(
-            util.solve_filepath('../configuration.default.ini'),
+            util.solve_filepath('../../configuration.default.ini'),
             encoding='utf-8')) == 0:
         logging.error("Could not read default configuration file 'configuration.default.ini', please check"
                       "your installation.")
         sys.exit()
 
     if len(config.read(
-            [util.solve_filepath('../configuration.default.ini'), util.solve_filepath(args.config)],
+            [util.solve_filepath('../../configuration.default.ini'), util.solve_filepath(args.config)],
             encoding='utf-8')) == 0:
         logging.error(f'Could not read configuration from file "{args.config}"')
         sys.exit()
@@ -231,7 +231,7 @@ def main() -> None:
         playback_mode: str = config.get('bot', 'playback_mode')
 
     if playback_mode in ["one-shot", "repeat", "random", "autoplay"]:
-        playlist = media.playlist.get_playlist(
+        playlist = get_playlist(
             playback_mode, cache, settings_db, music_db, config, send_channel_msg=None)
     else:
         raise KeyError(f"Unknown playback mode '{playback_mode}'")
