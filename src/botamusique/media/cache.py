@@ -1,10 +1,10 @@
-import filetype
 import logging
 import os
-import sys
 import threading
 from configparser import ConfigParser
 from typing import Any
+
+import filetype
 
 from botamusique.database import MusicDatabase, Condition, SettingsDatabase
 from botamusique.media.file import FileItem
