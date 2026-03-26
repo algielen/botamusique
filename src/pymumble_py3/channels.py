@@ -137,6 +137,7 @@ class Channel(dict):
         self.mumble_object = mumble_object
         self["channel_id"] = message.channel_id
         self.acl = ACL(mumble_object=mumble_object, channel_id=self["channel_id"])
+        self.permissions = None  # populated from PermissionQuery messages
         self.update(message)
 
     def get_users(self):
@@ -166,6 +167,19 @@ class Channel(dict):
 
     def update_acl(self, message):
         self.acl.update(message)
+
+    def update_permissions(self, permissions: int) -> None:
+        """Store the permission bitmask reported by the server for this channel."""
+        self.permissions = permissions
+
+    def has_permission(self, permission: int) -> bool:
+        """Return True if the bot has the given permission bit in this channel.
+
+        Returns None if permissions have not been received yet.
+        """
+        if self.permissions is None:
+            return None
+        return bool(self.permissions & permission)
 
     def get_id(self):
         return self["channel_id"]

@@ -80,6 +80,7 @@ class ChanGroup(dict):
     """Object that stores and update all ChanGroups ACL"""
 
     def __init__(self):
+        super().__init__()
         self.name = None
         self.acl = None
         self.inherited = None
@@ -115,6 +116,7 @@ class ChanACL(dict):
     """Object that stores and update all ChanACL ACL"""
 
     def __init__(self):
+        super().__init__()
         self.apply_here = None
         self.apply_subs = None
         self.inherited = None

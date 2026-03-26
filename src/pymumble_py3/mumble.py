@@ -456,6 +456,9 @@ class Mumble(threading.Thread):
             mess = mumble_pb2.PermissionQuery()
             mess.ParseFromString(message)
             self.Log.debug("message: PermissionQuery : %s", mess)
+            if mess.HasField("channel_id") and mess.channel_id in self.channels:
+                self.channels[mess.channel_id].update_permissions(mess.permissions)
+                self.callbacks(PYMUMBLE_CLBK_PERMISSIONQUERY, self.channels[mess.channel_id], mess.permissions)
 
         elif type == PYMUMBLE_MSG_TYPES_CODECVERSION:
             mess = mumble_pb2.CodecVersion()
