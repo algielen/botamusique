@@ -74,6 +74,23 @@ PYMUMBLE_CLBK_TEXTMESSAGERECEIVED = "text_received"
 PYMUMBLE_CLBK_CONTEXTACTIONRECEIVED = "contextAction_received"
 PYMUMBLE_CLBK_ACLRECEIVED = "acl_received"
 PYMUMBLE_CLBK_PERMISSIONDENIED = "permission_denied"
+PYMUMBLE_CLBK_PERMISSIONQUERY = "permission_query"
+
+# Mumble channel permission bitmask values
+# See https://github.com/mumble-voip/mumble/blob/master/src/ACL.h
+MUMBLE_PERM_NONE = 0x0
+MUMBLE_PERM_WRITE = 0x1           # Can change channel ACL/properties
+MUMBLE_PERM_TRAVERSE = 0x2        # Can move through channel (needed to see it)
+MUMBLE_PERM_ENTER = 0x4           # Can enter/join the channel
+MUMBLE_PERM_SPEAK = 0x8           # Can transmit audio
+MUMBLE_PERM_MUTEDEAFEN = 0x10     # Can mute/deafen other users
+MUMBLE_PERM_MOVE = 0x20           # Can move other users into the channel
+MUMBLE_PERM_MAKECHANNEL = 0x40    # Can create sub-channels
+MUMBLE_PERM_LINKCHANNEL = 0x80    # Can link channels
+MUMBLE_PERM_WHISPER = 0x100       # Can whisper to users in channel
+MUMBLE_PERM_TEXTMESSAGE = 0x200   # Can send text messages to the channel
+MUMBLE_PERM_MAKETEMPCHANNEL = 0x400  # Can create temporary channels
+MUMBLE_PERM_LISTEN = 0x1000       # Can listen to the channel (Mumble 1.4+)
 
 # audio types
 PYMUMBLE_AUDIO_TYPE_CELT_ALPHA = 0

@@ -28,7 +28,9 @@ from media.item import ValidationFailedError, PreparationFailedError
 from media.playlist import BasePlaylist
 from pymumble_py3.mumble import Mumble
 from pymumble_py3.pymumble_constants import PYMUMBLE_CONN_STATE_FAILED, PYMUMBLE_CLBK_TEXTMESSAGERECEIVED, \
-    PYMUMBLE_CLBK_SOUNDRECEIVED, PYMUMBLE_CLBK_USERREMOVED, PYMUMBLE_CLBK_USERUPDATED
+    PYMUMBLE_CLBK_SOUNDRECEIVED, PYMUMBLE_CLBK_USERREMOVED, PYMUMBLE_CLBK_USERUPDATED, \
+    PYMUMBLE_CLBK_PERMISSIONDENIED, PYMUMBLE_CLBK_PERMISSIONQUERY, \
+    MUMBLE_PERM_ENTER, MUMBLE_PERM_SPEAK, MUMBLE_PERM_TEXTMESSAGE
 
 
 class MumbleBot:
@@ -127,6 +129,8 @@ class MumbleBot:
                                       debug=self.config.getboolean('debug', 'mumble_connection'),
                                       certfile=certificate)
         self.mumble.callbacks.set_callback(PYMUMBLE_CLBK_TEXTMESSAGERECEIVED, self.message_received)
+        self.mumble.callbacks.set_callback(PYMUMBLE_CLBK_PERMISSIONDENIED, self.permission_denied)
+        self.mumble.callbacks.set_callback(PYMUMBLE_CLBK_PERMISSIONQUERY, self.permission_query_received)
 
         self.mumble.set_codec_profile("audio")
         self.mumble.start()  # start the mumble thread
@@ -140,6 +144,7 @@ class MumbleBot:
         self.mumble.users.myself.unmute()  # by sure the user is not muted
         self.join_channel()
         self.mumble.set_bandwidth(self.bandwidth)
+        self.check_channel_permissions()
 
         bots = self.config.get("bot", "when_nobody_in_channel_ignore", fallback="")
         self.bots = set(bots.split(','))
@@ -241,6 +246,74 @@ class MumbleBot:
                 self.mumble.channels.find_by_tree(self.channel.split('/')).move_in()
             else:
                 self.mumble.channels.find_by_name(self.channel).move_in()
+
+    # =======================
+    #       Permissions
+    # =======================
+
+    def check_channel_permissions(self) -> None:
+        """Check that the bot has the permissions it needs in its current channel.
+
+        Logs a warning and sends a channel message for each missing permission.
+        This is called once after joining the channel on startup.
+        """
+        channel = self.mumble.channels[self.mumble.users.myself['channel_id']]
+        if channel.permissions is None:
+            self.log.warning(
+                "bot: could not verify channel permissions — no PermissionQuery received for channel '%s'",
+                channel.get('name', channel['channel_id'])
+            )
+            return
+
+        required = {
+            MUMBLE_PERM_ENTER: "Enter",
+            MUMBLE_PERM_SPEAK: "Speak",
+            MUMBLE_PERM_TEXTMESSAGE: "TextMessage",
+        }
+        missing = [name for perm, name in required.items() if not channel.has_permission(perm)]
+        if missing:
+            channel_name = channel.get('name', str(channel['channel_id']))
+            warning = (
+                f"bot: missing permissions in channel '{channel_name}': "
+                + ", ".join(missing)
+                + " — the bot may not function correctly."
+            )
+            self.log.warning(warning)
+            try:
+                self.send_channel_msg(
+                    f"⚠ Missing permissions in this channel: {', '.join(missing)}. "
+                    "The bot may not function correctly."
+                )
+            except Exception:
+                pass  # can't send message if we lack TextMessage permission
+        else:
+            self.log.info(
+                "bot: permission check passed for channel '%s'",
+                channel.get('name', channel['channel_id'])
+            )
+
+    def permission_denied(self, message: Any) -> None:
+        """Called by pymumble when the server denies a permission."""
+        deny_type = self.mumble.denial_type(message.type)
+        if deny_type == "Permission":
+            channel_name = ""
+            if message.HasField("channel_id") and message.channel_id in self.mumble.channels:
+                channel_name = f" in channel '{self.mumble.channels[message.channel_id].get('name', message.channel_id)}'"
+            self.log.warning(
+                "bot: permission denied%s — the bot lacks a required ACL permission.",
+                channel_name,
+            )
+        else:
+            self.log.warning("bot: action denied by server (reason: %s): %s", deny_type, message.reason)
+
+    def permission_query_received(self, channel: Any, permissions: int) -> None:
+        """Called by pymumble when the server sends updated permissions for a channel."""
+        if self.mumble.users.myself is None: # we don't know yet
+            return
+        own_channel_id = self.mumble.users.myself.get('channel_id')
+        if own_channel_id is not None and channel['channel_id'] == own_channel_id:
+            # Permissions for our current channel were updated — re-check.
+            self.check_channel_permissions()
 
     # =======================
     #         Message

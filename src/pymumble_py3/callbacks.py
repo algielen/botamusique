@@ -29,6 +29,7 @@ class CallBacks(dict):
             PYMUMBLE_CLBK_CONTEXTACTIONRECEIVED: None,  # Send the contextaction message
             PYMUMBLE_CLBK_ACLRECEIVED: None, # Send the received ACL permissions object
             PYMUMBLE_CLBK_PERMISSIONDENIED: None, # Permission Denied for some action, send information
+            PYMUMBLE_CLBK_PERMISSIONQUERY: None
         })
 
     def set_callback(self, callback, dest):
