@@ -7,7 +7,8 @@ Steps:
   3. Concatenate theme CSS + custom CSS → static/css/{main,dark}.css
   4. Download JS vendor libraries into static/js/vendor/.
   5. Copy web/js/**/*.mjs → static/js/**/*.mjs
-  6. Translate Jinja2 templates for all supported languages.
+  6. Copy web/static/image/* → static/image/
+  7. Translate Jinja2 templates for all supported languages.
 """
 import base64
 import hashlib
@@ -61,7 +62,9 @@ vendor_dir = root / "web" / "vendor" / "css"
 cache_file = root / "web" / "vendor" / "build_cache.json"
 static_css_dir = pkg_dir / "static" / "css"
 static_webfonts_dir = pkg_dir / "static" / "webfonts"
+static_image_dir = pkg_dir / "static" / "image"
 js_src_dir = root / "web" / "js"
+image_src_dir = root / "web" / "static" / "image"
 js_dst_dir = pkg_dir / "static" / "js"
 js_vendor_dir = pkg_dir / "static" / "js" / "vendor"
 templates_out_dir = pkg_dir / "web" / "templates"
@@ -69,6 +72,7 @@ templates_out_dir = pkg_dir / "web" / "templates"
 vendor_dir.mkdir(parents=True, exist_ok=True)
 static_css_dir.mkdir(parents=True, exist_ok=True)
 static_webfonts_dir.mkdir(parents=True, exist_ok=True)
+static_image_dir.mkdir(parents=True, exist_ok=True)
 js_dst_dir.mkdir(parents=True, exist_ok=True)
 js_vendor_dir.mkdir(parents=True, exist_ok=True)
 
@@ -204,6 +208,12 @@ if not _is_cached("fa", fa_url) or not fa_css_dest.exists():
                 filename = member.name[len("package/webfonts/"):]
                 (static_webfonts_dir / filename).write_bytes(tar.extractfile(member).read())
     _mark_cached("fa", fa_url)
+
+# --- Images ---
+print("Copying images to static/image/ ...")
+for src_file in image_src_dir.iterdir():
+    shutil.copy2(src_file, static_image_dir / src_file.name)
+    print(f"  {src_file.name}")
 
 # --- JS ---
 print("Copying JS modules to static/js/ ...")
