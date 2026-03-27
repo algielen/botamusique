@@ -31,4 +31,4 @@ RUN groupadd -g 568 usergroup
 RUN useradd -u 568 -g usergroup -ms /bin/sh bota
 USER bota
 
-CMD ["uv", "run", "--locked", "--no-dev", "botamusique"]
+CMD ["uv", "run", "--locked", "--no-dev", "--no-sync", "botamusique"]
