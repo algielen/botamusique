@@ -104,7 +104,7 @@ requires-dist = [
     { name = "pycryptodome", specifier = ">=3.23.0" },
     { name = "pyradios", specifier = ">=2.1.1" },
     { name = "requests", specifier = ">=2.32.5" },
-    { name = "yt-dlp", extras = ["default"], specifier = ">=2025.11.12" },
+    { name = "yt-dlp", extras = ["default"], specifier = ">=2026.3.17" },
 ]
 
 [package.metadata.requires-dev]
