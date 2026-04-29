@@ -63,5 +63,5 @@ build = [
 ]
 dev = [
     "pytest>=9.0.1",
-    "pip>=25.0", # PyCharm uses it for its package management
+    "pip>=26.1", # PyCharm uses it for its package management
 ]
