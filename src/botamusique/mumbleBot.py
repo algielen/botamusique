@@ -502,20 +502,19 @@ class MumbleBot:
         # Function start if the next music isn't ready
         # Do nothing in case the next music is already downloaded
         self.log.debug("bot: Async download next asked ")
-        while self.playlist.next_item():
+        while next_item := self.playlist.next_item():
             # usually, all validation will be done when adding to the list.
             # however, for performance consideration, youtube playlist won't be validate when added.
             # the validation has to be done here.
-            next = self.playlist.next_item()
             try:
-                if not next.is_ready():
-                    self.async_download(next)
+                if not next_item.is_ready():
+                    self.async_download(next_item)
 
                 break
             except ValidationFailedError as e:
                 self.send_channel_msg(e.msg)
-                self.playlist.remove_by_id(next.id)
-                self.cache.free_and_delete(next.id)
+                self.playlist.remove_by_id(next_item.id)
+                self.cache.free_and_delete(next_item.id)
 
     def async_download(self, item: CachedItemWrapper) -> threading.Thread:
         th = threading.Thread(

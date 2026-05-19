@@ -74,13 +74,13 @@ class TestEmptyPlaylist:
         assert oneshot.is_empty() is True
 
     def test_next_returns_false(self, oneshot):
-        assert oneshot.next() is False
+        assert oneshot.next() is None
 
     def test_current_item_returns_false(self, oneshot):
-        assert oneshot.current_item() is False
+        assert oneshot.current_item() is None
 
-    def test_next_item_returns_false(self, oneshot):
-        assert oneshot.next_item() is False
+    def test_next_item_returns_none(self, oneshot):
+        assert oneshot.next_item() is None
 
     def test_len_is_zero(self, oneshot):
         assert len(oneshot) == 0
@@ -137,13 +137,13 @@ class TestOneshotCurrentAndNext:
         second = oneshot.next()  # deletes old self[0], returns new self[0]
         assert second is not False
         third = oneshot.next()   # list now empty → False
-        assert third is False
+        assert third is None
 
     def test_next_on_single_item_returns_false_after(self, oneshot, mock_cache):
         _add_items(oneshot, mock_cache, 1)
         oneshot.next()           # sets index=0, returns item
         result = oneshot.next()  # deletes item, list empty → False
-        assert result is False
+        assert result is None
 
 
 # ---------------------------------------------------------------------------
@@ -204,7 +204,7 @@ class TestRemove:
     def test_remove_returns_false_when_out_of_bounds(self, oneshot, mock_cache):
         _add_items(oneshot, mock_cache, 1)
         result = oneshot.remove(99)
-        assert result is False
+        assert result is None
 
     def test_remove_frees_cache_when_last_reference(self, oneshot, mock_cache):
         _add_items(oneshot, mock_cache, 1)
@@ -324,7 +324,7 @@ class TestRepeatPlaylist:
         assert first is wrapped
 
     def test_next_empty_returns_false(self, repeat_playlist):
-        assert repeat_playlist.next() is False
+        assert repeat_playlist.next() is None
 
 
 # ---------------------------------------------------------------------------
@@ -346,7 +346,7 @@ class TestRandomPlaylist:
         assert fourth is not False
 
     def test_next_empty_returns_false(self, random_playlist):
-        assert random_playlist.next() is False
+        assert random_playlist.next() is None
 
 
 # ---------------------------------------------------------------------------

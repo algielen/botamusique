@@ -60,6 +60,7 @@ class User(dict):
     """Object that store one user"""
 
     def __init__(self, mumble_object, message):
+        super().__init__()
         self.mumble_object = mumble_object
         self["session"] = message.session
         self["channel_id"] = 0

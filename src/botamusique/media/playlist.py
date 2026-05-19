@@ -102,16 +102,16 @@ class BasePlaylist(list):
         self.async_validate()
         return items
 
-    def next(self) -> CachedItemWrapper | bool:
+    def next(self) -> CachedItemWrapper | None:
         with self.playlist_lock:
             if len(self) == 0:
-                return False
+                return None
 
             if self.current_index < len(self) - 1:
                 self.current_index += 1
                 return self[self.current_index]
             else:
-                return False
+                return None
 
     def point_to(self, index: int) -> None:
         with self.playlist_lock:
@@ -125,14 +125,14 @@ class BasePlaylist(list):
                     return index
         return None
 
-    def __delitem__(self, key: int) -> CachedItemWrapper | bool:
+    def __delitem__(self, key: int) -> CachedItemWrapper | None:
         return self.remove(key)
 
-    def remove(self, index: int) -> CachedItemWrapper | bool:
+    def remove(self, index: int) -> CachedItemWrapper | None:
         with self.playlist_lock:
             self.version += 1
             if index > len(self) - 1:
-                return False
+                return None
 
             removed = self[index]
             super().__delitem__(index)
@@ -162,26 +162,26 @@ class BasePlaylist(list):
         for index in to_be_removed:
             self.remove(index)
 
-    def current_item(self) -> CachedItemWrapper | bool:
+    def current_item(self) -> CachedItemWrapper | None:
         with self.playlist_lock:
             if len(self) == 0:
-                return False
+                return None
 
             return self[self.current_index]
 
-    def next_index(self) -> int | bool:
+    def next_index(self) -> int | None:
         with self.playlist_lock:
             if self.current_index < len(self) - 1:
                 return self.current_index + 1
 
-        return False
+        return None
 
-    def next_item(self) -> CachedItemWrapper | bool:
+    def next_item(self) -> CachedItemWrapper | None:
         with self.playlist_lock:
             if self.current_index < len(self) - 1:
                 return self[self.current_index + 1]
+            return None
 
-        return False
 
     def randomize(self) -> None:
         with self.playlist_lock:
@@ -277,11 +277,11 @@ class OneshotPlaylist(BasePlaylist):
         self.mode = "one-shot"
         self.current_index = -1
 
-    def current_item(self) -> CachedItemWrapper | bool:
+    def current_item(self) -> CachedItemWrapper | None:
         with self.playlist_lock:
             if len(self) == 0:
                 self.current_index = -1
-                return False
+                return None
 
             if self.current_index == -1:
                 self.current_index = 0
@@ -298,7 +298,7 @@ class OneshotPlaylist(BasePlaylist):
                 return super().from_list(_list, -1)
             return self
 
-    def next(self) -> CachedItemWrapper | bool:
+    def next(self) -> CachedItemWrapper | None:
         with self.playlist_lock:
             if len(self) > 0:
                 self.version += 1
@@ -306,26 +306,26 @@ class OneshotPlaylist(BasePlaylist):
                 if self.current_index != -1:
                     super().__delitem__(self.current_index)
                     if len(self) == 0:
-                        return False
+                        return None
                 else:
                     self.current_index = 0
 
                 return self[0]
             else:
                 self.current_index = -1
-                return False
+                return None
 
-    def next_index(self) -> int | bool:
+    def next_index(self) -> int | None:
         if len(self) > 1:
             return 1
         else:
-            return False
+            return None
 
-    def next_item(self) -> CachedItemWrapper | bool:
+    def next_item(self) -> CachedItemWrapper | None:
         if len(self) > 1:
             return self[1]
         else:
-            return False
+            return None
 
     def point_to(self, index: int) -> None:
         with self.playlist_lock:
@@ -340,10 +340,10 @@ class RepeatPlaylist(BasePlaylist):
         super().__init__(cache, settings_db, music_db, config, send_channel_msg)
         self.mode = "repeat"
 
-    def next(self) -> CachedItemWrapper | bool:
+    def next(self) -> CachedItemWrapper | None:
         with self.playlist_lock:
             if len(self) == 0:
-                return False
+                return None
 
             if self.current_index < len(self) - 1:
                 self.current_index += 1
@@ -359,9 +359,9 @@ class RepeatPlaylist(BasePlaylist):
             else:
                 return 0
 
-    def next_item(self) -> CachedItemWrapper | bool:
+    def next_item(self) -> CachedItemWrapper | None:
         if len(self) == 0:
-            return False
+            return None
         return self[self.next_index()]
 
 
@@ -375,10 +375,10 @@ class RandomPlaylist(BasePlaylist):
         random.shuffle(_list)
         return super().from_list(_list, -1)
 
-    def next(self) -> CachedItemWrapper | bool:
+    def next(self) -> CachedItemWrapper | None:
         with self.playlist_lock:
             if len(self) == 0:
-                return False
+                return None
 
             if self.current_index < len(self) - 1:
                 self.current_index += 1
