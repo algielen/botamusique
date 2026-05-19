@@ -3,6 +3,7 @@ from threading import Lock
 
 import pymumble_py3.messages as messages
 import pymumble_py3.mumble_pb2 as mumble_pb2
+from pymumble_py3 import soundqueue
 from pymumble_py3.errors import TextTooLongError, ImageTooBigError
 from pymumble_py3.pymumble_constants import *
 
@@ -67,7 +68,6 @@ class User(dict):
         self.update(message)
 
         if mumble_object.receive_sound:
-            from . import soundqueue
             self.sound = soundqueue.SoundQueue(self.mumble_object)  # will hold this user incoming audio
         else:
             self.sound = None

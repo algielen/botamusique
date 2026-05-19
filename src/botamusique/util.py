@@ -4,10 +4,11 @@
 import hashlib
 import html
 import io
+import json
 import logging
 import os
 import re
-import subprocess as sp
+import subprocess
 import sys
 import traceback
 import zipfile
@@ -85,7 +86,7 @@ def update(current_version: str, config: ConfigParser) -> str:
     msg = ""
 
     log.info(f'update: starting update {YT_PKG_NAME} via pip3')
-    tp = sp.check_output([config.get('bot', 'pip3_path'), 'install', '--upgrade', YT_PKG_NAME]).decode()
+    tp = subprocess.check_output([config.get('bot', 'pip3_path'), 'install', '--upgrade', YT_PKG_NAME]).decode()
     if f"Collecting {YT_PKG_NAME}" in tp.splitlines():
         msg += "Update done: " + tp.split('Successfully installed')[1]
     else:
@@ -102,7 +103,6 @@ def pipe_no_wait() -> tuple[int, int] | tuple[None, None]:
 
     if platform == "linux" or platform == "linux2" or platform == "darwin" or platform.startswith("openbsd") or platform.startswith("freebsd"):
         import fcntl
-        import os
 
         pipe_rd = 0
         pipe_wd = 0
@@ -123,7 +123,6 @@ def pipe_no_wait() -> tuple[int, int] | tuple[None, None]:
     elif platform == "win32":
         # https://stackoverflow.com/questions/34504970/non-blocking-read-on-os-pipe-on-windows
         import msvcrt
-        import os
 
         from ctypes import windll, byref, wintypes, WinError, POINTER
         from ctypes.wintypes import HANDLE, DWORD, BOOL
@@ -256,7 +255,6 @@ def get_url_from_input(string: str) -> str:
 
 def youtube_search(query: str, config: ConfigParser) -> list[list[str]] | bool:
     global log
-    import json
 
     try:
         cookie_file = config.get('youtube_dl', 'cookie_file')
@@ -297,7 +295,7 @@ def youtube_search(query: str, config: ConfigParser) -> list[list[str]] | bool:
 def get_media_duration(path: str) -> float:
     command = ("ffprobe", "-v", "quiet", "-show_entries", "format=duration",
                "-of", "default=noprint_wrappers=1:nokey=1", path)
-    process = sp.Popen(command, stdout=sp.PIPE, stderr=sp.PIPE)
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = process.communicate()
 
     try:
@@ -383,7 +381,6 @@ def set_logging_formatter(handler: logging.Handler, logging_level: int) -> None:
 
 
 def get_snapshot_version() -> str:
-    import subprocess
     wd = os.getcwd()
     root_dir = os.path.dirname(__file__)
     os.chdir(root_dir)
