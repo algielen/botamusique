@@ -268,6 +268,7 @@ def main() -> None:
     # Start the main loop.
     bot.loop()
 
+
 def start_web_interface(addr: str, port: int, bot: MumbleBot) -> None:
     # setup logger
     werkzeug_logger = logging.getLogger('werkzeug')

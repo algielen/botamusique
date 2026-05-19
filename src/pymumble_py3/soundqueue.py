@@ -112,8 +112,8 @@ class SoundQueue:
 class SoundChunk:
     """
     Object that contains the actual audio frame, in PCM format"""    
-    def __init__(self, pcm: bytes, sequence: int, size: int, calculated_time: float, type: int, target: int, timestamp: float = time.time()) -> None:
-        self.timestamp = timestamp  # measured time of arrival of the sound 
+    def __init__(self, pcm: bytes, sequence: int, size: int, calculated_time: float, type: int, target: int, timestamp: float | None = None) -> None:
+        self.timestamp = timestamp if timestamp is not None else time.time()  # measured time of arrival of the sound
         self.time = calculated_time  # calculated time of arrival of the sound (based on sequence)
         self.pcm = pcm  # audio data
         self.sequence = sequence  # sequence of the packet
