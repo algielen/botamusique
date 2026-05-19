@@ -568,7 +568,7 @@ function displayLibraryControls(data) {
       } else {
         const tag_copy = lib_filter_tag_element.clone();
         tag_copy.html(tag);
-        console.log(getColor(tag));
+        // console.log(getColor(tag));
         tag_copy.addClass('bg-' + getColor(tag));
         tag_copy.appendTo(lib_filter_tag_group);
         // Bind Event
