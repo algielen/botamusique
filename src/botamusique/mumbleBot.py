@@ -5,6 +5,7 @@ import logging.handlers
 import math
 import os
 import os.path
+import queue
 import re
 import signal
 import struct
@@ -68,7 +69,7 @@ class MumbleBot:
 
         # Related to ffmpeg thread
         self.thread = None
-        self.thread_stderr = None
+        self._stderr_queue: queue.Queue[str] = queue.Queue()
         self.read_pcm_size = 0
         self.pcm_buffer_size = 0
         self.last_ffmpeg_err = ""
@@ -488,15 +489,17 @@ class MumbleBot:
                    uri, '-ss', f"{start_from:f}", '-ac', str(channels), '-f', 's16le', '-ar', '48000', '-')
         self.log.debug("bot: execute ffmpeg command: " + " ".join(command))
 
-        # The ffmpeg process is a thread
-        # prepare pipe for catching stderr of ffmpeg
+        self._stderr_queue = queue.Queue()
+        self.thread = sp.Popen(command, stdout=sp.PIPE,
+                               stderr=sp.PIPE if self.redirect_ffmpeg_log else None,
+                               bufsize=self.pcm_buffer_size)
         if self.redirect_ffmpeg_log:
-            pipe_rd, pipe_wd = util.pipe_no_wait()  # Let the pipe work in non-blocking mode
-            self.thread_stderr = os.fdopen(pipe_rd)
-        else:
-            pipe_rd, pipe_wd = None, None
+            th = threading.Thread(target=self._drain_stderr, args=(self.thread,), daemon=True)
+            th.start()
 
-        self.thread = sp.Popen(command, stdout=sp.PIPE, stderr=pipe_wd, bufsize=self.pcm_buffer_size)
+    def _drain_stderr(self, proc: sp.Popen) -> None:
+        for line in proc.stderr:
+            self._stderr_queue.put(line.decode(errors='replace'))
 
     def async_download_next(self) -> None:
         # Function start if the next music isn't ready
@@ -579,10 +582,9 @@ class MumbleBot:
 
                 if self.redirect_ffmpeg_log:
                     try:
-                        self.last_ffmpeg_err = self.thread_stderr.readline()
-                        if self.last_ffmpeg_err:
-                            self.log.debug("ffmpeg: " + self.last_ffmpeg_err.strip("\n"))
-                    except:
+                        self.last_ffmpeg_err = self._stderr_queue.get_nowait()
+                        self.log.debug("ffmpeg: " + self.last_ffmpeg_err.strip("\n"))
+                    except queue.Empty:
                         pass
 
                 if raw_music:

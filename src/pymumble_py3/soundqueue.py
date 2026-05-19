@@ -5,7 +5,7 @@ from threading import Lock
 
 import opuslib_next
 
-from pymumble_constants import *
+from pymumble_py3.pymumble_constants import *
 
 
 class SoundQueue:

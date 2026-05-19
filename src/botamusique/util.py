@@ -9,12 +9,10 @@ import logging
 import os
 import re
 import subprocess
-import sys
 import traceback
 import zipfile
 from configparser import ConfigParser
 from importlib import reload
-from sys import platform
 from typing import Any
 
 import requests
@@ -95,55 +93,6 @@ def update(current_version: str, config: ConfigParser) -> str:
     reload(youtube_dl)
     msg += "<br/>" + YT_PKG_NAME.capitalize() + " reloaded"
     return msg
-
-
-def pipe_no_wait() -> tuple[int, int] | tuple[None, None]:
-    """ Generate a non-block pipe used to fetch the STDERR of ffmpeg.
-    """
-
-    if platform == "linux" or platform == "linux2" or platform == "darwin" or platform.startswith("openbsd") or platform.startswith("freebsd"):
-        import fcntl
-
-        pipe_rd = 0
-        pipe_wd = 0
-
-        if hasattr(os, "pipe2"):
-            pipe_rd, pipe_wd = os.pipe2(os.O_NONBLOCK)
-        else:
-            pipe_rd, pipe_wd = os.pipe()
-
-            try:
-                fl = fcntl.fcntl(pipe_rd, fcntl.F_GETFL)
-                fcntl.fcntl(pipe_rd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
-            except:
-                print(sys.exc_info()[1])
-                return None, None
-        return pipe_rd, pipe_wd
-
-    elif platform == "win32":
-        # https://stackoverflow.com/questions/34504970/non-blocking-read-on-os-pipe-on-windows
-        import msvcrt
-
-        from ctypes import windll, byref, wintypes, WinError, POINTER
-        from ctypes.wintypes import HANDLE, DWORD, BOOL
-
-        pipe_rd, pipe_wd = os.pipe()
-
-        LPDWORD = POINTER(DWORD)
-        PIPE_NOWAIT = wintypes.DWORD(0x00000001)
-        ERROR_NO_DATA = 232
-
-        SetNamedPipeHandleState = windll.kernel32.SetNamedPipeHandleState
-        SetNamedPipeHandleState.argtypes = [HANDLE, LPDWORD, LPDWORD, LPDWORD]
-        SetNamedPipeHandleState.restype = BOOL
-
-        h = msvcrt.get_osfhandle(pipe_rd)
-
-        res = windll.kernel32.SetNamedPipeHandleState(h, byref(PIPE_NOWAIT), None, None)
-        if res == 0:
-            print(WinError())
-            return None, None
-        return pipe_rd, pipe_wd
 
 
 class Dir(object):
