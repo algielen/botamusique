@@ -5,7 +5,7 @@ import json
 import logging
 import re
 import secrets
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from pyradios import RadioBrowser
 
@@ -18,9 +18,7 @@ from botamusique.constants import tr_cli as tr
 from botamusique.database import SettingsDatabase, MusicDatabase, Condition
 from botamusique.media.cache import CachedItemWrapper
 from botamusique.media.url_from_playlist import get_playlist_info
-
-if TYPE_CHECKING:
-    from mumbleBot import MumbleBot
+from botamusique.mumbleBot import MumbleBot
 
 log = logging.getLogger("bot")
 

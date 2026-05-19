@@ -20,7 +20,6 @@ from typing import Callable, Any
 
 import audioop
 
-from botamusique import interface
 from botamusique import util
 from botamusique.constants import tr_cli as tr
 from botamusique.database import SettingsDatabase, MusicDatabase
@@ -802,29 +801,3 @@ class MumbleBot:
 
         self.wait_for_ready = True
         self.pause_at_id = ""
-
-
-def start_web_interface(addr: str, port: int, bot: MumbleBot) -> None:
-    global formatter
-
-    # setup logger
-    werkzeug_logger = logging.getLogger('werkzeug')
-    werkzeug_logger.propagate = False
-    logfile = util.solve_filepath(bot.config.get('webinterface', 'web_logfile'))
-    if logfile:
-        handler = logging.handlers.RotatingFileHandler(logfile, mode='a', maxBytes=10240, backupCount=3)  # Rotate after 10KB, leave 3 old logs
-    else:
-        handler = logging.StreamHandler()
-
-    # replace werkzeug_logger handlers with ours
-    for handler in list(werkzeug_logger.handlers):
-        if isinstance(handler, logging.StreamHandler):
-            werkzeug_logger.removeHandler(handler)
-            handler.close()
-    werkzeug_logger.addHandler(handler)
-
-    interface.init_app()
-    interface.set_bot(bot)
-    interface.init_proxy()
-    interface.web.secret_key = bot.config.get('webinterface', 'flask_secret')
-    interface.web.run(port=port, host=addr)
