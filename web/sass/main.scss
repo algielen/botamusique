@@ -132,8 +132,16 @@
     display: inline-block;
 }
 
-#volume-popover {
+.volume-popover-wrapper {
     position: relative;
+    display: inline-block;
+}
+
+#volume-popover {
+    position: absolute;
+    bottom: calc(100% + 10px);
+    left: 50%;
+    transform: translateX(-50%);
     background: #333;
     color: white;
     font-weight: bold;
@@ -141,32 +149,26 @@
     font-size: 20px;
     border-radius: 4px;
     display: none;
-}
+    z-index: 1000;
+    white-space: nowrap;
 
-#volume-popover[data-show] {
-    display: flex;
-}
+    &[data-show] {
+        display: flex;
+    }
 
-#volume-popover a {
-    cursor: pointer;
-}
+    a {
+        cursor: pointer;
+    }
 
-#volume-popover-arrow,
-#volume-popover-arrow::before {
-    position: absolute;
-    width: 10px;
-    height: 10px;
-    z-index: -1;
-}
-
-#volume-popover-arrow::before {
-    content: '';
-    transform: rotate(45deg);
-    background: #333;
-}
-
-#volume-popover[data-popper-placement^='top']>#volume-popover-arrow {
-    bottom: -4px;
+    &::after {
+        content: '';
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        border: 6px solid transparent;
+        border-top-color: #333;
+    }
 }
 
 #playerToast {
@@ -265,4 +267,32 @@ body {
 
 .toast {
     max-width: 700px;
+}
+
+/* SVG icon sprite */
+.svg-icon {
+    width: 1em;
+    height: 1em;
+    vertical-align: -0.125em;
+    fill: currentColor;
+    display: inline-block;
+}
+
+/* Native dialog modals */
+dialog {
+    border: none;
+    border-radius: 0.375rem;
+    padding: 0;
+    max-width: 500px;
+    width: 90%;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+
+    &::backdrop {
+        background: rgba(0, 0, 0, 0.5);
+    }
+}
+
+/* CSS hover for library thumbnail action buttons (replaces JS hover binding) */
+.library-item:hover .library-thumb-grp {
+    left: -15px;
 }
