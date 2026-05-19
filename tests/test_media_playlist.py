@@ -74,13 +74,13 @@ class TestEmptyPlaylist:
         assert oneshot.is_empty() is True
 
     def test_next_returns_false(self, oneshot):
-        assert oneshot.next() is False
+        assert oneshot.next() is None
 
     def test_current_item_returns_false(self, oneshot):
-        assert oneshot.current_item() is False
+        assert oneshot.current_item() is None
 
-    def test_next_item_returns_false(self, oneshot):
-        assert oneshot.next_item() is False
+    def test_next_item_returns_none(self, oneshot):
+        assert oneshot.next_item() is None
 
     def test_len_is_zero(self, oneshot):
         assert len(oneshot) == 0
@@ -128,22 +128,22 @@ class TestOneshotCurrentAndNext:
         _add_items(oneshot, mock_cache, 2)
         assert oneshot.current_index == -1
         result = oneshot.current_item()
-        assert result is not False
+        assert result is not None
 
     def test_next_advances_and_removes_current(self, oneshot, mock_cache):
         _add_items(oneshot, mock_cache, 2)
         first = oneshot.next()   # sets index=0, returns self[0]
-        assert first is not False
+        assert first is not None
         second = oneshot.next()  # deletes old self[0], returns new self[0]
-        assert second is not False
-        third = oneshot.next()   # list now empty → False
-        assert third is False
+        assert second is not None
+        third = oneshot.next()   # list now empty → None
+        assert third is None
 
     def test_next_on_single_item_returns_false_after(self, oneshot, mock_cache):
         _add_items(oneshot, mock_cache, 1)
         oneshot.next()           # sets index=0, returns item
-        result = oneshot.next()  # deletes item, list empty → False
-        assert result is False
+        result = oneshot.next()  # deletes item, list empty → None
+        assert result is None
 
 
 # ---------------------------------------------------------------------------
@@ -204,7 +204,7 @@ class TestRemove:
     def test_remove_returns_false_when_out_of_bounds(self, oneshot, mock_cache):
         _add_items(oneshot, mock_cache, 1)
         result = oneshot.remove(99)
-        assert result is False
+        assert result is None
 
     def test_remove_frees_cache_when_last_reference(self, oneshot, mock_cache):
         _add_items(oneshot, mock_cache, 1)
@@ -306,8 +306,8 @@ class TestRepeatPlaylist:
         _add_items(repeat_playlist, mock_cache, 2)
         first = repeat_playlist.next()
         second = repeat_playlist.next()
-        assert first is not False
-        assert second is not False
+        assert first is not None
+        assert second is not None
         assert first is not second
 
     def test_next_wraps_around(self, repeat_playlist, mock_cache):
@@ -324,7 +324,7 @@ class TestRepeatPlaylist:
         assert first is wrapped
 
     def test_next_empty_returns_false(self, repeat_playlist):
-        assert repeat_playlist.next() is False
+        assert repeat_playlist.next() is None
 
 
 # ---------------------------------------------------------------------------
@@ -335,7 +335,7 @@ class TestRandomPlaylist:
     def test_next_returns_items(self, random_playlist, mock_cache):
         _add_items(random_playlist, mock_cache, 3)
         results = [random_playlist.next() for _ in range(3)]
-        assert all(r is not False for r in results)
+        assert all(r is not None for r in results)
 
     def test_next_wraps_around_with_reshuffling(self, random_playlist, mock_cache):
         """After exhausting all items, next() reshuffles and returns an item."""
@@ -343,10 +343,10 @@ class TestRandomPlaylist:
         random_playlist.next()  # index 0
         random_playlist.next()  # index 1 (end)
         fourth = random_playlist.next()  # re-shuffle, index 0
-        assert fourth is not False
+        assert fourth is not None
 
     def test_next_empty_returns_false(self, random_playlist):
-        assert random_playlist.next() is False
+        assert random_playlist.next() is None
 
 
 # ---------------------------------------------------------------------------

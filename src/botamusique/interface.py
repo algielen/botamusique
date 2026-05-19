@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-from __future__ import annotations
 
 import errno
 import json
@@ -11,7 +10,7 @@ import sqlite3
 import time
 from functools import wraps
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable
+from typing import Any, Callable
 
 from flask import Flask, Blueprint, render_template, request, redirect, send_file, Response, jsonify, abort, session
 
@@ -23,12 +22,10 @@ from botamusique.media.item import BaseItem
 from botamusique.media.radio import RadioItem
 from botamusique.media.url import URLItem
 from botamusique.media.url_from_playlist import PlaylistURLItem
+from botamusique.mumbleBot import MumbleBot
 
-if TYPE_CHECKING:
-    from mumbleBot import MumbleBot
 
 _bot: MumbleBot | None = None
-
 
 def set_bot(bot: MumbleBot) -> None:
     global _bot

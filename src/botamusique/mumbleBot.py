@@ -5,6 +5,7 @@ import logging.handlers
 import math
 import os
 import os.path
+import queue
 import re
 import signal
 import struct
@@ -20,7 +21,6 @@ from typing import Callable, Any
 
 import audioop
 
-from botamusique import interface
 from botamusique import util
 from botamusique.constants import tr_cli as tr
 from botamusique.database import SettingsDatabase, MusicDatabase
@@ -69,7 +69,7 @@ class MumbleBot:
 
         # Related to ffmpeg thread
         self.thread = None
-        self.thread_stderr = None
+        self._stderr_queue: queue.Queue[str] = queue.Queue()
         self.read_pcm_size = 0
         self.pcm_buffer_size = 0
         self.last_ffmpeg_err = ""
@@ -335,8 +335,7 @@ class MumbleBot:
             user = user.split()[0]
 
         command_symbols = self.config.get('commands', 'command_symbol')
-        match = re.match(fr'^[{re.escape(command_symbols)}](?P<command>\S+)(?:\s(?P<argument>.*))?', message)
-        if match:
+        if match := re.match(fr'^[{re.escape(command_symbols)}](?P<command>\S+)(?:\s(?P<argument>.*))?', message):
             command = match.group("command").lower()
             argument = match.group("argument") or ""
 
@@ -489,34 +488,35 @@ class MumbleBot:
                    uri, '-ss', f"{start_from:f}", '-ac', str(channels), '-f', 's16le', '-ar', '48000', '-')
         self.log.debug("bot: execute ffmpeg command: " + " ".join(command))
 
-        # The ffmpeg process is a thread
-        # prepare pipe for catching stderr of ffmpeg
+        self._stderr_queue = queue.Queue()
+        self.thread = sp.Popen(command, stdout=sp.PIPE,
+                               stderr=sp.PIPE if self.redirect_ffmpeg_log else None,
+                               bufsize=self.pcm_buffer_size)
         if self.redirect_ffmpeg_log:
-            pipe_rd, pipe_wd = util.pipe_no_wait()  # Let the pipe work in non-blocking mode
-            self.thread_stderr = os.fdopen(pipe_rd)
-        else:
-            pipe_rd, pipe_wd = None, None
+            th = threading.Thread(target=self._drain_stderr, args=(self.thread,), daemon=True)
+            th.start()
 
-        self.thread = sp.Popen(command, stdout=sp.PIPE, stderr=pipe_wd, bufsize=self.pcm_buffer_size)
+    def _drain_stderr(self, proc: sp.Popen) -> None:
+        for line in proc.stderr:
+            self._stderr_queue.put(line.decode(errors='replace'))
 
     def async_download_next(self) -> None:
         # Function start if the next music isn't ready
         # Do nothing in case the next music is already downloaded
         self.log.debug("bot: Async download next asked ")
-        while self.playlist.next_item():
+        while next_item := self.playlist.next_item():
             # usually, all validation will be done when adding to the list.
             # however, for performance consideration, youtube playlist won't be validate when added.
             # the validation has to be done here.
-            next = self.playlist.next_item()
             try:
-                if not next.is_ready():
-                    self.async_download(next)
+                if not next_item.is_ready():
+                    self.async_download(next_item)
 
                 break
             except ValidationFailedError as e:
                 self.send_channel_msg(e.msg)
-                self.playlist.remove_by_id(next.id)
-                self.cache.free_and_delete(next.id)
+                self.playlist.remove_by_id(next_item.id)
+                self.cache.free_and_delete(next_item.id)
 
     def async_download(self, item: CachedItemWrapper) -> threading.Thread:
         th = threading.Thread(
@@ -581,10 +581,9 @@ class MumbleBot:
 
                 if self.redirect_ffmpeg_log:
                     try:
-                        self.last_ffmpeg_err = self.thread_stderr.readline()
-                        if self.last_ffmpeg_err:
-                            self.log.debug("ffmpeg: " + self.last_ffmpeg_err.strip("\n"))
-                    except:
+                        self.last_ffmpeg_err = self._stderr_queue.get_nowait()
+                        self.log.debug("ffmpeg: " + self.last_ffmpeg_err.strip("\n"))
+                    except queue.Empty:
                         pass
 
                 if raw_music:
@@ -802,29 +801,3 @@ class MumbleBot:
 
         self.wait_for_ready = True
         self.pause_at_id = ""
-
-
-def start_web_interface(addr: str, port: int, bot: MumbleBot) -> None:
-    global formatter
-
-    # setup logger
-    werkzeug_logger = logging.getLogger('werkzeug')
-    werkzeug_logger.propagate = False
-    logfile = util.solve_filepath(bot.config.get('webinterface', 'web_logfile'))
-    if logfile:
-        handler = logging.handlers.RotatingFileHandler(logfile, mode='a', maxBytes=10240, backupCount=3)  # Rotate after 10KB, leave 3 old logs
-    else:
-        handler = logging.StreamHandler()
-
-    # replace werkzeug_logger handlers with ours
-    for handler in list(werkzeug_logger.handlers):
-        if isinstance(handler, logging.StreamHandler):
-            werkzeug_logger.removeHandler(handler)
-            handler.close()
-    werkzeug_logger.addHandler(handler)
-
-    interface.init_app()
-    interface.set_bot(bot)
-    interface.init_proxy()
-    interface.web.secret_key = bot.config.get('webinterface', 'flask_secret')
-    interface.web.run(port=port, host=addr)

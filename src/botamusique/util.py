@@ -4,16 +4,15 @@
 import hashlib
 import html
 import io
+import json
 import logging
 import os
 import re
-import subprocess as sp
-import sys
+import subprocess
 import traceback
 import zipfile
 from configparser import ConfigParser
 from importlib import reload
-from sys import platform
 from typing import Any
 
 import requests
@@ -85,7 +84,7 @@ def update(current_version: str, config: ConfigParser) -> str:
     msg = ""
 
     log.info(f'update: starting update {YT_PKG_NAME} via pip3')
-    tp = sp.check_output([config.get('bot', 'pip3_path'), 'install', '--upgrade', YT_PKG_NAME]).decode()
+    tp = subprocess.check_output([config.get('bot', 'pip3_path'), 'install', '--upgrade', YT_PKG_NAME]).decode()
     if f"Collecting {YT_PKG_NAME}" in tp.splitlines():
         msg += "Update done: " + tp.split('Successfully installed')[1]
     else:
@@ -94,57 +93,6 @@ def update(current_version: str, config: ConfigParser) -> str:
     reload(youtube_dl)
     msg += "<br/>" + YT_PKG_NAME.capitalize() + " reloaded"
     return msg
-
-
-def pipe_no_wait() -> tuple[int, int] | tuple[None, None]:
-    """ Generate a non-block pipe used to fetch the STDERR of ffmpeg.
-    """
-
-    if platform == "linux" or platform == "linux2" or platform == "darwin" or platform.startswith("openbsd") or platform.startswith("freebsd"):
-        import fcntl
-        import os
-
-        pipe_rd = 0
-        pipe_wd = 0
-
-        if hasattr(os, "pipe2"):
-            pipe_rd, pipe_wd = os.pipe2(os.O_NONBLOCK)
-        else:
-            pipe_rd, pipe_wd = os.pipe()
-
-            try:
-                fl = fcntl.fcntl(pipe_rd, fcntl.F_GETFL)
-                fcntl.fcntl(pipe_rd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
-            except:
-                print(sys.exc_info()[1])
-                return None, None
-        return pipe_rd, pipe_wd
-
-    elif platform == "win32":
-        # https://stackoverflow.com/questions/34504970/non-blocking-read-on-os-pipe-on-windows
-        import msvcrt
-        import os
-
-        from ctypes import windll, byref, wintypes, WinError, POINTER
-        from ctypes.wintypes import HANDLE, DWORD, BOOL
-
-        pipe_rd, pipe_wd = os.pipe()
-
-        LPDWORD = POINTER(DWORD)
-        PIPE_NOWAIT = wintypes.DWORD(0x00000001)
-        ERROR_NO_DATA = 232
-
-        SetNamedPipeHandleState = windll.kernel32.SetNamedPipeHandleState
-        SetNamedPipeHandleState.argtypes = [HANDLE, LPDWORD, LPDWORD, LPDWORD]
-        SetNamedPipeHandleState.restype = BOOL
-
-        h = msvcrt.get_osfhandle(pipe_rd)
-
-        res = windll.kernel32.SetNamedPipeHandleState(h, byref(PIPE_NOWAIT), None, None)
-        if res == 0:
-            print(WinError())
-            return None, None
-        return pipe_rd, pipe_wd
 
 
 class Dir(object):
@@ -245,8 +193,7 @@ def get_url_from_input(string: str) -> str:
         else:
             return ""
 
-    match = re.search("(http|https)://(\\S*)?/(\\S*)", string, flags=re.IGNORECASE)
-    if match:
+    if match := re.search("(http|https)://(\\S*)?/(\\S*)", string, flags=re.IGNORECASE):
         url = match[1].lower() + "://" + match[2].lower() + "/" + match[3]
         # https://github.com/mumble-voip/mumble/issues/4999
         return html.unescape(url)
@@ -256,7 +203,6 @@ def get_url_from_input(string: str) -> str:
 
 def youtube_search(query: str, config: ConfigParser) -> list[list[str]] | bool:
     global log
-    import json
 
     try:
         cookie_file = config.get('youtube_dl', 'cookie_file')
@@ -297,7 +243,7 @@ def youtube_search(query: str, config: ConfigParser) -> list[list[str]] | bool:
 def get_media_duration(path: str) -> float:
     command = ("ffprobe", "-v", "quiet", "-show_entries", "format=duration",
                "-of", "default=noprint_wrappers=1:nokey=1", path)
-    process = sp.Popen(command, stdout=sp.PIPE, stderr=sp.PIPE)
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = process.communicate()
 
     try:
@@ -310,8 +256,7 @@ def get_media_duration(path: str) -> float:
 
 
 def parse_time(human: str) -> float:
-    match = re.search("(?:(\\d\\d):)?(?:(\\d\\d):)?(\\d+(?:\\.\\d*)?)", human, flags=re.IGNORECASE)
-    if match:
+    if match := re.search("(?:(\\d\\d):)?(?:(\\d\\d):)?(\\d+(?:\\.\\d*)?)", human, flags=re.IGNORECASE):
         if match[1] is None and match[2] is None:
             return float(match[3])
         elif match[2] is None:
@@ -333,8 +278,7 @@ def format_time(seconds: float) -> str:
 def parse_file_size(human: str) -> int:
     units = {"B": 1, "KB": 1024, "MB": 1024 * 1024, "GB": 1024 * 1024 * 1024, "TB": 1024 * 1024 * 1024 * 1024,
              "K": 1024, "M": 1024 * 1024, "G": 1024 * 1024 * 1024, "T": 1024 * 1024 * 1024 * 1024}
-    match = re.search("(\\d+(?:\\.\\d*)?)\\s*([A-Za-z]+)", human, flags=re.IGNORECASE)
-    if match:
+    if match := re.search("(\\d+(?:\\.\\d*)?)\\s*([A-Za-z]+)", human, flags=re.IGNORECASE):
         num = float(match[1])
         unit = match[2].upper()
         if unit in units:
@@ -383,7 +327,6 @@ def set_logging_formatter(handler: logging.Handler, logging_level: int) -> None:
 
 
 def get_snapshot_version() -> str:
-    import subprocess
     wd = os.getcwd()
     root_dir = os.path.dirname(__file__)
     os.chdir(root_dir)
