@@ -357,8 +357,7 @@ def cmd_play_file_match(bot: MumbleBot, user: str, text: Any, command: str, para
             music_wrappers = []
             for file_dict in file_dicts:
                 file = file_dict['title']
-                match = re.search(parameter, file)
-                if match and match[0]:
+                if (match := re.search(parameter, file)) and match[0]:
                     count += 1
                     music_wrapper = bot.cache.get_cached_wrapper(bot.cache.dict_to_item(file_dict), user)
                     music_wrappers.append(music_wrapper)
@@ -893,8 +892,7 @@ def cmd_repeat(bot: MumbleBot, user: str, text: Any, command: str, parameter: st
     if parameter and parameter.isdigit():
         repeat = int(parameter)
 
-    music = bot.playlist.current_item()
-    if music:
+    if music := bot.playlist.current_item():
         for _ in range(repeat):
             bot.playlist.insert(
                 bot.playlist.current_index + 1,

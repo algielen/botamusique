@@ -193,8 +193,7 @@ def get_url_from_input(string: str) -> str:
         else:
             return ""
 
-    match = re.search("(http|https)://(\\S*)?/(\\S*)", string, flags=re.IGNORECASE)
-    if match:
+    if match := re.search("(http|https)://(\\S*)?/(\\S*)", string, flags=re.IGNORECASE):
         url = match[1].lower() + "://" + match[2].lower() + "/" + match[3]
         # https://github.com/mumble-voip/mumble/issues/4999
         return html.unescape(url)
@@ -257,8 +256,7 @@ def get_media_duration(path: str) -> float:
 
 
 def parse_time(human: str) -> float:
-    match = re.search("(?:(\\d\\d):)?(?:(\\d\\d):)?(\\d+(?:\\.\\d*)?)", human, flags=re.IGNORECASE)
-    if match:
+    if match := re.search("(?:(\\d\\d):)?(?:(\\d\\d):)?(\\d+(?:\\.\\d*)?)", human, flags=re.IGNORECASE):
         if match[1] is None and match[2] is None:
             return float(match[3])
         elif match[2] is None:
@@ -280,8 +278,7 @@ def format_time(seconds: float) -> str:
 def parse_file_size(human: str) -> int:
     units = {"B": 1, "KB": 1024, "MB": 1024 * 1024, "GB": 1024 * 1024 * 1024, "TB": 1024 * 1024 * 1024 * 1024,
              "K": 1024, "M": 1024 * 1024, "G": 1024 * 1024 * 1024, "T": 1024 * 1024 * 1024 * 1024}
-    match = re.search("(\\d+(?:\\.\\d*)?)\\s*([A-Za-z]+)", human, flags=re.IGNORECASE)
-    if match:
+    if match := re.search("(\\d+(?:\\.\\d*)?)\\s*([A-Za-z]+)", human, flags=re.IGNORECASE):
         num = float(match[1])
         unit = match[2].upper()
         if unit in units:

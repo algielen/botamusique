@@ -335,8 +335,7 @@ class MumbleBot:
             user = user.split()[0]
 
         command_symbols = self.config.get('commands', 'command_symbol')
-        match = re.match(fr'^[{re.escape(command_symbols)}](?P<command>\S+)(?:\s(?P<argument>.*))?', message)
-        if match:
+        if match := re.match(fr'^[{re.escape(command_symbols)}](?P<command>\S+)(?:\s(?P<argument>.*))?', message):
             command = match.group("command").lower()
             argument = match.group("argument") or ""
 

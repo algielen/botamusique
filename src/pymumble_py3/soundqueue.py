@@ -2,6 +2,7 @@
 import time
 from collections import deque
 from threading import Lock
+from typing import Any
 
 import opuslib_next
 
@@ -13,7 +14,7 @@ class SoundQueue:
     Per user storage of received audio frames
     Takes care of the decoding of the received audio
     """
-    def __init__(self, mumble_object):
+    def __init__(self, mumble_object: Any) -> None:
         self.mumble_object = mumble_object
         
         self.queue = deque()
@@ -30,14 +31,14 @@ class SoundQueue:
                     PYMUMBLE_AUDIO_TYPE_OPUS: opuslib_next.Decoder(PYMUMBLE_SAMPLERATE, 1)
         }
 
-    def set_receive_sound(self, value):
+    def set_receive_sound(self, value: bool) -> None:
         """Define if received sounds must be kept or discarded in this specific queue (user)"""
         if value:
             self.receive_sound = True
         else:
             self.receive_sound = False
 
-    def add(self, audio, sequence, type, target):
+    def add(self, audio: bytes, sequence: int, type: int, target: int) -> SoundChunk | None:
         """Add a new audio frame to the queue, after decoding"""
         if not self.receive_sound:
             return None
@@ -78,14 +79,14 @@ class SoundQueue:
             self.lock.release()
             self.mumble_object.Log.error("error while decoding audio. sequence:{seq}, type:{type}. {error}".format(seq=sequence, type=type, error=str(e)))
 
-    def is_sound(self):
+    def is_sound(self) -> bool:
         """Boolean to check if there is a sound frame in the queue"""
         if len(self.queue) > 0:
             return True
         else:
             return False
         
-    def get_sound(self, duration=None):
+    def get_sound(self, duration: float | None = None) -> SoundChunk | None:
         """Return the first sound of the queue and discard it"""
         self.lock.acquire()
 
@@ -100,7 +101,7 @@ class SoundQueue:
         self.lock.release()
         return result
     
-    def first_sound(self):
+    def first_sound(self) -> SoundChunk | None:
         """Return the first sound of the queue, but keep it"""
         if len(self.queue) > 0:
             return self.queue[-1]
@@ -111,7 +112,7 @@ class SoundQueue:
 class SoundChunk:
     """
     Object that contains the actual audio frame, in PCM format"""    
-    def __init__(self, pcm, sequence, size, calculated_time, type, target, timestamp=time.time()):
+    def __init__(self, pcm: bytes, sequence: int, size: int, calculated_time: float, type: int, target: int, timestamp: float = time.time()) -> None:
         self.timestamp = timestamp  # measured time of arrival of the sound 
         self.time = calculated_time  # calculated time of arrival of the sound (based on sequence)
         self.pcm = pcm  # audio data
@@ -121,7 +122,7 @@ class SoundChunk:
         self.type = type  # type of the audio (codec)
         self.target = target  # target of the audio
         
-    def extract_sound(self, duration):
+    def extract_sound(self, duration: float) -> SoundChunk:
         """Extract part of the chunk, leaving a valid chunk for the remaining part"""
         size = int(duration*2*PYMUMBLE_SAMPLERATE)
         result = SoundChunk(

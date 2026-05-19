@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from threading import Lock
+from typing import Any
 
 import pymumble_py3.messages as messages
 import pymumble_py3.mumble_pb2 as mumble_pb2
@@ -11,7 +12,7 @@ from pymumble_py3.pymumble_constants import *
 class Users(dict):
     """Object that stores and update all connected users"""
 
-    def __init__(self, mumble_object, callbacks):
+    def __init__(self, mumble_object: Any, callbacks: Any) -> None:
         super().__init__()
         self.mumble_object = mumble_object
         self.callbacks = callbacks
@@ -20,7 +21,7 @@ class Users(dict):
         self.myself_session = None  # session number of the pymumble thread itself
         self.lock = Lock()
 
-    def update(self, message):
+    def update(self, message: Any) -> None:
         """Update a user information, based on the incoming message"""
         self.lock.acquire()
 
@@ -60,7 +61,7 @@ class Users(dict):
 class User(dict):
     """Object that store one user"""
 
-    def __init__(self, mumble_object, message):
+    def __init__(self, mumble_object: Any, message: Any) -> None:
         super().__init__()
         self.mumble_object = mumble_object
         self["session"] = message.session
@@ -72,7 +73,7 @@ class User(dict):
         else:
             self.sound = None
 
-    def update(self, message):
+    def update(self, message: Any) -> dict[str, Any]:
         """Update user state, based on an incoming message"""
         actions = dict()
 
@@ -97,7 +98,7 @@ class User(dict):
 
         return actions  # return a dict, useful for the callback functions
 
-    def update_field(self, name, field):
+    def update_field(self, name: str, field: Any) -> dict[str, Any]:
         """Update one state value for a user"""
         actions = dict()
         if name not in self or self[name] != field:
@@ -106,7 +107,7 @@ class User(dict):
 
         return actions
 
-    def get_property(self, property):
+    def get_property(self, property: str) -> Any:
         if property in self:
             return self[property]
         else:
