@@ -286,6 +286,9 @@ def start_web_interface(addr: str, port: int, bot: MumbleBot) -> None:
             existing.close()
     werkzeug_logger.addHandler(handler)
 
+    level_name = bot.config.get('debug', 'web_access_log_level').upper()
+    werkzeug_logger.setLevel(getattr(logging, level_name, logging.INFO))
+
     interface.init_app()
     interface.set_bot(bot)
     interface.init_proxy()
