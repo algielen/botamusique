@@ -331,6 +331,7 @@ def playlist() -> Response:
 
 
 def status() -> Response:
+    bot_version = _bot.get_version()
     if len(_bot.playlist) > 0:
         return jsonify({'ver': _bot.playlist.version,
                         'current_index': _bot.playlist.current_index,
@@ -338,7 +339,8 @@ def status() -> Response:
                         'play': not _bot.is_pause,
                         'mode': _bot.playlist.mode,
                         'volume': _bot.volume_helper.plain_volume_set,
-                        'playhead': _bot.playhead
+                        'playhead': _bot.playhead,
+                        'bot_version': bot_version,
                         })
 
     else:
@@ -348,7 +350,8 @@ def status() -> Response:
                         'play': not _bot.is_pause,
                         'mode': _bot.playlist.mode,
                         'volume': _bot.volume_helper.plain_volume_set,
-                        'playhead': 0
+                        'playhead': 0,
+                        'bot_version': bot_version,
                         })
 
 

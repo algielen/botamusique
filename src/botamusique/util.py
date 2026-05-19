@@ -331,19 +331,32 @@ def get_snapshot_version() -> str:
     root_dir = os.path.dirname(__file__)
     os.chdir(root_dir)
 
-    ver = "unknown"
+    git_ver: str | None = None
     if os.path.exists(os.path.join(root_dir, ".git")):
         try:
             ret = subprocess.check_output(["git", "describe", "--tags"]).strip()
-            ver = ret.decode("utf-8")
+            git_ver = ret.decode("utf-8")
         except (FileNotFoundError, subprocess.CalledProcessError):
             try:
                 with open(os.path.join(root_dir, ".git/refs/heads/master")) as f:
-                    ver = "g" + f.read()[:7]
+                    git_ver = "g" + f.read()[:7]
             except FileNotFoundError:
                 pass
 
     os.chdir(wd)
+
+    if git_ver:
+        return git_ver
+
+    from importlib.metadata import version as pkg_version, PackageNotFoundError
+    try:
+        ver = pkg_version("botamusique")
+    except PackageNotFoundError:
+        return "unknown"
+
+    commit = os.environ.get("GIT_COMMIT", "")
+    if commit:
+        ver = f"{ver} ({commit[:7]})"
     return ver
 
 

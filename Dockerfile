@@ -1,5 +1,6 @@
 FROM ghcr.io/astral-sh/uv:python3.14-trixie-slim AS python-builder
 ENV DEBIAN_FRONTEND=noninteractive
+ARG GIT_COMMIT
 WORKDIR /botamusique
 
 RUN apt-get update \
@@ -15,6 +16,8 @@ RUN uv venv --clear \
 
 FROM ghcr.io/astral-sh/uv:python3.14-trixie-slim
 ENV DEBIAN_FRONTEND=noninteractive
+ARG GIT_COMMIT
+ENV GIT_COMMIT=${GIT_COMMIT}
 
 RUN apt-get update && \
     apt-get install --no-install-recommends -y opus-tools ffmpeg curl tar && \
