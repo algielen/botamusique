@@ -589,7 +589,7 @@ def cmd_yt_search(bot: MumbleBot, user: str, text: Any, command: str, parameter:
         bot.send_msg(tr('bad_parameter', command=command), text)
 
 
-def _yt_format_result(results, start, count):
+def _yt_format_result(results: list[tuple[str, str, str]], start: int, count: int) -> str:
     msg = '<table><tr><th width="10%">Index</th><th>Title</th><th width="20%">Uploader</th></tr>'
     for index, item in enumerate(results[start:start + count]):
         msg += '<tr><td>{index:d}</td><td>{title}</td><td>{uploader}</td></tr>'.format(
