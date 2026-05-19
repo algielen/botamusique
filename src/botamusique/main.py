@@ -279,10 +279,10 @@ def start_web_interface(addr: str, port: int, bot: MumbleBot) -> None:
         handler = logging.StreamHandler()
 
     # replace werkzeug_logger handlers with ours
-    for handler in list(werkzeug_logger.handlers):
-        if isinstance(handler, logging.StreamHandler):
-            werkzeug_logger.removeHandler(handler)
-            handler.close()
+    for existing in list(werkzeug_logger.handlers):
+        if isinstance(existing, logging.StreamHandler):
+            werkzeug_logger.removeHandler(existing)
+            existing.close()
     werkzeug_logger.addHandler(handler)
 
     interface.init_app()
