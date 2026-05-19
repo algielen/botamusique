@@ -292,6 +292,9 @@ function checkForPlaylistUpdate() {
         if (!data.empty) {
           updatePlayerPlayhead(data.playhead);
         }
+        if (data.bot_version) {
+          $('#bot-version').text(data.bot_version);
+        }
       },
     },
   });

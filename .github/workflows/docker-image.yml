@@ -50,7 +50,7 @@ jobs:
       with:
         images: ${{ vars.DOCKER_USERNAME }}/botamusique
         tags: |
-          type=raw,value=latest,enable=${{ github.event_name == 'schedule' }}
+          type=raw,value=latest,enable=${{ github.ref == 'refs/heads/master' }}
           type=ref,event=branch
           type=ref,event=pr
           type=semver,pattern={{version}}
@@ -68,6 +68,7 @@ jobs:
         push: ${{ github.event_name != 'pull_request' }}
         tags: ${{ steps.meta.outputs.tags }}
         annotations: ${{ steps.meta.outputs.annotations }}
+        build-args: GIT_COMMIT=${{ github.sha }}
         provenance: true
         sbom: true
 
