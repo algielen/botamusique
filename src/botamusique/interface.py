@@ -128,7 +128,7 @@ banned_ip = []
 
 def requires_auth(f: Callable[..., Any]) -> Callable[..., Any]:
     @wraps(f)
-    def decorated(*args, **kwargs):
+    def decorated(*args: Any, **kwargs: Any) -> Any:
         global log, user, bad_access_count, banned_ip
 
         if request.remote_addr in banned_ip:
@@ -197,7 +197,7 @@ def requires_auth(f: Callable[..., Any]) -> Callable[..., Any]:
     return decorated
 
 
-def tag_color(tag):
+def tag_color(tag: str) -> str:
     num = hash(tag) % 8
     if num == 0:
         return "primary"
@@ -217,7 +217,7 @@ def tag_color(tag):
         return "dark"
 
 
-def build_tags_color_lookup():
+def build_tags_color_lookup() -> dict[str, str]:
     color_lookup = {}
     for tag in _bot.music_db.query_all_tags():
         color_lookup[tag] = tag_color(tag)
@@ -225,7 +225,7 @@ def build_tags_color_lookup():
     return color_lookup
 
 
-def get_all_dirs():
+def get_all_dirs() -> list[str]:
     dirs = ["."]
     paths = _bot.music_db.query_all_paths()
     for path in paths:
@@ -243,7 +243,7 @@ def get_all_dirs():
 
 @bp.route("/", methods=["GET"])
 @requires_auth
-def index():
+def index() -> str:
     return open(
         root_dir.joinpath(
             f"web/templates/index.{_bot.config.get('bot', 'language')}.html"
@@ -254,7 +254,7 @@ def index():
 
 @bp.route("/playlist", methods=['GET'])
 @requires_auth
-def playlist():
+def playlist() -> Response:
     if len(_bot.playlist) == 0:
         return jsonify({
             'items': [],
@@ -330,7 +330,7 @@ def playlist():
     })
 
 
-def status():
+def status() -> Response:
     if len(_bot.playlist) > 0:
         return jsonify({'ver': _bot.playlist.version,
                         'current_index': _bot.playlist.current_index,
@@ -354,7 +354,7 @@ def status():
 
 @bp.route("/post", methods=['POST'])
 @requires_auth
-def post():
+def post() -> Response:
     global log
 
     payload = request.get_json() if request.is_json else request.form
@@ -533,7 +533,7 @@ def post():
     return status()
 
 
-def build_library_query_condition(form):
+def build_library_query_condition(form: dict[str, Any]) -> Condition:
     try:
         condition = Condition()
 
@@ -574,7 +574,7 @@ def build_library_query_condition(form):
 
 @bp.route("/library/info", methods=['GET'])
 @requires_auth
-def library_info():
+def library_info() -> Response:
     global log
 
     while _bot.cache.dir_lock.locked():
@@ -594,7 +594,7 @@ def library_info():
 
 @bp.route("/library", methods=['POST'])
 @requires_auth
-def library():
+def library() -> Response:
     global log
     ITEM_PER_PAGE = 10
 
@@ -704,7 +704,7 @@ def library():
 
 @bp.route('/upload', methods=["POST"])
 @requires_auth
-def upload():
+def upload() -> tuple[str, int]:
     global log
 
     if not _bot.config.getboolean("webinterface", "upload_enabled"):
@@ -756,7 +756,7 @@ def upload():
 
 @bp.route('/download', methods=["GET"])
 @requires_auth
-def download():
+def download() -> Response:
     global log
 
     if 'id' in request.args and request.args['id']:

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from threading import Lock
+from typing import Any
 
 import pymumble_py3.messages as messages
 from pymumble_py3.acl import ACL
@@ -12,14 +13,14 @@ class Channels(dict):
     Object that Stores all channels and their properties.
     """
 
-    def __init__(self, mumble_object, callbacks):
+    def __init__(self, mumble_object: Any, callbacks: Any) -> None:
         super().__init__()
         self.mumble_object = mumble_object
         self.callbacks = callbacks
 
         self.lock = Lock()
 
-    def update(self, message):
+    def update(self, message: Any) -> None:
         """Update the channel information based on an incoming message"""
         self.lock.acquire()
 
@@ -32,7 +33,7 @@ class Channels(dict):
 
         self.lock.release()
 
-    def remove(self, id):
+    def remove(self, id: int) -> None:
         """Delete a channel when server signal the channel is removed"""
         self.lock.acquire()
 
@@ -43,7 +44,7 @@ class Channels(dict):
 
         self.lock.release()
 
-    def find_by_tree(self, tree):
+    def find_by_tree(self, tree: list[str]) -> dict[str, Any]:
         """Find a channel by its full path (a list with an element for each leaf)"""
         if not getattr(tree, '__iter__', False):
             tree = tree  # function use argument as a list
@@ -64,7 +65,7 @@ class Channels(dict):
 
         return current
 
-    def get_childs(self, channel):
+    def get_childs(self, channel: dict[str, Any]) -> list[dict[str, Any]]:
         """Get the child channels of a channel in a list"""
         childs = list()
 
@@ -74,7 +75,7 @@ class Channels(dict):
 
         return childs
 
-    def get_descendants(self, channel):
+    def get_descendants(self, channel: dict[str, Any]) -> list[list[dict[str, Any]]]:
         """Get all the descendant of a channel, in nested lists"""
         descendants = list()
 
@@ -83,7 +84,7 @@ class Channels(dict):
 
         return descendants
 
-    def get_tree(self, channel):
+    def get_tree(self, channel: dict[str, Any]) -> list[dict[str, Any]]:
         """Get the whole list of channels, in a multidimensional list"""
         tree = list()
 
@@ -97,7 +98,7 @@ class Channels(dict):
 
         return tree
 
-    def find_by_name(self, name):
+    def find_by_name(self, name: str) -> dict[str, Any]:
         """Find a channel by name.  Stop on the first that match"""
         if name == "":
             return self[0]
@@ -109,15 +110,15 @@ class Channels(dict):
         err = "Channel %s does not exists" % name
         raise UnknownChannelError(err)
 
-    def new_channel(self, parent_id, name, temporary=False):
+    def new_channel(self, parent_id: int, name: str, temporary: bool = False) -> None:
         cmd = messages.CreateChannel(parent_id, name, temporary)
         self.mumble_object.execute_command(cmd)
 
-    def remove_channel(self, channel_id):
+    def remove_channel(self, channel_id: int) -> None:
         cmd = messages.RemoveChannel(channel_id)
         self.mumble_object.execute_command(cmd)
 
-    def unlink_every_channel(self):
+    def unlink_every_channel(self) -> None:
         """
         Unlink every channels in server.
         So there will be no channel linked to other channel.
@@ -133,21 +134,21 @@ class Channel(dict):
     Stores information about one specific channel
     """
 
-    def __init__(self, mumble_object, message):
+    def __init__(self, mumble_object: Any, message: Any) -> None:
         self.mumble_object = mumble_object
         self["channel_id"] = message.channel_id
         self.acl = ACL(mumble_object=mumble_object, channel_id=self["channel_id"])
         self.permissions = None  # populated from PermissionQuery messages
         self.update(message)
 
-    def get_users(self):
+    def get_users(self) -> list[dict[str, Any]]:
         users = []
         for user in list(self.mumble_object.users.values()):
             if user["channel_id"] == self["channel_id"]:
                 users.append(user)
         return users
 
-    def update(self, message):
+    def update(self, message: Any) -> dict[str, Any]:
         """Update a channel based on an incoming message"""
         actions = dict()
 
@@ -165,7 +166,7 @@ class Channel(dict):
 
         return actions  # return a dict with updates performed, useful for the callback functions
 
-    def update_acl(self, message):
+    def update_acl(self, message: Any) -> None:
         self.acl.update(message)
 
     def update_permissions(self, permissions: int) -> None:
@@ -181,10 +182,10 @@ class Channel(dict):
             return None
         return bool(self.permissions & permission)
 
-    def get_id(self):
+    def get_id(self) -> int:
         return self["channel_id"]
 
-    def update_field(self, name, field):
+    def update_field(self, name: str, field: Any) -> dict[str, Any]:
         """Update one value"""
         actions = dict()
         if name not in self or self[name] != field:
@@ -193,13 +194,13 @@ class Channel(dict):
 
         return actions  # return a dict with updates performed, useful for the callback functions
 
-    def get_property(self, property):
+    def get_property(self, property: str) -> Any:
         if property in self:
             return self[property]
         else:
             return None
 
-    def move_in(self, session=None):
+    def move_in(self, session: int | None = None) -> None:
         """Ask to move a session in a specific channel.  By default move pymumble own session"""
         if session is None:
             session = self.mumble_object.users.myself_session
@@ -207,11 +208,11 @@ class Channel(dict):
         cmd = messages.MoveCmd(session, self["channel_id"])
         self.mumble_object.execute_command(cmd)
 
-    def remove(self):
+    def remove(self) -> None:
         cmd = messages.RemoveChannel(self["channel_id"])
         self.mumble_object.execute_command(cmd)
 
-    def send_text_message(self, message):
+    def send_text_message(self, message: str) -> None:
         """Send a text message to the channel."""
 
         # TODO: This check should be done inside execute_command()
@@ -229,23 +230,23 @@ class Channel(dict):
         cmd = messages.TextMessage(session, self["channel_id"], message)
         self.mumble_object.execute_command(cmd)
 
-    def link(self, channel_id):
+    def link(self, channel_id: int) -> None:
         """Link selected channel with other channel"""
         cmd = messages.LinkChannel({"channel_id": self["channel_id"], "add_id": channel_id})
         self.mumble_object.execute_command(cmd)
 
-    def unlink(self, channel_id):
+    def unlink(self, channel_id: int) -> None:
         """Unlink one channel which is linked to a specific channel."""
         cmd = messages.UnlinkChannel({"channel_id": self["channel_id"], "remove_ids": [channel_id]})
         self.mumble_object.execute_command(cmd)
 
-    def unlink_all(self):
+    def unlink_all(self) -> None:
         """Unlink all channels which is linked to a specific channel."""
         if "links" in self:
             cmd = messages.UnlinkChannel({"channel_id": self["channel_id"], "remove_ids": self["links"]})
             self.mumble_object.execute_command(cmd)
 
-    def rename_channel(self, name):
+    def rename_channel(self, name: str) -> None:
         params = {
             'channel_id': self['channel_id'],
             'name': name
@@ -253,7 +254,7 @@ class Channel(dict):
         cmd = messages.UpdateChannel(params)
         self.mumble_object.execute_command(cmd)
 
-    def move_channel(self, new_parent_id):
+    def move_channel(self, new_parent_id: int) -> None:
         params = {
             'channel_id': self['channel_id'],
             'parent': new_parent_id
@@ -261,7 +262,7 @@ class Channel(dict):
         cmd = messages.UpdateChannel(params)
         self.mumble_object.execute_command(cmd)
 
-    def set_channel_position(self, position):
+    def set_channel_position(self, position: int) -> None:
         params = {
             'channel_id': self['channel_id'],
             'position': position
@@ -269,7 +270,7 @@ class Channel(dict):
         cmd = messages.UpdateChannel(params)
         self.mumble_object.execute_command(cmd)
 
-    def set_channel_max_users(self, max_users):
+    def set_channel_max_users(self, max_users: int) -> None:
         params = {
             'channel_id': self['channel_id'],
             'max_users': max_users
@@ -277,7 +278,7 @@ class Channel(dict):
         cmd = messages.UpdateChannel(params)
         self.mumble_object.execute_command(cmd)
 
-    def set_channel_description(self, description):
+    def set_channel_description(self, description: str) -> None:
         params = {
             'channel_id': self['channel_id'],
             'description': description
@@ -285,6 +286,6 @@ class Channel(dict):
         cmd = messages.UpdateChannel(params)
         self.mumble_object.execute_command(cmd)
 
-    def request_acl(self):
+    def request_acl(self) -> None:
         cmd = messages.QueryACL(self["channel_id"])
         self.mumble_object.execute_command(cmd)

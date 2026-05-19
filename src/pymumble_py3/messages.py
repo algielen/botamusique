@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from threading import Lock
+from typing import Any
 
 from pymumble_py3.pymumble_constants import *
 
@@ -10,7 +11,7 @@ class Cmd:
     usually to forward to the murmur server
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.cmd_id = None
         self.lock = Lock()
 
@@ -22,7 +23,7 @@ class Cmd:
 class MoveCmd(Cmd):
     """Command to move a user from channel"""
 
-    def __init__(self, session, channel_id):
+    def __init__(self, session: int, channel_id: int) -> None:
         Cmd.__init__(self)
 
         self.cmd = PYMUMBLE_CMD_MOVE
@@ -33,7 +34,7 @@ class MoveCmd(Cmd):
 class TextMessage(Cmd):
     """Command to send a text message"""
 
-    def __init__(self, session, channel_id, message):
+    def __init__(self, session: int, channel_id: int, message: str) -> None:
         Cmd.__init__(self)
 
         self.cmd = PYMUMBLE_CMD_TEXTMESSAGE
@@ -45,7 +46,7 @@ class TextMessage(Cmd):
 class TextPrivateMessage(Cmd):
     """Command to send a private text message"""
 
-    def __init__(self, session, message):
+    def __init__(self, session: int, message: str) -> None:
         Cmd.__init__(self)
 
         self.cmd = PYMUMBLE_CMD_TEXTPRIVATEMESSAGE
@@ -56,7 +57,7 @@ class TextPrivateMessage(Cmd):
 class ModUserState(Cmd):
     """Command to change a user state"""
 
-    def __init__(self, session, params):
+    def __init__(self, session: int, params: dict[str, Any]) -> None:
         Cmd.__init__(self)
 
         self.cmd = PYMUMBLE_CMD_MODUSERSTATE
@@ -66,7 +67,7 @@ class ModUserState(Cmd):
 class RemoveUser(Cmd):
     """Command to kick (ban=False) or ban (ban=True) a user"""
 
-    def __init__(self, session, params):
+    def __init__(self, session: int, params: dict[str, Any]) -> None:
         Cmd.__init__(self)
 
         self.cmd = PYMUMBLE_CMD_REMOVEUSER
@@ -76,7 +77,7 @@ class RemoveUser(Cmd):
 class CreateChannel(Cmd):
     """Command to create channel"""
 
-    def __init__(self, parent, name, temporary):
+    def __init__(self, parent: int, name: str, temporary: bool) -> None:
         Cmd.__init__(self)
 
         self.cmd = PYMUMBLE_MSG_TYPES_CHANNELSTATE
@@ -88,7 +89,7 @@ class CreateChannel(Cmd):
 class RemoveChannel(Cmd):
     """Command to create channel"""
 
-    def __init__(self, channel_id):
+    def __init__(self, channel_id: int) -> None:
         Cmd.__init__(self)
 
         self.cmd = PYMUMBLE_MSG_TYPES_CHANNELREMOVE
@@ -98,7 +99,7 @@ class RemoveChannel(Cmd):
 class UpdateChannel(Cmd):
     """Command to update channel"""
 
-    def __init__(self, params):
+    def __init__(self, params: dict[str, Any]) -> None:
         Cmd.__init__(self)
 
         self.cmd = PYMUMBLE_CMD_UPDATECHANNEL
@@ -108,7 +109,7 @@ class UpdateChannel(Cmd):
 class VoiceTarget(Cmd):
     """Command to create a whisper"""
 
-    def __init__(self, voice_id, targets):
+    def __init__(self, voice_id: int, targets: list[Any]) -> None:
         Cmd.__init__(self)
 
         self.cmd = PYMUMBLE_MSG_TYPES_VOICETARGET
@@ -119,7 +120,7 @@ class VoiceTarget(Cmd):
 class LinkChannel(Cmd):
     """Command to link channel"""
 
-    def __init__(self, params):
+    def __init__(self, params: dict[str, Any]) -> None:
         Cmd.__init__(self)
 
         self.cmd = PYMUMBLE_CMD_LINKCHANNEL
@@ -129,7 +130,7 @@ class LinkChannel(Cmd):
 class UnlinkChannel(Cmd):
     """Command to unlink channel"""
 
-    def __init__(self, params):
+    def __init__(self, params: dict[str, Any]) -> None:
         Cmd.__init__(self)
 
         self.cmd = PYMUMBLE_CMD_UNLINKCHANNEL
@@ -139,7 +140,7 @@ class UnlinkChannel(Cmd):
 class QueryACL(Cmd):
     """Command to query ACL information for channel"""
 
-    def __init__(self, channel_id):
+    def __init__(self, channel_id: int) -> None:
         Cmd.__init__(self)
 
         self.cmd = PYMUMBLE_CMD_QUERYACL
@@ -149,7 +150,7 @@ class QueryACL(Cmd):
 class UpdateACL(Cmd):
     """Command to Update ACL information for channel"""
 
-    def __init__(self, channel_id, inherit_acls, chan_group, chan_acl):
+    def __init__(self, channel_id: int, inherit_acls: bool, chan_group: list[Any], chan_acl: list[Any]) -> None:
         Cmd.__init__(self)
 
         self.cmd = PYMUMBLE_CMD_UPDATEACL

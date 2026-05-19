@@ -36,7 +36,7 @@ class Users(dict):
 
         self.lock.release()
 
-    def remove(self, message):
+    def remove(self, message: Any) -> None:
         """Remove a user object based on server info"""
         self.lock.acquire()
 
@@ -47,13 +47,13 @@ class Users(dict):
 
         self.lock.release()
 
-    def set_myself(self, session):
+    def set_myself(self, session: int) -> None:
         """Set the "myself" user"""
         self.myself_session = session
         if session in self:
             self.myself = self[session]
 
-    def count(self):
+    def count(self) -> int:
         """Return the count of connected users"""
         return len(self)
 
@@ -113,7 +113,7 @@ class User(dict):
         else:
             return None
 
-    def mute(self):
+    def mute(self) -> None:
         """Mute a user"""
         params = {"session": self["session"]}
 
@@ -125,7 +125,7 @@ class User(dict):
         cmd = messages.ModUserState(self.mumble_object.users.myself_session, params)
         self.mumble_object.execute_command(cmd)
 
-    def unmute(self):
+    def unmute(self) -> None:
         """Unmute a user"""
         params = {"session": self["session"]}
 
@@ -137,7 +137,7 @@ class User(dict):
         cmd = messages.ModUserState(self.mumble_object.users.myself_session, params)
         self.mumble_object.execute_command(cmd)
 
-    def deafen(self):
+    def deafen(self) -> None:
         """Deafen a user"""
         params = {"session": self["session"]}
 
@@ -149,7 +149,7 @@ class User(dict):
         cmd = messages.ModUserState(self.mumble_object.users.myself_session, params)
         self.mumble_object.execute_command(cmd)
 
-    def undeafen(self):
+    def undeafen(self) -> None:
         """Undeafen a user"""
         params = {"session": self["session"]}
 
@@ -161,7 +161,7 @@ class User(dict):
         cmd = messages.ModUserState(self.mumble_object.users.myself_session, params)
         self.mumble_object.execute_command(cmd)
 
-    def suppress(self):
+    def suppress(self) -> None:
         """Disable a user"""
         params = {"session": self["session"],
                   "suppress": True}
@@ -169,7 +169,7 @@ class User(dict):
         cmd = messages.ModUserState(self.mumble_object.users.myself_session, params)
         self.mumble_object.execute_command(cmd)
 
-    def unsuppress(self):
+    def unsuppress(self) -> None:
         """Enable a user"""
         params = {"session": self["session"],
                   "suppress": False}
@@ -177,7 +177,7 @@ class User(dict):
         cmd = messages.ModUserState(self.mumble_object.users.myself_session, params)
         self.mumble_object.execute_command(cmd)
 
-    def recording(self):
+    def recording(self) -> None:
         """Set the user as recording"""
         params = {"session": self["session"],
                   "recording": True}
@@ -185,7 +185,7 @@ class User(dict):
         cmd = messages.ModUserState(self.mumble_object.users.myself_session, params)
         self.mumble_object.execute_command(cmd)
 
-    def unrecording(self):
+    def unrecording(self) -> None:
         """Set the user as not recording"""
         params = {"session": self["session"],
                   "recording": False}
@@ -193,7 +193,7 @@ class User(dict):
         cmd = messages.ModUserState(self.mumble_object.users.myself_session, params)
         self.mumble_object.execute_command(cmd)
 
-    def comment(self, comment):
+    def comment(self, comment: str) -> None:
         """Set the user comment"""
         params = {"session": self["session"],
                   "comment": comment}
@@ -201,7 +201,7 @@ class User(dict):
         cmd = messages.ModUserState(self.mumble_object.users.myself_session, params)
         self.mumble_object.execute_command(cmd)
 
-    def texture(self, texture):
+    def texture(self, texture: bytes) -> None:
         """Set the user texture"""
         params = {"session": self["session"],
                   "texture": texture}
@@ -209,7 +209,7 @@ class User(dict):
         cmd = messages.ModUserState(self.mumble_object.users.myself_session, params)
         self.mumble_object.execute_command(cmd)
     
-    def register(self):
+    def register(self) -> None:
         """Register the user (mostly for myself)"""
         params = {"session": self["session"],
                   "user_id": 0}
@@ -217,13 +217,13 @@ class User(dict):
         cmd = messages.ModUserState(self.mumble_object.users.myself_session, params)
         self.mumble_object.execute_command(cmd)
 
-    def update_context(self, context_name):
+    def update_context(self, context_name: str) -> None:
         params = {"session": self["session"],
                   "plugin_context": context_name}
         cmd = messages.ModUserState(self.mumble_object.users.myself_session, params)
         self.mumble_object.execute_command(cmd)
 
-    def move_in(self, channel_id, token=None):
+    def move_in(self, channel_id: int, token: str | None = None) -> None:
         if token:
             authenticate = mumble_pb2.Authenticate()
             authenticate.username = self.mumble_object.user
@@ -238,7 +238,7 @@ class User(dict):
         cmd = messages.MoveCmd(session, channel_id)
         self.mumble_object.execute_command(cmd)
 
-    def send_text_message(self, message):
+    def send_text_message(self, message: str) -> None:
         """Send a text message to the user."""
 
         # TODO: This check should be done inside execute_command()
@@ -254,7 +254,7 @@ class User(dict):
         cmd = messages.TextPrivateMessage(self["session"], message)
         self.mumble_object.execute_command(cmd)
 
-    def kick(self, reason=""):
+    def kick(self, reason: str = "") -> None:
         params = {"session": self["session"],
                   "reason": reason,
                   "ban": False}
@@ -262,7 +262,7 @@ class User(dict):
         cmd = messages.RemoveUser(self.mumble_object.users.myself_session, params)
         self.mumble_object.execute_command(cmd)
 
-    def ban(self, reason=""):
+    def ban(self, reason: str = "") -> None:
         params = {"session": self["session"],
                   "reason": reason,
                   "ban": True}
@@ -270,7 +270,7 @@ class User(dict):
         cmd = messages.RemoveUser(self.mumble_object.users.myself_session, params)
         self.mumble_object.execute_command(cmd)
 
-    def add_listening_channels(self, channel):
+    def add_listening_channels(self, channel: int) -> None:
         """Add user to listening channel"""
         params = {"session": self["session"],
                   "listening_channel_add": channel}
@@ -278,7 +278,7 @@ class User(dict):
         cmd = messages.ModUserState(self.mumble_object.users.myself_session, params)
         self.mumble_object.execute_command(cmd)
 
-    def remove_listening_channels(self, channel):
+    def remove_listening_channels(self, channel: int) -> None:
         """Remove user from listening channel"""
         params = {"session": self["session"],
                   "listening_channel_remove": channel}
