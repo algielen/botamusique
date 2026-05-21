@@ -120,6 +120,32 @@ A Flask app served on a daemon thread. Holds a module-level `_bot` reference set
 
 Vendored fork of the pymumble library. Contains the Mumble protocol implementation (protobuf, CELT/Opus audio, crypto). Tests live in `src/pymumble_py3/tests/`.
 
+#### Protobuf regeneration
+
+The Mumble protocol is defined in two `.proto` files vendored alongside the library:
+
+- `src/pymumble_py3/Mumble.proto` — main protocol messages (source of truth: `mumble-voip/mumble` → `src/Mumble.proto`)
+- `src/pymumble_py3/MumbleUDP.proto` — UDP protocol messages (source of truth: `mumble-voip/mumble` → `src/MumbleUDP.proto`)
+
+`mumble_pb2.py` is generated from `Mumble.proto` and checked in. To regenerate it after updating either the `.proto` files or the `protobuf` dependency:
+
+**Preferred — local `protoc` (use a version matching the `protobuf` runtime):**
+
+```bash
+protoc -I src/pymumble_py3 --python_out=src/pymumble_py3 src/pymumble_py3/Mumble.proto
+```
+
+**Fallback — `grpcio-tools` (no separate install needed):**
+
+```bash
+uv run --with grpcio-tools python -m grpc_tools.protoc \
+    -I src/pymumble_py3 \
+    --python_out=src/pymumble_py3 \
+    src/pymumble_py3/Mumble.proto
+```
+
+`grpcio-tools` bundles its own `protoc` which may lag behind the `protobuf` runtime version — harmless, but the local binary produces a cleaner match. Verify with `uv run python -c "import src.pymumble_py3.mumble_pb2"`.
+
 ## Key Conventions
 
 - **State ownership**: `MumbleBot` is the central owner of runtime state (`config`, `db`, `music_db`, `cache`, `playlist`, `music_folder`). All dependencies are passed explicitly via constructors — there are no module-level globals.

@@ -238,6 +238,34 @@ If you ran into some problems in using the bot, or discovered bugs and want to t
  - Start a new issue,
  - Ask in the Matrix channel of Mumble [#mumble:matrix.org](https://matrix.to/#/#mumble:matrix.org) (we are usually there to help).
 
+## Development
+
+### Protobuf / pymumble
+
+The Mumble protocol messages are defined in `.proto` files vendored inside `src/pymumble_py3/`:
+
+- `Mumble.proto` — main TCP protocol (upstream: [`mumble-voip/mumble src/Mumble.proto`](https://github.com/mumble-voip/mumble/blob/master/src/Mumble.proto))
+- `MumbleUDP.proto` — UDP protocol (upstream: [`mumble-voip/mumble src/MumbleUDP.proto`](https://github.com/mumble-voip/mumble/blob/master/src/MumbleUDP.proto))
+
+`mumble_pb2.py` is the generated Python binding for `Mumble.proto` and is checked into the repository. To regenerate it (e.g. after updating the `.proto` files or bumping the `protobuf` dependency):
+
+**Preferred — local `protoc`** (install from https://github.com/protocolbuffers/protobuf/releases, use a version matching the `protobuf` runtime):
+
+```bash
+protoc -I src/pymumble_py3 --python_out=src/pymumble_py3 src/pymumble_py3/Mumble.proto
+```
+
+**Fallback — `grpcio-tools`** (no extra install required, but bundles an older `protoc`):
+
+```bash
+uv run --with grpcio-tools python -m grpc_tools.protoc \
+    -I src/pymumble_py3 \
+    --python_out=src/pymumble_py3 \
+    src/pymumble_py3/Mumble.proto
+```
+
+Verify the result with `uv run python -c "import src.pymumble_py3.mumble_pb2"`.
+
 ## Contributors
 If you want to help us develop, you're welcome to fork and submit pull requests (fixes and new features).
 We are looking for people helping us translating the bot. If you'd like to add a new language or fix errors in existed translations,
