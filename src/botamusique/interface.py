@@ -246,7 +246,7 @@ def get_all_dirs() -> list[str]:
 def index() -> str:
     return open(
         root_dir.joinpath(
-            f"web/templates/index.{_bot.config.get('bot', 'language')}.html"
+            f"web/index.{_bot.config.get('bot', 'language')}.html"
         ),
         "r",
     ).read()
