@@ -303,7 +303,7 @@ def verify_password(password: str, salted_hash: str, salt: str) -> bool:
 
 def get_supported_language() -> list[Any]:
     root_dir = os.path.dirname(__file__)
-    lang_files = os.listdir(os.path.join(root_dir, '../../lang'))
+    lang_files = os.listdir(os.path.join(root_dir, 'lang'))
     lang_list = []
     for lang_file in lang_files:
         match = re.search("([a-z]{2}_[A-Z]{2})\\.json", lang_file)

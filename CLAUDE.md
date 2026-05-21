@@ -38,7 +38,7 @@ Build assets and translate templates in one step. No Node.js required.
 uv run --group build scripts/build.py
 ```
 
-This downloads pre-built Bootswatch theme CSS (cached in `web/vendor/`), compiles `web/sass/main.scss` with libsass, copies JS modules and images to `static/`, and translates Jinja2 templates for all supported languages.
+This downloads pre-built Bootswatch theme CSS (cached in `src/botamusique/static/vendor/`, gitignored), compiles `web/sass/main.scss` with libsass, and translates Jinja2 templates for all supported languages. JS modules and images live directly in `src/botamusique/static/` and are tracked in git — no copy step needed.
 
 To run the translation step on its own (e.g. after editing a `lang/*.json` file):
 
@@ -46,15 +46,22 @@ To run the translation step on its own (e.g. after editing a `lang/*.json` file)
 uv run scripts/translate_templates.py --lang-dir lang/ --template-dir web/templates/
 ```
 
+**Frontend source layout:**
+- `web/sass/main.scss` — SCSS source → compiled to `src/botamusique/static/css/{main,dark}.css` (tracked in git)
+- `web/templates/*.template.html` — template sources → translated to `src/botamusique/web/*.{lang}.html` (tracked in git)
+- `src/botamusique/static/js/` — JS source modules (tracked in git, edit in place)
+- `src/botamusique/static/image/` — image assets (tracked in git, edit in place)
+- `tmp/vendor/` — downloaded Bootswatch CSS (gitignored, used only during CSS compilation)
+
 **Frontend stack:** The web UI is intentionally dependency-light. Bootstrap CSS (Bootswatch themes) is the only external dependency — everything else is vanilla browser APIs:
 - `fetch()` + `URLSearchParams` for all server communication
 - Native DOM APIs (`querySelector`, `classList`, `addEventListener`)
 - Native `<dialog>` elements for modals
 - CSS absolute positioning for the volume popover (no Popper.js)
-- An SVG sprite (`web/static/image/icons.svg`) for all icons (no Font Awesome)
+- An SVG sprite (`src/botamusique/static/image/icons.svg`) for all icons (no Font Awesome)
 - Bootstrap CSS-only for Toast visibility, dropdown open/close handled in JS
 
-When adding icons, add a `<symbol>` to `web/static/image/icons.svg` and reference it with `<svg class="svg-icon"><use href="static/image/icons.svg#icon-NAME"/></svg>`. When adding modals, use native `<dialog>` + `.showModal()` / `.close()` rather than Bootstrap modal markup.
+When adding icons, add a `<symbol>` to `src/botamusique/static/image/icons.svg` and reference it with `<svg class="svg-icon"><use href="static/image/icons.svg#icon-NAME"/></svg>`. When adding modals, use native `<dialog>` + `.showModal()` / `.close()` rather than Bootstrap modal markup.
 
 ### Configuration
 
