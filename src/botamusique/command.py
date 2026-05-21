@@ -650,14 +650,9 @@ def cmd_kill(bot: MumbleBot, user: str, text: Any, command: str, parameter: str)
 def cmd_update(bot: MumbleBot, user: str, text: Any, command: str, parameter: str) -> None:
     global log
 
-    if bot.is_admin(user):
-        bot.mumble.users[text.actor].send_text_message(
-            tr('start_updating'))
-        msg = util.update(bot.version, bot.config)
-        bot.mumble.users[text.actor].send_text_message(msg)
-    else:
-        bot.mumble.users[text.actor].send_text_message(
-            tr('not_admin'))
+    bot.mumble.users[text.actor].send_text_message(tr('start_updating'))
+    msg = util.update()
+    bot.mumble.users[text.actor].send_text_message(msg)
 
 
 def cmd_stop_and_getout(bot: MumbleBot, user: str, text: Any, command: str, parameter: str) -> None:

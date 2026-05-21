@@ -79,7 +79,6 @@ uv run botamusique --config configuration.ini
 
 You can checkout the master branch of our repo and compile everything by yourself.
 We will test new features in the master branch, maybe sometimes post some hotfixes.
-Please be noted that the builtin auto-update support doesn't track this version.
 If you have no idea what these descriptions mean to you, we recommend you install the stable version above.
 ```
 git clone https://github.com/algielen/botamusique.git
@@ -190,10 +189,17 @@ The web interface can be used if you'd like an intuitive way of interacting with
 
 ## Update
 
-If you enable `auto_check_update`, the bot will check for updates every time it starts.
-If you are using the recommended install, you can send `!update` to the bot (command by default).
+### Updating yt-dlp
 
-If you are using git, you need to update manually:
+You can update yt-dlp without restarting the bot by sending `!update` (admins only). This upgrades yt-dlp in-place and reloads it immediately.
+
+### Updating the bot
+
+Bot updates require a manual intervention. Stop the bot, then:
+
+If you installed from a release package, download the new release and re-run the install steps.
+
+If you are running from source (git):
 ```
 git pull --all
 uv sync --no-dev

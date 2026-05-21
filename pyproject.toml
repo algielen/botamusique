@@ -1,6 +1,6 @@
 [project]
 name = "botamusique"
-version = "8.7.5"
+version = "8.8.0"
 description = "Bot to play youtube / soundcloud / radio / local music on Mumble (using pymumble)"
 readme = "README.md"
 requires-python = ">=3.14"
@@ -43,23 +43,22 @@ exclude = [
     "/CLAUDE.md",
     "/uv.lock",
     "/static",
-    "/tests"
+    "/tests",
+    "/web",
+    "/scripts",
 ]
 
+
 [tool.hatch.build.hooks.custom]
-path = "scripts/hatch_build.py"
 
 
 [tool.botamusique.build]
 bootswatch_version = "5.3.8"
-jquery_version = "4.0.0"
-bootstrap_version = "5.3.8"
-popperjs_version = "2.11.8"
-fontawesome_version = "6.7.2"
 
 [dependency-groups]
 build = [
     "libsass>=0.23.0",
+    "jinja2>=3.0",
 ]
 dev = [
     "pytest>=9.0.1",

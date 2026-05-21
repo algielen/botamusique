@@ -65,7 +65,7 @@ wheels = [
 
 [[package]]
 name = "botamusique"
-version = "8.7.5"
+version = "8.8.0"
 source = { editable = "." }
 dependencies = [
     { name = "audioop-lts" },
@@ -84,6 +84,7 @@ dependencies = [
 
 [package.dev-dependencies]
 build = [
+    { name = "jinja2" },
     { name = "libsass" },
 ]
 dev = [
@@ -108,7 +109,10 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
-build = [{ name = "libsass", specifier = ">=0.23.0" }]
+build = [
+    { name = "jinja2", specifier = ">=3.0" },
+    { name = "libsass", specifier = ">=0.23.0" },
+]
 dev = [
     { name = "pip", specifier = ">=26.1.1" },
     { name = "pytest", specifier = ">=9.0.1" },

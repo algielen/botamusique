@@ -8,7 +8,9 @@ import json
 import logging
 import os
 import re
+import shutil
 import subprocess
+import sys
 import traceback
 import zipfile
 from configparser import ConfigParser
@@ -78,21 +80,25 @@ def get_user_ban(settings_db: SettingsDatabase) -> str:
     return res
 
 
-def update(current_version: str, config: ConfigParser) -> str:
-    global log
+def update() -> str:
+    log.info(f'update: upgrading {YT_PKG_NAME}')
 
-    msg = ""
+    version_before = youtube_dl.version.__version__
 
-    log.info(f'update: starting update {YT_PKG_NAME} via pip3')
-    tp = subprocess.check_output([config.get('bot', 'pip3_path'), 'install', '--upgrade', YT_PKG_NAME]).decode()
-    if f"Collecting {YT_PKG_NAME}" in tp.splitlines():
-        msg += "Update done: " + tp.split('Successfully installed')[1]
+    uv = shutil.which('uv')
+    if uv:
+        cmd = [uv, 'pip', 'install', '--upgrade', YT_PKG_NAME]
     else:
-        msg += YT_PKG_NAME.capitalize() + " is up-to-date"
+        cmd = [sys.executable, '-m', 'pip', 'install', '--upgrade', YT_PKG_NAME]
+
+    subprocess.check_call(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     reload(youtube_dl)
-    msg += "<br/>" + YT_PKG_NAME.capitalize() + " reloaded"
-    return msg
+    version_after = youtube_dl.version.__version__
+
+    if version_after != version_before:
+        return f"{YT_PKG_NAME} updated: {version_before} → {version_after}"
+    return f"{YT_PKG_NAME} is already up-to-date ({version_after})"
 
 
 class Dir(object):
@@ -303,7 +309,7 @@ def verify_password(password: str, salted_hash: str, salt: str) -> bool:
 
 def get_supported_language() -> list[Any]:
     root_dir = os.path.dirname(__file__)
-    lang_files = os.listdir(os.path.join(root_dir, '../../lang'))
+    lang_files = os.listdir(os.path.join(root_dir, 'lang'))
     lang_list = []
     for lang_file in lang_files:
         match = re.search("([a-z]{2}_[A-Z]{2})\\.json", lang_file)

@@ -11,17 +11,6 @@
     <link rel="icon" href="static/image/favicon.ico" />
 
     <link id="pagestyle" rel="stylesheet" href="static/css/main.css">
-    <link rel="stylesheet" href="static/css/font-awesome.min.css">
-
-    <script type="importmap">
-    {
-      "imports": {
-        "jquery": "./static/js/vendor/jquery.module.min.js",
-        "@popperjs/core": "./static/js/vendor/popper.js",
-        "bootstrap": "./static/js/vendor/bootstrap.esm.min.js"
-      }
-    }
-    </script>
 </head>
 
 <body>
@@ -40,64 +29,64 @@
     <main id="playlist" class="container mb-5">
         <div class="btn-toolbar mb-2" role="toolbar" aria-label="{{ tr('playlist_controls') }}">
             <button type="button" id="play-pause-btn" class="btn btn-info mb-2 me-2" aria-label="{{ tr('play') }}">
-                <i class="fas fa-play"></i>
+                <svg class="svg-icon" aria-hidden="true" id="play-pause-icon-play"><use href="static/image/icons.svg#icon-play"/></svg>
+                <svg class="svg-icon d-none" aria-hidden="true" id="play-pause-icon-pause"><use href="static/image/icons.svg#icon-pause"/></svg>
             </button>
             <button type="button" id="fast-forward-btn" class="btn btn-info mb-2" aria-label="{{ tr('skip_track') }}">
-                <i class="fas fa-fast-forward"></i>
+                <svg class="svg-icon" aria-hidden="true"><use href="static/image/icons.svg#icon-forward-fast"/></svg>
             </button>
             <div class="ms-auto">
               <div class="dropdown">
                 <button class="btn btn-secondary dropdown-toggle"
                           type="button"
                           id="play-mode"
-                          data-bs-toggle="dropdown"
-                          data-toggle="dropdown"
                           aria-haspopup="true" aria-expanded="false"
                           aria-label="{{ tr('change_playback_mode') }}">
-                          <i class="fas fa-tasks me-2" aria-hidden="true" id="modeIndicator"></i>
+                          <svg class="svg-icon me-2" aria-hidden="true" id="modeIndicator"><use id="modeIndicatorUse" href="static/image/icons.svg#icon-list-check"/></svg>
                       </button>
 
                 <ul class="dropdown-menu" aria-labelledby="play-mode">
                   <li>
                     <a class="dropdown-item" href="#" id="one-shot-mode-btn">
-                      <i class="fas fa-tasks me-2" aria-hidden="true"></i> {{ tr('oneshot') }}
+                      <svg class="svg-icon me-2" aria-hidden="true"><use href="static/image/icons.svg#icon-list-check"/></svg> {{ tr('oneshot') }}
                     </a>
                   </li>
                   <li>
                     <a class="dropdown-item" href="#" id="random-mode-btn">
-                        <i class="fas fa-random me-2" aria-hidden="true"></i> {{ tr('random') }}
+                        <svg class="svg-icon me-2" aria-hidden="true"><use href="static/image/icons.svg#icon-shuffle"/></svg> {{ tr('random') }}
                     </a>
                   </li>
                   <li>
                     <a class="dropdown-item" href="#" id="repeat-mode-btn">
-                        <i class="fas fa-redo me-2" aria-hidden="true"></i> {{ tr('repeat') }}
+                        <svg class="svg-icon me-2" aria-hidden="true"><use href="static/image/icons.svg#icon-rotate-right"/></svg> {{ tr('repeat') }}
                     </a>
                   </li>
                   <li>
                     <a class="dropdown-item" href="#" id="autoplay-mode-btn">
-                        <i class="fas fa-robot me-2" aria-hidden="true"></i> {{ tr('autoplay') }}
+                        <svg class="svg-icon me-2" aria-hidden="true"><use href="static/image/icons.svg#icon-robot"/></svg> {{ tr('autoplay') }}
                     </a>
                   </li>
                 </ul>
               </div>
 
-                <button type="button" id="volume-popover-btn" class="btn btn-warning ms-1"
-                                                              aria-label="{{ tr('open_volume_controls') }}">
-                    <i class="fa fa-volume-up" aria-hidden="true"></i>
-                </button>
+                <div class="volume-popover-wrapper">
+                    <button type="button" id="volume-popover-btn" class="btn btn-warning ms-1"
+                                                                  aria-label="{{ tr('open_volume_controls') }}">
+                        <svg class="svg-icon" aria-hidden="true"><use href="static/image/icons.svg#icon-volume-high"/></svg>
+                    </button>
 
-                <div id="volume-popover">
-                    <a id="volume-down-btn">
-                        <i class="fa fa-volume-down" aria-hidden="true"></i>
-                    </a>
+                    <div id="volume-popover">
+                        <a id="volume-down-btn">
+                            <svg class="svg-icon" aria-hidden="true"><use href="static/image/icons.svg#icon-volume-low"/></svg>
+                        </a>
 
-                    <input type="range" class="custom-range ms-1" id="volume-slider" min="0" max="1" step="0.01"
-                                                                                                     value="0.5" aria-label="{{ tr('volume_slider') }}" />
+                        <input type="range" class="custom-range ms-1" id="volume-slider" min="0" max="1" step="0.01"
+                                                                                                         value="0.5" aria-label="{{ tr('volume_slider') }}" />
 
-                    <a id="volume-up-btn">
-                        <i class="fa fa-volume-up" aria-hidden="true"></i>
-                    </a>
-                    <div data-popper-arrow id="volume-popover-arrow"></div>
+                        <a id="volume-up-btn">
+                            <svg class="svg-icon" aria-hidden="true"><use href="static/image/icons.svg#icon-volume-high"/></svg>
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -148,7 +137,7 @@
 
                                     <div class="playlist-item-tags">
                                         <a class="playlist-item-edit tag-space tag-click">
-                                            <i class="fas fa-edit" style="color: #AAAAAA"></i>
+                                            <svg class="svg-icon" aria-hidden="true" style="color: #AAAAAA"><use href="static/image/icons.svg#icon-pen-to-square"/></svg>
                                         </a>
                                     </div>
                                 </div>
@@ -162,11 +151,11 @@
                                 <div class="col-auto btn-group">
                                     <button type="button" class="playlist-item-play btn btn-info btn-sm"
                                                           aria-label="{{ tr('aria_skip_current_song') }}">
-                                        <i class="fas fa-play" aria-hidden="true"></i>
+                                        <svg class="svg-icon" aria-hidden="true"><use href="static/image/icons.svg#icon-play"/></svg>
                                     </button>
                                     <button type="button" class="playlist-item-trash btn btn-danger btn-sm"
                                                           aria-label="{{ tr('aria_remove_this_song') }}">
-                                        <i class="fas fa-trash-alt" aria-hidden="true"></i>
+                                        <svg class="svg-icon" aria-hidden="true"><use href="static/image/icons.svg#icon-trash-can"/></svg>
                                     </button>
                                 </div>
                             </div>
@@ -178,7 +167,7 @@
 
         <div class="btn-group">
             <button type="button" id="clear-playlist-btn" class="btn btn-danger me-1">
-                <i class="fas fa-trash-alt" aria-hidden="true"></i> {{ tr('clear_playlist') }}</button>
+                <svg class="svg-icon" aria-hidden="true"><use href="static/image/icons.svg#icon-trash-can"/></svg> {{ tr('clear_playlist') }}</button>
         </div>
     </main>
 
@@ -241,7 +230,7 @@
                             </div>
                             <div class="btn-group-vertical library-thumb-grp">
                                 <div class="library-item-play btn btn-secondary library-thumb-btn-up" title="{{ tr('play') }}">
-                                    <i class="fas fa-play" aria-hidden="true"></i>
+                                    <svg class="svg-icon" aria-hidden="true"><use href="static/image/icons.svg#icon-play"/></svg>
                                 </div>
                             </div>
                         </div>
@@ -257,8 +246,9 @@
                         <div class="library-info-col col-4 d-none d-md-flex" style="padding: 3px;">
                             <span class="library-item-path text-muted path">Path/to/the/file</span>
                             <div class="library-item-tags">
-                                <a class="tag-space tag-click library-item-edit"><i class="fas fa-edit"
-                                        style="color: #AAAAAA"></i></a>
+                                <a class="tag-space tag-click library-item-edit">
+                                    <svg class="svg-icon" aria-hidden="true" style="color: #AAAAAA"><use href="static/image/icons.svg#icon-pen-to-square"/></svg>
+                                </a>
                                 <span class="library-item-notag badge bg-light text-muted font-italic">{{ tr('no_tag') }}</span>
                                 <span class="library-item-tag tag-space badge">Tag</span>
                             </div>
@@ -287,11 +277,11 @@
                             </button>
                             <button class="library-item-download btn btn-primary btn-sm" type="button"
                                                                                                    aria-label="{{ tr('download_song_from_library') }}">
-                                <i class="fas fa-download" aria-hidden="true"></i>
+                                <svg class="svg-icon" aria-hidden="true"><use href="static/image/icons.svg#icon-download"/></svg>
                             </button>
                             <button class="library-item-trash btn btn-danger btn-sm library-delete" type="button"
                                                                                                aria-label="{{ tr('remove_song_from_library') }}">
-                                <i class="fas fa-trash-alt" aria-hidden="true"></i>
+                                <svg class="svg-icon" aria-hidden="true"><use href="static/image/icons.svg#icon-trash-can"/></svg>
                             </button>
                         </div>
                     </div>
@@ -310,39 +300,17 @@
 
                 <div class="btn-group mb-2" role="group">
                     <button id="add-to-playlist-btn" type="button" class="btn btn-secondary me-1">
-                        <i class="fas fa-plus" aria-hidden="true"></i>{{ tr('add_all') }}
+                        <svg class="svg-icon" aria-hidden="true"><use href="static/image/icons.svg#icon-plus"/></svg>{{ tr('add_all') }}
                     </button>
                     <button id="library-rescan-btn" type="button" class="btn btn-secondary me-1">
-                        <i class="fas fa-sync-alt" aria-hidden="true"></i>{{ tr('rescan_files') }}
+                        <svg class="svg-icon" aria-hidden="true"><use href="static/image/icons.svg#icon-arrows-rotate"/></svg>{{ tr('rescan_files') }}
                     </button>
                     <button id="library-download-btn" type="button" class="btn btn-secondary me-1">
-                        <i class="fas fa-download" aria-hidden="true"></i>{{ tr('download_all') }}
+                        <svg class="svg-icon" aria-hidden="true"><use href="static/image/icons.svg#icon-download"/></svg>{{ tr('download_all') }}
                     </button>
-                    <button type="button" class="btn btn-danger me-1 library-delete" data-toggle="modal"
-                        data-target="#deleteWarningModal">
-                        <i class="fas fa-trash-alt" aria-hidden="true"></i>{{ tr('delete_all') }}
+                    <button id="delete-all-btn" type="button" class="btn btn-danger me-1 library-delete">
+                        <svg class="svg-icon" aria-hidden="true"><use href="static/image/icons.svg#icon-trash-can"/></svg>{{ tr('delete_all') }}
                     </button>
-                </div>
-
-                <div class="modal fade" id="deleteWarningModal" tabindex="-1" role="dialog"
-                                                                              aria-label="{{ tr('aria_warning_of_deletion') }}" aria-hidden="true">
-                    <div class="modal-dialog" role="document">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h3 class="modal-title" id="deleteWarningModalLabel">{{ tr('are_you_really_sure') }}</h3>
-                                <button type="button" class="close" data-dismiss="modal" aria-label="{{ tr('close') }}">
-                                    <span aria-hidden="true">&times;</span>
-                                </button>
-                            </div>
-                            <div class="modal-body">
-                                {{ tr('delete_file_warning') }}</div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-secondary" data-dismiss="modal">{{ tr('close') }}</button>
-                                <button id="library-delete-btn" type="button" class="btn btn-danger"
-                                                                              data-dismiss="modal">{{ tr('delete_all_files') }}</button>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
@@ -379,7 +347,9 @@
                                     </div>
                                 </div>
                                 <div class="col-auto">
-                                    <button class="btn btn-primary" type="button" id="uploadSubmit"><i class="fas fa-upload me-1"></i>{{ tr('upload_submit') }}</button>
+                                    <button class="btn btn-primary" type="button" id="uploadSubmit">
+                                        <svg class="svg-icon me-1" aria-hidden="true"><use href="static/image/icons.svg#icon-upload"/></svg>{{ tr('upload_submit') }}
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -419,18 +389,18 @@
     </div>
 
     <div id="player-toast" class="floating-button" style="bottom: 120px;">
-        <i class="fas fa-play" aria-hidden="true"></i>
+        <svg class="svg-icon" aria-hidden="true"><use href="static/image/icons.svg#icon-play"/></svg>
     </div>
 
     <div id="theme-switch-btn" class="floating-button" style="bottom: 50px;">
-        <i class="fas fa-lightbulb" aria-hidden="true"></i>
+        <svg class="svg-icon" aria-hidden="true"><use href="static/image/icons.svg#icon-lightbulb"/></svg>
     </div>
 
-    <div id="playerToast" class="toast w-auto" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="false">
+    <div id="playerToast" class="toast w-auto" role="alert" aria-live="assertive" aria-atomic="true">
         <div class="toast-header">
-            <i class="fas fa-play-circle me-2 text-primary"></i>
+            <svg class="svg-icon me-2 text-primary" aria-hidden="true"><use href="static/image/icons.svg#icon-circle-play"/></svg>
             <strong class="me-auto">{{ tr('mini_player_title') }}</strong>
-            <button type="button" class="ms-2 mb-1 btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            <button type="button" class="ms-2 mb-1 btn-close" aria-label="Close"></button>
         </div>
         <div class="toast-body" id="playerContainer">
             <img id="playerArtworkIdle" src="static/image/empty_box.svg" alt="{{ tr('aria_empty_box') }}" />
@@ -440,14 +410,14 @@
                 <div id="playerActionBox">
                     <button id="playerPlayBtn" class="btn btn-primary btn-sm me-2" style="display: none"
                                                                                         aria-label="{{ tr('play') }}">
-                        <i class="fas fa-play"></i>
+                        <svg class="svg-icon" aria-hidden="true"><use href="static/image/icons.svg#icon-play"/></svg>
                     </button>
                     <button id="playerPauseBtn" class="btn btn-primary btn-sm me-2" style="display: none"
                                                                                          aria-label="{{ tr('pause') }}">
-                        <i class="fas fa-pause"></i>
+                        <svg class="svg-icon" aria-hidden="true"><use href="static/image/icons.svg#icon-pause"/></svg>
                     </button>
                     <button id="playerSkipBtn" class="btn btn-primary btn-sm" aria-label="{{ tr('aria_skip_to_next_track') }}">
-                        <i class="fas fa-fast-forward"></i>
+                        <svg class="svg-icon" aria-hidden="true"><use href="static/image/icons.svg#icon-forward-fast"/></svg>
                     </button>
                 </div>
 
@@ -476,79 +446,94 @@
         <input hidden type="hidden" name="keywords" value="">
     </form>
 
-    <!-- Add tags modal -->
-    <div class="modal fade" id="addTagModal" tabindex="-1" role="dialog">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3 class="modal-title">{{ tr('edit_tags_for') }} <span id="addTagModalTitle">?</span></h3>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    <!-- Add tags dialog -->
+    <dialog id="addTagModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">{{ tr('edit_tags_for') }} <span id="addTagModalTitle">?</span></h3>
+                <button type="button" class="btn-close" id="addTagModalClose" aria-label="Close"></button>
+            </div>
+            <div id="addTagModalBody" class="modal-body">
+                <input hidden type="hidden" id="addTagModalItemId" name="id" value="">
+                <div class="modal-tag" style="display: none; width: 100%;">
+                    <span class="modal-tag-text tag-space badge rounded-pill bg-dark">Tag</span>
+                    <a class="modal-tag-remove tag-click small">
+                        <svg class="svg-icon" aria-hidden="true" style="color: var(--bs-danger)"><use href="static/image/icons.svg#icon-circle-xmark"/></svg>
+                    </a>
                 </div>
-                <div id="addTagModalBody" class="modal-body">
-                    <input hidden type="hidden" id="addTagModalItemId" name="id" value="">
-                    <div class="modal-tag" style="display: none; width: 100%;">
-                        <span class="modal-tag-text tag-space badge rounded-pill bg-dark">Tag</span>
-                        <a class="modal-tag-remove tag-click small"><i
-                                class="fas fa-times-circle btn-outline-danger"></i></a>
-                    </div>
-                    <div id="addTagModalTags" style="margin-left: 5px; margin-bottom: 10px;">
-                    </div>
-                    <div class="input-group">
-                        <input class="form-control form-control-sm"
-                               type="text" id="addTagModalInput"
-                               placeholder="tag1,tag2,..."
-                               aria-label="{{ tr('tags_to_add') }}">
-                        <button id="addTagModalAddBtn" type="button" class="btn btn-primary btn-sm">
-                            <i class="fas fa-plus" aria-hidden="true"></i>
-                            {{ tr('add') }}
-                        </button>
-                    </div>
+                <div id="addTagModalTags" style="margin-left: 5px; margin-bottom: 10px;">
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" aria-label="Close">{{ tr('close') }}</button>
-                    <button id="addTagModalSubmit" type="button"
-                            class="btn btn-success" data-bs-dismiss="modal">{{ tr('edit_submit') }}</button>
+                <div class="input-group">
+                    <input class="form-control form-control-sm"
+                           type="text" id="addTagModalInput"
+                           placeholder="tag1,tag2,..."
+                           aria-label="{{ tr('tags_to_add') }}">
+                    <button id="addTagModalAddBtn" type="button" class="btn btn-primary btn-sm">
+                        <svg class="svg-icon" aria-hidden="true"><use href="static/image/icons.svg#icon-plus"/></svg>
+                        {{ tr('add') }}
+                    </button>
                 </div>
             </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="addTagModalCloseBtn">{{ tr('close') }}</button>
+                <button id="addTagModalSubmit" type="button" class="btn btn-success">{{ tr('edit_submit') }}</button>
+            </div>
         </div>
-    </div>
+    </dialog>
 
-    <!-- Upload files modal -->
-    <div class="modal fade" id="uploadModal" tabindex="-1" role="dialog">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3 class="modal-title" id="uploadTitle"><i class="fas fa-upload me-1"></i>{{ tr('uploading_files') }}</h3>
+    <!-- Delete warning dialog -->
+    <dialog id="deleteWarningModal" aria-label="{{ tr('aria_warning_of_deletion') }}">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">{{ tr('are_you_really_sure') }}</h3>
+            </div>
+            <div class="modal-body">
+                {{ tr('delete_file_warning') }}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="deleteWarningCloseBtn">{{ tr('close') }}</button>
+                <button id="library-delete-btn" type="button" class="btn btn-danger">{{ tr('delete_all_files') }}</button>
+            </div>
+        </div>
+    </dialog>
+
+    <!-- Upload files dialog -->
+    <dialog id="uploadModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="uploadTitle">
+                    <svg class="svg-icon me-1" aria-hidden="true"><use href="static/image/icons.svg#icon-upload"/></svg>{{ tr('uploading_files') }}
+                </h3>
+            </div>
+            <div id="uploadModalBody" class="modal-body">
+                <div id="uploadSuccessAlert" class="alert alert-success" role="alert" style="display: none">
+                    <svg class="svg-icon me-1" aria-hidden="true"><use href="static/image/icons.svg#icon-check"/></svg>
+                    {{ tr('uploaded_finished') }}
                 </div>
-                <div id="uploadModalBody" class="modal-body">
-                    <div id="uploadSuccessAlert" class="alert alert-success" role="alert" style="display: none">
-                        <i class="fas fa-check me-1"></i>
-                        {{ tr('uploaded_finished') }}
-                    </div>
-                    <div id="uploadModalList" style="margin-left: 5px; margin-bottom: 10px;">
-                        <div class="uploadItem" style="display: none; width: 100%; padding-bottom: 8px;">
-                            <i class="far fa-file-alt me-1"></i>
-                            <span class="uploadItemTitle me-3"></span>
-                            <span class="uploadItemError text-danger"></span>
-                            <div class="progress" style="margin-top: 5px; height: 10px;">
-                                <div class="uploadProgress progress-bar pe-2" role="progressbar" aria-valuenow="0"
-                                    aria-valuemin="0" aria-valuemax="100"
-                                    style="width: 100%; text-align: right; transform: translateX(-100%);"></div>
-                            </div>
+                <div id="uploadModalList" style="margin-left: 5px; margin-bottom: 10px;">
+                    <div class="uploadItem" style="display: none; width: 100%; padding-bottom: 8px;">
+                        <svg class="svg-icon me-1" aria-hidden="true"><use href="static/image/icons.svg#icon-file-lines"/></svg>
+                        <span class="uploadItemTitle me-3"></span>
+                        <span class="uploadItemError text-danger"></span>
+                        <div class="progress" style="margin-top: 5px; height: 10px;">
+                            <div class="uploadProgress progress-bar pe-2" role="progressbar" aria-valuenow="0"
+                                aria-valuemin="0" aria-valuemax="100"
+                                style="width: 100%; text-align: right; transform: translateX(-100%);"></div>
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" id="uploadClose" class="btn btn-success" data-dismiss="modal">
-                        <i class="fas fa-times me-1"></i> {{ tr('close') }}</button>
-                    <button type="button" id="uploadCancel" class="btn btn-danger" data-toggle="tooltip"
-                        data-html="true"
-                        title="{{ tr('cancel_upload_warning') }}">
-                        <i class="fas fa-trash-alt me-1" aria-hidden="true"></i> {{ tr('cancel') }}</button>
-                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="uploadClose" class="btn btn-success">
+                    <svg class="svg-icon me-1" aria-hidden="true"><use href="static/image/icons.svg#icon-xmark"/></svg> {{ tr('close') }}
+                </button>
+                <button type="button" id="uploadCancel" class="btn btn-danger"
+                    title="{{ tr('cancel_upload_warning') }}">
+                    <svg class="svg-icon me-1" aria-hidden="true"><use href="static/image/icons.svg#icon-trash-can"/></svg> {{ tr('cancel') }}
+                </button>
             </div>
         </div>
-    </div>
+    </dialog>
 
     <input type="hidden" id="maxUploadFileSize" value="" />
 

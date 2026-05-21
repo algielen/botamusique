@@ -81,7 +81,7 @@ def init_app() -> None:
     global web
     web = Flask(
         __name__,
-        template_folder=root_dir.joinpath("web/templates"),
+        template_folder=root_dir.joinpath("web"),
         static_folder=root_dir.joinpath("static"),
     )
     web.register_blueprint(bp)
