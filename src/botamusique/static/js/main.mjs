@@ -628,7 +628,7 @@ function processResults(data) {
       const _i = total_pages - 23;
       i = (i < _i) ? i : _i;
 
-      const li = page_li_template.cloneNode(true);
+      const li = page_li_template.cloneNode(false);
       const a = page_no_template.cloneNode(true);
       a.innerHTML = '&laquo;';
       a.addEventListener('click', () => updateResults(1));
@@ -638,7 +638,7 @@ function processResults(data) {
 
     const limit = i + 24;
     for (; i <= total_pages && i <= limit; i++) {
-      const li = page_li_template.cloneNode(true);
+      const li = page_li_template.cloneNode(false);
       const a = page_no_template.cloneNode(true);
       a.textContent = i.toString();
       if (active_page === i) {
@@ -652,7 +652,7 @@ function processResults(data) {
     }
 
     if (limit < total_pages) {
-      const li = page_li_template.cloneNode(true);
+      const li = page_li_template.cloneNode(false);
       const a = page_no_template.cloneNode(true);
       a.innerHTML = '&raquo;';
       a.addEventListener('click', () => updateResults(total_pages));
