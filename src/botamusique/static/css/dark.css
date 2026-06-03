@@ -224,7 +224,7 @@ legend {
 
 /* Overrides previously provided via SCSS variables */
 body {
-  background-color: #e9ecef; }
+  background-color: #1e1e1e; }
 
 .toast {
   max-width: 700px; }
