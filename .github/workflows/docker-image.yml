@@ -105,6 +105,8 @@ jobs:
     - name: Extract Docker image metadata
       id: meta
       uses: docker/metadata-action@v6
+      env:
+        DOCKER_METADATA_ANNOTATIONS_LEVELS: index
       with:
         images: ${{ vars.DOCKER_USERNAME }}/botamusique
         tags: |
@@ -120,9 +122,18 @@ jobs:
 
     - name: Create multi-platform manifest
       working-directory: /tmp/digests
+      env:
+        TAGS: ${{ steps.meta.outputs.tags }}
+        ANNOTATIONS: ${{ steps.meta.outputs.annotations }}
       run: |
-        docker buildx imagetools create \
-          $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
+        args=()
+        while IFS= read -r tag; do
+          [ -n "$tag" ] && args+=(-t "$tag")
+        done <<< "$TAGS"
+        while IFS= read -r annotation; do
+          [ -n "$annotation" ] && args+=(--annotation "$annotation")
+        done <<< "$ANNOTATIONS"
+        docker buildx imagetools create "${args[@]}" \
           $(printf '${{ vars.DOCKER_USERNAME }}/botamusique@sha256:%s ' *)
 
   publish-release:

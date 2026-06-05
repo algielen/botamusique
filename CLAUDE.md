@@ -63,6 +63,22 @@ uv run scripts/translate_templates.py --lang-dir lang/ --template-dir web/templa
 
 When adding icons, add a `<symbol>` to `src/botamusique/static/image/icons.svg` and reference it with `<svg class="svg-icon"><use href="static/image/icons.svg#icon-NAME"/></svg>`. When adding modals, use native `<dialog>` + `.showModal()` / `.close()` rather than Bootstrap modal markup.
 
+### Running CI workflows locally (act)
+
+The GitHub Actions workflows in `.github/workflows/` can be run locally with [`act`](https://github.com/nektos/act) (requires Docker). An `.actrc` in the repo root maps the GitHub-hosted runner labels (`ubuntu-latest`, `ubuntu-24.04-arm`) to a local container image.
+
+```bash
+# Run the PR-check workflow (test + Docker build), amd64 leg only
+act pull_request -W .github/workflows/docker-pr-check.yml -j build --matrix platform:linux/amd64
+
+# List jobs without running them
+act pull_request -W .github/workflows/docker-pr-check.yml --list
+```
+
+Caveats:
+- **arm64 leg**: building `linux/arm64` on an amd64 host needs QEMU/binfmt emulation. Drop the `--matrix` flag to run both legs; if arm fails, run `docker run --privileged --rm tonistiigi/binfmt --install arm64` first. `act` cannot reproduce the native `ubuntu-24.04-arm` runner.
+- **`docker-image.yml`**: `act` can run its `test` and matrix `build` jobs, but the `merge` job's `docker buildx imagetools create` pushes to a real registry, so it can't be meaningfully validated locally without a throwaway registry.
+
 ### Configuration
 
 Copy `configuration.example.ini` to `configuration.ini` and edit it. Do **not** modify `configuration.default.ini` — it is the fallback for any option not set in `configuration.ini` and serves as the schema reference. The bot validates config keys against `configuration.default.ini` on startup and will refuse to start if unknown keys are found.
