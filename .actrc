@@ -1,0 +1,10 @@
+# Configuration for nektos/act (https://github.com/nektos/act)
+# Run the PR-check workflow locally:
+#   act pull_request -W .github/workflows/docker-pr-check.yml
+#
+# Map GitHub-hosted runner labels to local container images.
+# Both arches run on the same amd64 image locally — act cannot emulate the
+# native ubuntu-24.04-arm runner, so the arm matrix leg builds under the host
+# architecture. This still validates the Dockerfile and workflow wiring.
+-P ubuntu-latest=catthehacker/ubuntu:act-latest
+-P ubuntu-24.04-arm=catthehacker/ubuntu:act-latest
