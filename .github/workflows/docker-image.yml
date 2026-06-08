@@ -57,13 +57,6 @@ jobs:
         username: ${{ vars.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
 
-    - name: Log in to GHCR
-      uses: docker/login-action@v4
-      with:
-        registry: ghcr.io
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-        
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v4
 
@@ -71,9 +64,7 @@ jobs:
       id: meta
       uses: docker/metadata-action@v6
       with:
-        images: |
-          ${{ vars.DOCKER_USERNAME }}/botamusique
-          ghcr.io/${{ github.repository_owner }}/botamusique
+        images: ${{ vars.DOCKER_USERNAME }}/botamusique
 
     - name: Build and push Docker image
       id: build
@@ -82,7 +73,7 @@ jobs:
         context: .
         platforms: ${{ matrix.platform }}
         file: ./Dockerfile
-        outputs: type=image,name=${{ vars.DOCKER_USERNAME }}/botamusique|ghcr.io/${{ github.repository_owner }}/botamusique,push-by-digest=true,name-canonical=true,push=true
+        outputs: type=image,name=${{ vars.DOCKER_USERNAME }}/botamusique,push-by-digest=true,name-canonical=true,push=true
         labels: ${{ steps.meta.outputs.labels }}
         build-args: GIT_COMMIT=${{ github.sha }}
         provenance: true
@@ -176,7 +167,7 @@ jobs:
           [ -n "$tag" ] && ghcr_args+=(-t "$tag")
         done <<< "$GHCR_TAGS"
         docker buildx imagetools create "${ghcr_args[@]}" \
-          $(printf 'ghcr.io/${{ github.repository_owner }}/botamusique@sha256:%s ' *)
+          $(printf '${{ vars.DOCKER_USERNAME }}/botamusique@sha256:%s ' *)
 
   publish-release:
 
