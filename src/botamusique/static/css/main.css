@@ -222,10 +222,6 @@ h3 {
 legend {
   font-size: 1rem; }
 
-/* Overrides previously provided via SCSS variables */
-body {
-  background-color: #e9ecef; }
-
 .toast {
   max-width: 700px; }
 
@@ -251,3 +247,4 @@ dialog {
 /* CSS hover for library thumbnail action buttons (replaces JS hover binding) */
 .library-item:hover .library-thumb-grp {
   left: -15px; }
+body { background-color: #e9ecef; }

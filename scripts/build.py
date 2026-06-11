@@ -69,6 +69,14 @@ def download_file(url: str, dest: Path, cache_key: str) -> None:
     _mark_cached(cache_key, url)
 
 
+# Per-theme CSS appended after the shared custom CSS.
+# Needed because both themes compile from the same main.scss but some
+# overrides only make sense for one theme (e.g. the light-theme body bg).
+THEME_EXTRA_CSS = {
+    "main": "body { background-color: #e9ecef; }\n",
+    "dark": "",
+}
+
 # --- CSS ---
 print("Compiling web/sass/main.scss ...")
 custom_css = sass.compile(filename=str(root / "web" / "sass" / "main.scss"))
@@ -84,7 +92,7 @@ for output_name, theme_name in THEMES.items():
     print(f"Building static/css/{output_name}.css ...")
     vendor_css = vendor_file.read_text(encoding="utf-8")
     out = static_css_dir / f"{output_name}.css"
-    out.write_text(vendor_css + "\n" + custom_css, encoding="utf-8")
+    out.write_text(vendor_css + "\n" + custom_css + THEME_EXTRA_CSS[output_name], encoding="utf-8")
 
 # --- Templates ---
 subprocess.run(
