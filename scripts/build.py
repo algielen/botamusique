@@ -14,8 +14,6 @@ import tomllib
 import urllib.request
 from pathlib import Path
 
-import sass  # libsass-python
-
 root = Path(__file__).parent.parent
 
 with open(root / "pyproject.toml", "rb") as f:
@@ -78,8 +76,7 @@ THEME_EXTRA_CSS = {
 }
 
 # --- CSS ---
-print("Compiling web/sass/main.scss ...")
-custom_css = sass.compile(filename=str(root / "web" / "sass" / "main.scss"))
+custom_css = (root / "web" / "css" / "main.css").read_text(encoding="utf-8")
 
 for output_name, theme_name in THEMES.items():
     vendor_file = vendor_dir / f"{theme_name}.min.css"

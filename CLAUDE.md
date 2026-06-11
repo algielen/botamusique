@@ -30,7 +30,7 @@ uv run pytest src/pymumble_py3/tests/test_crypto.py
 
 ```
 
-### Web Frontend (Python/libsass)
+### Web Frontend (Python)
 
 Build assets and translate templates in one step. No Node.js required.
 
@@ -38,7 +38,7 @@ Build assets and translate templates in one step. No Node.js required.
 uv run --group build scripts/build.py
 ```
 
-This downloads pre-built Bootswatch theme CSS (cached in `src/botamusique/static/vendor/`, gitignored), compiles `web/sass/main.scss` with libsass, and translates Jinja2 templates for all supported languages. JS modules and images live directly in `src/botamusique/static/` and are tracked in git — no copy step needed.
+This downloads pre-built Bootswatch theme CSS (cached in `tmp/vendor/`, gitignored), concatenates it with `web/css/main.css`, and translates Jinja2 templates for all supported languages. JS modules and images live directly in `src/botamusique/static/` and are tracked in git — no copy step needed.
 
 To run the translation step on its own (e.g. after editing a `lang/*.json` file):
 
@@ -47,7 +47,7 @@ uv run scripts/translate_templates.py --lang-dir lang/ --template-dir web/templa
 ```
 
 **Frontend source layout:**
-- `web/sass/main.scss` — SCSS source → compiled to `src/botamusique/static/css/{main,dark}.css` (tracked in git)
+- `web/css/main.css` — custom CSS (uses native CSS nesting) → concatenated into `src/botamusique/static/css/{main,dark}.css` (tracked in git)
 - `web/templates/*.template.html` — template sources → translated to `src/botamusique/web/*.{lang}.html` (tracked in git)
 - `src/botamusique/static/js/` — JS source modules (tracked in git, edit in place)
 - `src/botamusique/static/image/` — image assets (tracked in git, edit in place)
