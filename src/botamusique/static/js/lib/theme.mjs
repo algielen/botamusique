@@ -26,6 +26,16 @@ export default class {
       document.getElementById('pagestyle')
           .setAttribute('href', 'static/css/' + (dark ? 'dark' : 'main') + '.css');
 
+      // Expose the active theme to CSS. The light (flatly) theme carries a
+      // `data-bs-theme=light` hook so shared custom rules can target it; the
+      // dark (darkly) theme keeps no attribute so it renders via its :root
+      // defaults unchanged.
+      if (dark) {
+        document.documentElement.removeAttribute('data-bs-theme');
+      } else {
+        document.documentElement.setAttribute('data-bs-theme', 'light');
+      }
+
       // Update local storage
       localStorage.setItem('darkTheme', dark);
 

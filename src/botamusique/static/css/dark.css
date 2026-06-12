@@ -270,6 +270,13 @@ legend {
     font-size: 1rem;
 }
 
+/* Light theme uses Bootstrap grey-200 rather than flatly's pure white #fff.
+   Scoped to the light-theme hook set by the JS theme switcher, so it is inert
+   when concatenated into dark.css (the dark page sets no data-bs-theme). */
+[data-bs-theme="light"] {
+    --bs-body-bg: #e9ecef;
+}
+
 .toast {
     max-width: 700px;
 }
