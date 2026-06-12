@@ -9,7 +9,7 @@ class CustomBuildHook(BuildHookInterface):
     def initialize(self, version, build_data):
         # When building from an sdist, web/ and scripts/ are absent —
         # the pre-generated assets are already included; nothing to do.
-        if not (Path(self.root) / "web" / "css" / "main.css").exists():
+        if not (Path(self.root) / "web" / "templates" / "index.template.html").exists():
             return
         subprocess.run(
             [sys.executable, Path(self.root) / "scripts" / "build.py"],

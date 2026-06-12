@@ -38,7 +38,7 @@ Build assets and translate templates in one step. No Node.js required.
 uv run --group build scripts/build.py
 ```
 
-This downloads pre-built Bootswatch theme CSS (cached in `tmp/vendor/`, gitignored), concatenates it with `web/css/main.css`, and translates Jinja2 templates for all supported languages. JS modules and images live directly in `src/botamusique/static/` and are tracked in git — no copy step needed.
+This downloads the two pre-built Bootswatch themes directly to `src/botamusique/static/css/{main,dark}.css` and translates Jinja2 templates for all supported languages. The custom stylesheet, JS modules, and images live directly in `src/botamusique/static/` and are tracked in git — there is no compilation or copy step for them.
 
 To run the translation step on its own (e.g. after editing a `lang/*.json` file):
 
@@ -47,11 +47,12 @@ uv run scripts/translate_templates.py --lang-dir lang/ --template-dir web/templa
 ```
 
 **Frontend source layout:**
-- `web/css/main.css` — custom CSS (uses native CSS nesting) → concatenated into `src/botamusique/static/css/{main,dark}.css` (tracked in git)
+- `src/botamusique/static/css/{main,dark}.css` — raw Bootswatch themes (flatly/darkly), downloaded by the build; swapped at runtime by the JS theme switcher (`#pagestyle` link)
+- `src/botamusique/static/css/custom.css` — custom CSS (uses native CSS nesting), loaded as a constant second `<link>` after the theme so it layers on top; tracked in git, edit in place
 - `web/templates/*.template.html` — template sources → translated to `src/botamusique/web/*.{lang}.html` (tracked in git)
 - `src/botamusique/static/js/` — JS source modules (tracked in git, edit in place)
 - `src/botamusique/static/image/` — image assets (tracked in git, edit in place)
-- `tmp/vendor/` — downloaded Bootswatch CSS (gitignored, used only during CSS compilation)
+- `tmp/vendor/build_cache.json` — URL-based download cache (gitignored)
 
 **Frontend stack:** The web UI is intentionally dependency-light. Bootstrap CSS (Bootswatch themes) is the only external dependency — everything else is vanilla browser APIs:
 - `fetch()` + `URLSearchParams` for all server communication

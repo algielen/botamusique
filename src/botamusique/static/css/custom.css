@@ -1,3 +1,7 @@
+/* Custom styles layered on top of the active Bootswatch theme.
+   Loaded as a constant <link> after the swappable theme stylesheet
+   (static/css/main.css or dark.css), so these rules win on equal specificity. */
+
 /* Playlist */
 .playlist-item {
     transition: all 0.2s ease-in-out;
@@ -259,8 +263,8 @@ legend {
 }
 
 /* Light theme uses Bootstrap grey-200 rather than flatly's pure white #fff.
-   Scoped to the light-theme hook set by the JS theme switcher, so it is inert
-   when concatenated into dark.css (the dark page sets no data-bs-theme). */
+   Scoped to the light-theme hook set by the JS theme switcher; inert on the
+   dark theme, which sets no data-bs-theme attribute. */
 [data-bs-theme="light"] {
     --bs-body-bg: #e9ecef;
 }
