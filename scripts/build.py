@@ -8,12 +8,20 @@ Steps:
 The custom stylesheet (static/css/custom.css) and the JS modules are edited in
 place under src/botamusique/static/ and tracked in git — they need no build step.
 """
+import argparse
 import json
 import subprocess
 import sys
 import tomllib
 import urllib.request
 from pathlib import Path
+
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument(
+    "--no-cache", action="store_true",
+    help="Ignore the download cache and re-download all theme CSS "
+         "(e.g. after the Bootswatch CDN content changes for a fixed version).")
+args = parser.parse_args()
 
 root = Path(__file__).parent.parent
 
@@ -42,7 +50,7 @@ static_css_dir.mkdir(parents=True, exist_ok=True)
 # Bootswatch version is bumped in pyproject.toml the URL changes and the
 # corresponding theme is re-downloaded automatically.
 _cache: dict[str, str] = {}
-if cache_file.exists():
+if cache_file.exists() and not args.no_cache:
     _cache = json.loads(cache_file.read_text(encoding="utf-8"))
 
 

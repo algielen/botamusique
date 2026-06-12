@@ -87,6 +87,16 @@ uv venv
 uv sync --no-dev
 uv run --group build scripts/build.py
 ```
+
+The build step downloads the Bootswatch theme stylesheets and caches them in
+`tmp/vendor/build_cache.json` (keyed by URL, so a Bootswatch version bump in
+`pyproject.toml` re-downloads automatically). Note that `uv build --clear`
+only clears the `dist/` output directory, not this asset cache. To force a
+fresh re-download of the themes (e.g. if the CDN content changed for a pinned
+version), pass `--no-cache`:
+```
+uv run --group build scripts/build.py --no-cache
+```
 </details>
 
 ## Configuration

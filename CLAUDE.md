@@ -40,6 +40,8 @@ uv run --group build scripts/build.py
 
 This downloads the two pre-built Bootswatch themes directly to `src/botamusique/static/css/{main,dark}.css` and translates Jinja2 templates for all supported languages. The custom stylesheet, JS modules, and images live directly in `src/botamusique/static/` and are tracked in git — there is no compilation or copy step for them.
 
+The theme download is cached in `tmp/vendor/build_cache.json` (keyed by URL). `uv build --clear` only clears the `dist/` output directory, not this cache; pass `--no-cache` to force a fresh re-download: `uv run --group build scripts/build.py --no-cache`.
+
 To run the translation step on its own (e.g. after editing a `lang/*.json` file):
 
 ```bash
