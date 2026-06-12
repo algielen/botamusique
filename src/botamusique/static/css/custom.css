@@ -1,10 +1,14 @@
+/* Custom styles layered on top of the active Bootswatch theme.
+   Loaded as a constant <link> after the swappable theme stylesheet
+   (static/css/main.css or dark.css), so these rules win on equal specificity. */
+
 /* Playlist */
 .playlist-item {
     transition: all 0.2s ease-in-out;
 }
 
 .playlist-artwork {
-    //float: left;
+    /* float: left; */
     margin-left: 10px;
     white-space: nowrap;
     overflow: hidden;
@@ -250,18 +254,19 @@
     }
 }
 
-// Allows us to have H3 with the size of an H5
 h3 {
     font-size: 1.25rem;
 }
 
-// Makes legend match the size of other labels
 legend {
     font-size: 1rem;
 }
 
-/* Overrides previously provided via SCSS variables */
-body {
+/* Light theme uses a soft grey page background rather than flatly's pure
+   white. Scoped to the body element (not the --bs-body-bg variable) so cards,
+   modals, inputs and other surfaces keep their white background; and to the
+   light-theme hook so the dark theme is unaffected. */
+[data-bs-theme="light"] body {
     background-color: #e9ecef;
 }
 

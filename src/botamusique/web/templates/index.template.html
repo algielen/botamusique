@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html lang="en">
+<html lang="en" data-bs-theme="light">
 
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
@@ -10,7 +10,25 @@
 
     <link rel="icon" href="static/image/favicon.ico" />
 
-    <link id="pagestyle" rel="stylesheet" href="static/css/main.css">
+    <!-- Apply the saved theme before the stylesheet loads to avoid a flash of
+         the wrong theme (FOUC). Mirrors lib/theme.mjs: the dark (darkly) theme
+         keeps no data-bs-theme attribute; the light (flatly) theme carries
+         data-bs-theme="light" as the hook for custom.css overrides. -->
+    <script>
+        (function () {
+            var dark = localStorage.getItem('darkTheme') === 'true';
+            if (dark) {
+                document.documentElement.removeAttribute('data-bs-theme');
+            }
+            var link = document.createElement('link');
+            link.id = 'pagestyle';
+            link.rel = 'stylesheet';
+            link.href = 'static/css/' + (dark ? 'dark' : 'main') + '.css';
+            document.head.appendChild(link);
+        })();
+    </script>
+    <noscript><link id="pagestyle" rel="stylesheet" href="static/css/main.css"></noscript>
+    <link rel="stylesheet" href="static/css/custom.css">
 </head>
 
 <body>
