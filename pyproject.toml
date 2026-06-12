@@ -29,6 +29,8 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/botamusique", "src/pymumble_py3"]
+# Template sources are build inputs; only their translated output ships.
+exclude = ["src/botamusique/web/templates"]
 
 [tool.hatch.build.targets.sdist]
 exclude = [
@@ -44,8 +46,8 @@ exclude = [
     "/uv.lock",
     "/static",
     "/tests",
-    "/web",
     "/scripts",
+    "src/botamusique/web/templates",
 ]
 
 

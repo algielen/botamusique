@@ -68,7 +68,7 @@ for output_name, theme_name in THEMES.items():
 subprocess.run(
     [sys.executable, root / "scripts" / "translate_templates.py",
      "--lang-dir", pkg_dir / "lang",
-     "--template-dir", root / "web" / "templates",
+     "--template-dir", pkg_dir / "web" / "templates",
      "--output-dir", templates_out_dir],
     check=True,
 )

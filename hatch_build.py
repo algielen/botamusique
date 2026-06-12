@@ -7,12 +7,14 @@ from hatchling.builders.hooks.plugin.interface import BuildHookInterface
 
 class CustomBuildHook(BuildHookInterface):
     def initialize(self, version, build_data):
-        # When building from an sdist, web/ and scripts/ are absent —
-        # the pre-generated assets are already included; nothing to do.
-        if not (Path(self.root) / "web" / "templates" / "index.template.html").exists():
+        # The sdist ships pre-generated assets and excludes the build tooling
+        # (scripts/). When build.py is absent we are building from an sdist —
+        # there is nothing to regenerate.
+        build_script = Path(self.root) / "scripts" / "build.py"
+        if not build_script.exists():
             return
         subprocess.run(
-            [sys.executable, Path(self.root) / "scripts" / "build.py"],
+            [sys.executable, build_script],
             check=True,
             cwd=self.root,
         )

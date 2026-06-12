@@ -43,13 +43,13 @@ This downloads the two pre-built Bootswatch themes directly to `src/botamusique/
 To run the translation step on its own (e.g. after editing a `lang/*.json` file):
 
 ```bash
-uv run scripts/translate_templates.py --lang-dir lang/ --template-dir web/templates/
+uv run scripts/translate_templates.py --lang-dir lang/ --template-dir src/botamusique/web/templates/
 ```
 
 **Frontend source layout:**
 - `src/botamusique/static/css/{main,dark}.css` — raw Bootswatch themes (flatly/darkly), downloaded by the build; swapped at runtime by the JS theme switcher (`#pagestyle` link)
 - `src/botamusique/static/css/custom.css` — custom CSS (uses native CSS nesting), loaded as a constant second `<link>` after the theme so it layers on top; tracked in git, edit in place
-- `web/templates/*.template.html` — template sources → translated to `src/botamusique/web/*.{lang}.html` (tracked in git)
+- `src/botamusique/web/templates/*.template.html` — template sources → translated to `src/botamusique/web/*.{lang}.html` alongside them (tracked in git)
 - `src/botamusique/static/js/` — JS source modules (tracked in git, edit in place)
 - `src/botamusique/static/image/` — image assets (tracked in git, edit in place)
 - `tmp/vendor/build_cache.json` — URL-based download cache (gitignored)
