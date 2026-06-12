@@ -262,11 +262,12 @@ legend {
     font-size: 1rem;
 }
 
-/* Light theme uses Bootstrap grey-200 rather than flatly's pure white #fff.
-   Scoped to the light-theme hook set by the JS theme switcher; inert on the
-   dark theme, which sets no data-bs-theme attribute. */
-[data-bs-theme="light"] {
-    --bs-body-bg: #e9ecef;
+/* Light theme uses a soft grey page background rather than flatly's pure
+   white. Scoped to the body element (not the --bs-body-bg variable) so cards,
+   modals, inputs and other surfaces keep their white background; and to the
+   light-theme hook so the dark theme is unaffected. */
+[data-bs-theme="light"] body {
+    background-color: #e9ecef;
 }
 
 .toast {
