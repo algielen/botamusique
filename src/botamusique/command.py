@@ -1258,13 +1258,17 @@ def cmd_web_access(bot: MumbleBot, user: str, text: Any, command: str, parameter
         user_info = bot.db.get("user", user, fallback='{}')
         user_dict = json.loads(user_info)
         if 'token' in user_dict:
+            # Stored value is the hash; this revokes the user's previous token.
             bot.db.remove_option("web_token", user_dict['token'])
 
         token = secrets.token_urlsafe(16)
-        user_dict['token'] = token
+        token_hash = util.hash_token(token)
+        # Only the hash is persisted; the plaintext token lives only in the URL
+        # we hand back to the user below.
+        user_dict['token'] = token_hash
         user_dict['token_created'] = str(datetime.datetime.now())
         user_dict['last_ip'] = ''
-        bot.db.set("web_token", token, user)
+        bot.db.set("web_token", token_hash, user)
         bot.db.set("user", user, json.dumps(user_dict))
 
         access_address = bot.config.get("webinterface", "access_address") + "/?token=" + token

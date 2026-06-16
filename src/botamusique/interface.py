@@ -161,36 +161,54 @@ def requires_auth(f: Callable[..., Any]) -> Callable[..., Any]:
             else:
                 return authenticate()
         if auth_method == 'token':
+            ttl = _bot.config.getint("webinterface", "token_ttl", fallback=604800)
+
             if 'user' in session and 'token' not in request.args:
-                user = session['user']
-                return f(*args, **kwargs)
+                # Resume an existing browser session, but only while the
+                # underlying token is still within its TTL — otherwise the
+                # signed cookie could outlive the token it was minted from.
+                sess_info = _bot.db.get("user", session['user'], fallback=None)
+                if sess_info and not util.is_token_expired(json.loads(sess_info), ttl):
+                    user = session['user']
+                    return f(*args, **kwargs)
+                session.pop('user', None)
+                session.pop('token', None)
+
             elif 'token' in request.args:
                 token = request.args.get('token')
-                token_user = _bot.db.get("web_token", token, fallback=None)
+                token_hash = util.hash_token(token)
+                token_user = _bot.db.get("web_token", token_hash, fallback=None)
                 if token_user is not None:
-                    user = token_user
+                    user_info = _bot.db.get("user", token_user, fallback=None)
+                    user_dict = json.loads(user_info) if user_info else {}
+                    if not util.is_token_expired(user_dict, ttl):
+                        user = token_user
+                        user_dict['IP'] = request.remote_addr
+                        _bot.db.set("user", token_user, json.dumps(user_dict))
 
-                    user_info = _bot.db.get("user", user, fallback=None)
-                    user_dict = json.loads(user_info)
-                    user_dict['IP'] = request.remote_addr
-                    _bot.db.set("user", user, json.dumps(user_dict))
+                        log.debug(
+                            f"web: new user access, token validated for the user: {token_user}, from ip {request.remote_addr}.")
+                        session['token'] = token_hash
+                        session['user'] = token_user
+                        return f(*args, **kwargs)
 
-                    log.debug(
-                        f"web: new user access, token validated for the user: {token_user}, from ip {request.remote_addr}.")
-                    session['token'] = token
-                    session['user'] = token_user
-                    return f(*args, **kwargs)
+                    # Expired token: revoke it so the stale link stops working.
+                    _bot.db.remove_option("web_token", token_hash)
+                    log.info(f"web: expired token for user {token_user} from ip {request.remote_addr}.")
 
-            if request.remote_addr in bad_access_count:
-                bad_access_count[request.remote_addr] += 1
-                log.info(f"web: bad token from ip {request.remote_addr}, "
-                         f"{bad_access_count[request.remote_addr]} attempts.")
-                if bad_access_count[request.remote_addr] > _bot.config.getint("webinterface", "max_attempts"):
-                    banned_ip.append(request.remote_addr)
-                    log.info(f"web: access banned for {request.remote_addr}")
-            else:
-                bad_access_count[request.remote_addr] = 1
-                log.info(f"web: bad token from ip {request.remote_addr}.")
+                # A token was supplied but is invalid or expired: count it as a
+                # bad attempt and ban the IP after too many. Requests that carry
+                # no token at all simply get the "need token" page below.
+                if request.remote_addr in bad_access_count:
+                    bad_access_count[request.remote_addr] += 1
+                    log.info(f"web: bad token from ip {request.remote_addr}, "
+                             f"{bad_access_count[request.remote_addr]} attempts.")
+                    if bad_access_count[request.remote_addr] > _bot.config.getint("webinterface", "max_attempts"):
+                        banned_ip.append(request.remote_addr)
+                        log.info(f"web: access banned for {request.remote_addr}")
+                else:
+                    bad_access_count[request.remote_addr] = 1
+                    log.info(f"web: bad token from ip {request.remote_addr}.")
 
             return render_template(f'need_token.{_bot.config.get('bot', 'language')}.html',
                                    name=_bot.config.get('bot', 'username'),
