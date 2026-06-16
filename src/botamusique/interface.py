@@ -367,7 +367,7 @@ def post() -> Response:
 
     payload = request.get_json() if request.is_json else request.form
     if payload:
-        log.debug("web: Post request from %s: %s" % (request.remote_addr, str(payload)))
+        log.debug("web: Post request from %s (user: %s): %s" % (request.remote_addr, user, str(payload)))
 
         if 'add_item_at_once' in payload:
             music_wrapper = _bot.cache.get_cached_wrapper_by_id(payload['add_item_at_once'], user)
@@ -455,7 +455,7 @@ def post() -> Response:
             item = _bot.cache.get_item_by_id(_id)
 
             if os.path.isfile(item.uri()):
-                log.info("web: delete file " + item.uri())
+                log.info("web: user %s (%s) deleting file %s" % (user, request.remote_addr, item.uri()))
                 os.remove(item.uri())
 
             _bot.cache.free_and_delete(_id)
@@ -608,7 +608,7 @@ def library() -> Response:
 
     payload = request.form if request.form else request.json
     if payload:
-        log.debug("web: Post request from %s: %s" % (request.remote_addr, str(payload)))
+        log.debug("web: Post request from %s (user: %s): %s" % (request.remote_addr, user, str(payload)))
 
         if payload['action'] in ['add', 'query', 'delete']:
             condition = build_library_query_condition(payload)
@@ -646,7 +646,7 @@ def library() -> Response:
                         item = _bot.cache.get_item_by_id(item.id)
 
                         if os.path.isfile(item.uri()):
-                            log.info("web: delete file " + item.uri())
+                            log.info("web: user %s (%s) deleting file %s" % (user, request.remote_addr, item.uri()))
                             os.remove(item.uri())
 
                         _bot.cache.free_and_delete(item.id)
@@ -738,7 +738,7 @@ def upload() -> tuple[str, int]:
     elif '../' in targetdir:
         abort(403)
 
-    log.info('web: Uploading file from %s:' % request.remote_addr)
+    log.info('web: user %s uploading file from %s:' % (user, request.remote_addr))
     log.info('web: - filename: ' + filename)
     log.info('web: - targetdir: ' + targetdir)
     log.info('web: - mimetype: ' + file.mimetype)
@@ -784,7 +784,7 @@ def download() -> Response:
             Condition().and_equal('id', request.args['id'])))[0]
 
         requested_file = item.uri()
-        log.info('web: Download of file %s requested from %s:' % (requested_file, request.remote_addr))
+        log.info('web: user %s (%s) requested download of file %s' % (user, request.remote_addr, requested_file))
 
         try:
             return send_file(requested_file, as_attachment=True)
