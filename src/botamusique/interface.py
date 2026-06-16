@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from flask import Flask, Blueprint, render_template, request, redirect, send_file, Response, jsonify, abort, session
+from werkzeug.utils import secure_filename
 
 from botamusique import media
 from botamusique import util
@@ -101,7 +102,11 @@ def check_auth(username: str, password: str) -> bool:
     password combination is valid.
     """
 
-    if username == _bot.config.get("webinterface", "user") and password == _bot.config.get("webinterface", "password"):
+    conf_user = _bot.config.get("webinterface", "user")
+    conf_password = _bot.config.get("webinterface", "password")
+    # Require both to be configured: otherwise an empty configured password
+    # would let a client authenticate with empty Basic-auth credentials.
+    if conf_user and conf_password and username == conf_user and password == conf_password:
         return True
 
     web_users = json.loads(_bot.db.get("privilege", "web_access", fallback='[]'))
@@ -646,8 +651,11 @@ def library() -> Response:
 
                         _bot.cache.free_and_delete(item.id)
 
-                    if len(os.listdir(_bot.music_folder + payload['dir'])) == 0:
-                        os.rmdir(_bot.music_folder + payload['dir'])
+                    music_root = os.path.abspath(_bot.music_folder)
+                    deldir = os.path.abspath(os.path.join(music_root, payload['dir']))
+                    if (deldir == music_root or deldir.startswith(music_root + os.sep)) \
+                            and os.path.isdir(deldir) and len(os.listdir(deldir)) == 0:
+                        os.rmdir(deldir)
 
                     time.sleep(0.1)
                     return redirect("./", code=302)
@@ -717,7 +725,10 @@ def upload() -> tuple[str, int]:
     if not file:
         abort(400)
 
-    filename = file.filename
+    # Sanitize the client-supplied filename: secure_filename strips any
+    # directory components (../, absolute paths, drive letters), preventing
+    # path traversal when it is later joined onto the storage path.
+    filename = secure_filename(file.filename or '')
     if filename == '':
         abort(400)
 
@@ -732,9 +743,10 @@ def upload() -> tuple[str, int]:
     log.info('web: - targetdir: ' + targetdir)
     log.info('web: - mimetype: ' + file.mimetype)
 
+    music_root = os.path.abspath(_bot.music_folder)
     if "audio" in file.mimetype or "video" in file.mimetype:
-        storagepath = os.path.abspath(os.path.join(_bot.music_folder, targetdir))
-        if not storagepath.startswith(os.path.abspath(_bot.music_folder)):
+        storagepath = os.path.abspath(os.path.join(music_root, targetdir))
+        if storagepath != music_root and not storagepath.startswith(music_root + os.sep):
             abort(403)
 
         try:
@@ -745,6 +757,11 @@ def upload() -> tuple[str, int]:
                 abort(500)
 
         filepath = os.path.join(storagepath, filename)
+        # Defense in depth: re-validate the final, fully-resolved path lies
+        # inside the music folder before writing.
+        if os.path.abspath(filepath) != music_root \
+                and not os.path.abspath(filepath).startswith(music_root + os.sep):
+            abort(403)
         log.info('web: - file saved at: ' + filepath)
         if os.path.exists(filepath):
             return 'File existed!', 409

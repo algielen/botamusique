@@ -2,6 +2,7 @@ import argparse
 import configparser
 import logging
 import os
+import secrets
 import sys
 from argparse import ArgumentParser, Namespace
 from configparser import ConfigParser
@@ -289,11 +290,52 @@ def start_web_interface(addr: str, port: int, bot: MumbleBot) -> None:
     level_name = bot.config.get('debug', 'web_access_log_level').upper()
     werkzeug_logger.setLevel(getattr(logging, level_name, logging.INFO))
 
+    flask_secret = warn_insecure_webinterface(bot, addr)
+
     interface.init_app()
     interface.set_bot(bot)
     interface.init_proxy()
-    interface.web.secret_key = bot.config.get('webinterface', 'flask_secret')
+    interface.web.secret_key = flask_secret
     interface.web.run(port=port, host=addr)
+
+
+def warn_insecure_webinterface(bot: MumbleBot, addr: str) -> str:
+    """Emit loud warnings for insecure web-interface configuration and return
+    the Flask cookie-signing secret to use (an ephemeral random one if the
+    configured value is empty or the well-known default)."""
+    log = logging.getLogger("bot")
+    auth_method = bot.config.get('webinterface', 'auth_method')
+    flask_secret = bot.config.get('webinterface', 'flask_secret')
+    upload_enabled = bot.config.getboolean('webinterface', 'upload_enabled')
+    port = bot.config.getint('webinterface', 'listening_port')
+    is_loopback = addr in ('127.0.0.1', 'localhost', '::1')
+
+    banner = "!" * 72
+    if auth_method == 'none':
+        log.warning(banner)
+        log.warning("SECURITY: web interface authentication is DISABLED (auth_method = none).")
+        log.warning("Anyone able to reach %s:%d has full control of the bot%s.",
+                    addr, port, " and can upload files to the server" if upload_enabled else "")
+        if not is_loopback:
+            log.warning("It is bound to %s and reachable from other hosts. Set "
+                        "'auth_method = token' (or 'password') in configuration.ini.", addr)
+        log.warning(banner)
+
+    if auth_method == 'password':
+        if not bot.config.get('webinterface', 'user') or not bot.config.get('webinterface', 'password'):
+            log.warning("SECURITY: auth_method = password but 'user'/'password' is empty in "
+                        "configuration.ini. The master credential is disabled; make sure "
+                        "per-user web accounts are configured, or set 'user'/'password'.")
+
+    if not flask_secret or flask_secret == 'ChangeThisPassword':
+        if auth_method != 'none':
+            log.warning("SECURITY: 'flask_secret' is unset or the default 'ChangeThisPassword'. "
+                        "A random secret will be used for this run so session cookies cannot be "
+                        "forged. Set a strong 'flask_secret' in configuration.ini to keep "
+                        "sessions valid across restarts.")
+        return secrets.token_hex(32)
+
+    return flask_secret
 
 if __name__ == '__main__':
     main()
