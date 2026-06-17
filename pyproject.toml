@@ -62,6 +62,6 @@ build = [
     "jinja2>=3.0",
 ]
 dev = [
-    "pytest>=9.0.1",
+    "pytest>=9.1.0",
     "pip>=26.1.2", # PyCharm uses it for its package management
 ]
