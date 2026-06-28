@@ -97,7 +97,7 @@ requires-dist = [
     { name = "filetype", specifier = ">=1.2" },
     { name = "flask", specifier = ">=3.1.2" },
     { name = "mutagen", specifier = ">=1.48.0" },
-    { name = "opuslib-next", specifier = ">=1.1.5" },
+    { name = "opuslib-next", specifier = ">=1.3.0" },
     { name = "packaging", specifier = ">=26.1" },
     { name = "pillow", specifier = ">=12.0.0" },
     { name = "protobuf", specifier = ">=7.35.0" },
@@ -400,11 +400,11 @@ wheels = [
 
 [[package]]
 name = "opuslib-next"
-version = "1.1.6"
+version = "1.3.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/f4/72/1d964e27a886e422b45261402794a322c463aa9ef6e3f3dfee6632b8145a/opuslib_next-1.1.6.tar.gz", hash = "sha256:5ee217837c122023a95d4ec7bc29f44cb2e7f3db2b855968ef19375d21cedfa4", size = 49127, upload-time = "2026-03-16T04:24:35.63Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/a4/54/f0528115c40a3a6e14d9c3f24bb2f2c418dce248dffa1ccd21dd58b3d483/opuslib_next-1.3.0.tar.gz", hash = "sha256:0fe7350ec2e524380cca69700705abe6e2545b824f921a32f36c8c98f35b8527", size = 54800, upload-time = "2026-06-15T03:08:33.935Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a3/40/44ada38936e1f8c989266abd18535ff267d0054fd21a5915a570e0daae25/opuslib_next-1.1.6-py3-none-any.whl", hash = "sha256:96e2eac3a2577de8eb86db1da34fc504152ecefc39ff9154b4c15219cc474ea8", size = 13738, upload-time = "2026-03-16T04:24:34.795Z" },
+    { url = "https://files.pythonhosted.org/packages/da/75/5e3d7c884f239cb4014666a71bc7c2bf03fbaa7a00940838df90072180c3/opuslib_next-1.3.0-py3-none-any.whl", hash = "sha256:3025e961d8fe73874801dfba7ef85fc71f1d82f76fd5363806558338547deaa5", size = 21432, upload-time = "2026-06-15T03:08:33.095Z" },
 ]
 
 [[package]]
