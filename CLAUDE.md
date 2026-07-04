@@ -82,6 +82,26 @@ Caveats:
 - **arm64 leg**: building `linux/arm64` on an amd64 host needs QEMU/binfmt emulation. Drop the `--matrix` flag to run both legs; if arm fails, run `docker run --privileged --rm tonistiigi/binfmt --install arm64` first. `act` cannot reproduce the native `ubuntu-24.04-arm` runner.
 - **`docker-image.yml`**: `act` can run its `test` and matrix `build` jobs, but the `merge` job's `docker buildx imagetools create` pushes to a real registry, so it can't be meaningfully validated locally without a throwaway registry.
 
+### Building/running the Docker image without Docker Desktop (wslc)
+
+On Windows, [`wslc`](https://github.com/MicrosoftDocs/wsl/blob/main/WSL/wsl-container.md) (ships built-in with WSL) can build and run this project's `Dockerfile` without Docker Desktop running. It exposes a Docker-CLI-like surface (`wslc build`, `wslc run`, `wslc exec`, `wslc images`, `wslc list -a`, etc.) backed by a WSL-hosted container runtime.
+
+Two scripts at the repo root wrap the equivalent `docker build` / `docker run` invocations:
+
+```powershell
+# Build the image (wires GIT_COMMIT from git rev-parse --short HEAD)
+./wslc-build.ps1
+./wslc-build.ps1 -Tag botamusique:dev
+
+# Run it (mounts configuration.ini, music_folder/, and data/ for persistent DBs; publishes the web port)
+./wslc-run.ps1
+./wslc-run.ps1 -Detach -WebPort 8080
+```
+
+Caveats:
+- **No `wslc compose`** yet — `wslc --help` has no `compose` subcommand, so multi-container orchestration still needs Docker Desktop or manual `wslc run` scripting.
+- Build log output interleaves both Dockerfile stages' lines under `[python-builder]` / `[stage-1]` prefixes — noisier than BuildKit's grouped output, but carries the same information.
+
 ### Configuration
 
 Copy `configuration.example.ini` to `configuration.ini` and edit it. Do **not** modify `configuration.default.ini` — it is the fallback for any option not set in `configuration.ini` and serves as the schema reference. The bot validates config keys against `configuration.default.ini` on startup and will refuse to start if unknown keys are found.
