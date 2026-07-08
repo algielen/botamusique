@@ -85,6 +85,7 @@
         "user_ban_success": "User {user} is banned.",
         "user_password_set": "Your password has been updated.",
         "user_unban_success": "User {user} is unbanned.",
+        "web_access_needs_registration": "Only users registered on this Mumble server can request web interface access.",
         "web_user_list": "Following users have the privilege to access the web interface: <br /> {users}",
         "webpage_address": "Your own address to access the web interface is <a href=\"{address}\">{address}</a>",
         "which_command": "Do you mean <br /> {commands}",

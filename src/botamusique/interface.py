@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from flask import Flask, Blueprint, render_template, request, redirect, send_file, Response, jsonify, abort, session
+from werkzeug.utils import secure_filename
 
 from botamusique import media
 from botamusique import util
@@ -101,7 +102,11 @@ def check_auth(username: str, password: str) -> bool:
     password combination is valid.
     """
 
-    if username == _bot.config.get("webinterface", "user") and password == _bot.config.get("webinterface", "password"):
+    conf_user = _bot.config.get("webinterface", "user")
+    conf_password = _bot.config.get("webinterface", "password")
+    # Require both to be configured: otherwise an empty configured password
+    # would let a client authenticate with empty Basic-auth credentials.
+    if conf_user and conf_password and username == conf_user and password == conf_password:
         return True
 
     web_users = json.loads(_bot.db.get("privilege", "web_access", fallback='[]'))
@@ -156,36 +161,59 @@ def requires_auth(f: Callable[..., Any]) -> Callable[..., Any]:
             else:
                 return authenticate()
         if auth_method == 'token':
+            ttl = _bot.config.getint("webinterface", "token_ttl", fallback=604800)
+
             if 'user' in session and 'token' not in request.args:
-                user = session['user']
-                return f(*args, **kwargs)
+                # Resume an existing browser session, but only while it still
+                # matches the user's current token hash and that token is
+                # within its TTL. Matching the hash ensures a regenerated or
+                # revoked token (which overwrites the stored hash) kills any
+                # session minted from the old one, instead of the signed
+                # cookie outliving the token it was minted from.
+                sess_info = _bot.db.get("user", session['user'], fallback=None)
+                user_dict = json.loads(sess_info) if sess_info else {}
+                if user_dict and session.get('token') == user_dict.get('token') \
+                        and not util.is_token_expired(user_dict, ttl):
+                    user = session['user']
+                    return f(*args, **kwargs)
+                session.pop('user', None)
+                session.pop('token', None)
+
             elif 'token' in request.args:
                 token = request.args.get('token')
-                token_user = _bot.db.get("web_token", token, fallback=None)
+                token_hash = util.hash_token(token)
+                token_user = _bot.db.get("web_token", token_hash, fallback=None)
                 if token_user is not None:
-                    user = token_user
+                    user_info = _bot.db.get("user", token_user, fallback=None)
+                    user_dict = json.loads(user_info) if user_info else {}
+                    if not util.is_token_expired(user_dict, ttl):
+                        user = token_user
+                        user_dict['IP'] = request.remote_addr
+                        _bot.db.set("user", token_user, json.dumps(user_dict))
 
-                    user_info = _bot.db.get("user", user, fallback=None)
-                    user_dict = json.loads(user_info)
-                    user_dict['IP'] = request.remote_addr
-                    _bot.db.set("user", user, json.dumps(user_dict))
+                        log.debug(
+                            f"web: new user access, token validated for the user: {token_user}, from ip {request.remote_addr}.")
+                        session['token'] = token_hash
+                        session['user'] = token_user
+                        return f(*args, **kwargs)
 
-                    log.debug(
-                        f"web: new user access, token validated for the user: {token_user}, from ip {request.remote_addr}.")
-                    session['token'] = token
-                    session['user'] = token_user
-                    return f(*args, **kwargs)
+                    # Expired token: revoke it so the stale link stops working.
+                    _bot.db.remove_option("web_token", token_hash)
+                    log.info(f"web: expired token for user {token_user} from ip {request.remote_addr}.")
 
-            if request.remote_addr in bad_access_count:
-                bad_access_count[request.remote_addr] += 1
-                log.info(f"web: bad token from ip {request.remote_addr}, "
-                         f"{bad_access_count[request.remote_addr]} attempts.")
-                if bad_access_count[request.remote_addr] > _bot.config.getint("webinterface", "max_attempts"):
-                    banned_ip.append(request.remote_addr)
-                    log.info(f"web: access banned for {request.remote_addr}")
-            else:
-                bad_access_count[request.remote_addr] = 1
-                log.info(f"web: bad token from ip {request.remote_addr}.")
+                # A token was supplied but is invalid or expired: count it as a
+                # bad attempt and ban the IP after too many. Requests that carry
+                # no token at all simply get the "need token" page below.
+                if request.remote_addr in bad_access_count:
+                    bad_access_count[request.remote_addr] += 1
+                    log.info(f"web: bad token from ip {request.remote_addr}, "
+                             f"{bad_access_count[request.remote_addr]} attempts.")
+                    if bad_access_count[request.remote_addr] > _bot.config.getint("webinterface", "max_attempts"):
+                        banned_ip.append(request.remote_addr)
+                        log.info(f"web: access banned for {request.remote_addr}")
+                else:
+                    bad_access_count[request.remote_addr] = 1
+                    log.info(f"web: bad token from ip {request.remote_addr}.")
 
             return render_template(f'need_token.{_bot.config.get('bot', 'language')}.html',
                                    name=_bot.config.get('bot', 'username'),
@@ -362,7 +390,7 @@ def post() -> Response:
 
     payload = request.get_json() if request.is_json else request.form
     if payload:
-        log.debug("web: Post request from %s: %s" % (request.remote_addr, str(payload)))
+        log.debug("web: Post request from %s (user: %s): %s" % (request.remote_addr, user, str(payload)))
 
         if 'add_item_at_once' in payload:
             music_wrapper = _bot.cache.get_cached_wrapper_by_id(payload['add_item_at_once'], user)
@@ -450,7 +478,7 @@ def post() -> Response:
             item = _bot.cache.get_item_by_id(_id)
 
             if os.path.isfile(item.uri()):
-                log.info("web: delete file " + item.uri())
+                log.info("web: user %s (%s) deleting file %s" % (user, request.remote_addr, item.uri()))
                 os.remove(item.uri())
 
             _bot.cache.free_and_delete(_id)
@@ -603,7 +631,7 @@ def library() -> Response:
 
     payload = request.form if request.form else request.json
     if payload:
-        log.debug("web: Post request from %s: %s" % (request.remote_addr, str(payload)))
+        log.debug("web: Post request from %s (user: %s): %s" % (request.remote_addr, user, str(payload)))
 
         if payload['action'] in ['add', 'query', 'delete']:
             condition = build_library_query_condition(payload)
@@ -641,13 +669,16 @@ def library() -> Response:
                         item = _bot.cache.get_item_by_id(item.id)
 
                         if os.path.isfile(item.uri()):
-                            log.info("web: delete file " + item.uri())
+                            log.info("web: user %s (%s) deleting file %s" % (user, request.remote_addr, item.uri()))
                             os.remove(item.uri())
 
                         _bot.cache.free_and_delete(item.id)
 
-                    if len(os.listdir(_bot.music_folder + payload['dir'])) == 0:
-                        os.rmdir(_bot.music_folder + payload['dir'])
+                    music_root = os.path.abspath(_bot.music_folder)
+                    deldir = os.path.abspath(os.path.join(music_root, payload['dir']))
+                    if (deldir == music_root or deldir.startswith(music_root + os.sep)) \
+                            and os.path.isdir(deldir) and len(os.listdir(deldir)) == 0:
+                        os.rmdir(deldir)
 
                     time.sleep(0.1)
                     return redirect("./", code=302)
@@ -717,7 +748,10 @@ def upload() -> tuple[str, int]:
     if not file:
         abort(400)
 
-    filename = file.filename
+    # Sanitize the client-supplied filename: secure_filename strips any
+    # directory components (../, absolute paths, drive letters), preventing
+    # path traversal when it is later joined onto the storage path.
+    filename = secure_filename(file.filename or '')
     if filename == '':
         abort(400)
 
@@ -727,14 +761,15 @@ def upload() -> tuple[str, int]:
     elif '../' in targetdir:
         abort(403)
 
-    log.info('web: Uploading file from %s:' % request.remote_addr)
+    log.info('web: user %s uploading file from %s:' % (user, request.remote_addr))
     log.info('web: - filename: ' + filename)
     log.info('web: - targetdir: ' + targetdir)
     log.info('web: - mimetype: ' + file.mimetype)
 
+    music_root = os.path.abspath(_bot.music_folder)
     if "audio" in file.mimetype or "video" in file.mimetype:
-        storagepath = os.path.abspath(os.path.join(_bot.music_folder, targetdir))
-        if not storagepath.startswith(os.path.abspath(_bot.music_folder)):
+        storagepath = os.path.abspath(os.path.join(music_root, targetdir))
+        if storagepath != music_root and not storagepath.startswith(music_root + os.sep):
             abort(403)
 
         try:
@@ -745,6 +780,11 @@ def upload() -> tuple[str, int]:
                 abort(500)
 
         filepath = os.path.join(storagepath, filename)
+        # Defense in depth: re-validate the final, fully-resolved path lies
+        # inside the music folder before writing.
+        if os.path.abspath(filepath) != music_root \
+                and not os.path.abspath(filepath).startswith(music_root + os.sep):
+            abort(403)
         log.info('web: - file saved at: ' + filepath)
         if os.path.exists(filepath):
             return 'File existed!', 409
@@ -767,7 +807,7 @@ def download() -> Response:
             Condition().and_equal('id', request.args['id'])))[0]
 
         requested_file = item.uri()
-        log.info('web: Download of file %s requested from %s:' % (requested_file, request.remote_addr))
+        log.info('web: user %s (%s) requested download of file %s' % (user, request.remote_addr, requested_file))
 
         try:
             return send_file(requested_file, as_attachment=True)

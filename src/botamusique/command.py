@@ -10,7 +10,6 @@ from typing import Any
 from pyradios import RadioBrowser
 
 import pymumble_py3 as pymumble
-from botamusique import interface
 from botamusique import media
 from botamusique import util
 from botamusique.constants import commands
@@ -1247,19 +1246,29 @@ def cmd_web_access(bot: MumbleBot, user: str, text: Any, command: str, parameter
     auth_method = bot.config.get("webinterface", "auth_method")
 
     if auth_method == 'token':
-        interface.banned_ip = []
-        interface.bad_access_count = {}
+        # Only hand out an access token to users with a registered account on
+        # the Mumble server. Unregistered guests can pick any name, so issuing
+        # them a token would let anyone who can join the server gain web access.
+        if bot.config.getboolean("webinterface", "web_access_requires_registration", fallback=True):
+            requester = bot.mumble.users[text.actor] if text.actor in bot.mumble.users else None
+            if requester is None or requester.get_property("user_id") is None:
+                bot.send_msg(tr('web_access_needs_registration'), text)
+                return
 
         user_info = bot.db.get("user", user, fallback='{}')
         user_dict = json.loads(user_info)
         if 'token' in user_dict:
+            # Stored value is the hash; this revokes the user's previous token.
             bot.db.remove_option("web_token", user_dict['token'])
 
-        token = secrets.token_urlsafe(5)
-        user_dict['token'] = token
+        token = secrets.token_urlsafe(16)
+        token_hash = util.hash_token(token)
+        # Only the hash is persisted; the plaintext token lives only in the URL
+        # we hand back to the user below.
+        user_dict['token'] = token_hash
         user_dict['token_created'] = str(datetime.datetime.now())
         user_dict['last_ip'] = ''
-        bot.db.set("web_token", token, user)
+        bot.db.set("web_token", token_hash, user)
         bot.db.set("user", user, json.dumps(user_dict))
 
         access_address = bot.config.get("webinterface", "access_address") + "/?token=" + token

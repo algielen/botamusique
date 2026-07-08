@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 # coding=utf-8
 
+import datetime
 import hashlib
 import html
 import io
@@ -291,6 +292,36 @@ def parse_file_size(human: str) -> int:
             return int(num * units[unit])
 
     raise ValueError("Invalid file size given.")
+
+
+def hash_token(token: str) -> str:
+    """Hash a web access token for storage/lookup.
+
+    Tokens are high-entropy random strings (secrets.token_urlsafe), so a plain
+    fast hash is sufficient: there is nothing to brute-force, and no salt is
+    needed. Storing only the hash means a leaked settings DB does not yield
+    usable bearer tokens.
+    """
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
+def is_token_expired(user_dict: dict[str, Any], ttl_seconds: int) -> bool:
+    """Return True if the user's web token is older than ttl_seconds.
+
+    ttl_seconds <= 0 disables expiry. A missing/unparseable creation timestamp
+    is treated as expired (fail closed)."""
+    if ttl_seconds <= 0:
+        return False
+
+    created = user_dict.get('token_created')
+    if not created:
+        return True
+    try:
+        created_dt = datetime.datetime.fromisoformat(created)
+    except (ValueError, TypeError):
+        return True
+
+    return (datetime.datetime.now() - created_dt) > datetime.timedelta(seconds=ttl_seconds)
 
 
 def get_salted_password_hash(password: str) -> tuple[str, str]:

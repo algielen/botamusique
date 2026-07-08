@@ -1,3 +1,5 @@
+import datetime
+import hashlib
 import json
 import logging
 import os
@@ -191,7 +193,7 @@ class Condition:
         return self
 
 
-SETTING_DB_VERSION = 2
+SETTING_DB_VERSION = 3
 MUSIC_DB_VERSION = 4
 
 
@@ -499,7 +501,8 @@ class DatabaseMigration:
         self.settings_db = settings_db
         self.music_db = music_db
         self.settings_table_migrate_func = {0: self.settings_table_migrate_from_0_to_1,
-                                            1: self.settings_table_migrate_from_1_to_2}
+                                            1: self.settings_table_migrate_from_1_to_2,
+                                            2: self.settings_table_migrate_from_2_to_3}
         self.music_table_migrate_func = {0: self.music_table_migrate_from_0_to_1,
                                          1: self.music_table_migrate_from_1_to_2,
                                          2: self.music_table_migrate_from_2_to_4,
@@ -585,8 +588,11 @@ class DatabaseMigration:
                        "option TEXT, "
                        "value TEXT, "
                        "UNIQUE(section, option))")
+        # Stamp freshly created databases with the current version so that
+        # data migrations (e.g. token hashing in 2->3) only ever run against
+        # genuinely old data, never against rows already written by new code.
         cursor.execute("INSERT INTO botamusique (section, option, value) "
-                       "VALUES (?, ?, ?)", ("bot", "db_version", 2))
+                       "VALUES (?, ?, ?)", ("bot", "db_version", SETTING_DB_VERSION))
         conn.commit()
 
         return 1
@@ -639,6 +645,47 @@ class DatabaseMigration:
         cursor.execute("UPDATE botamusique SET value=2 "
                        "WHERE section='bot' AND option='db_version'")
         return 2  # return new version number
+
+    def settings_table_migrate_from_2_to_3(self, conn: sqlite3.Connection) -> int:
+        # Hash web access tokens at rest (SHA-256) and stamp a creation time so
+        # the new token TTL can be enforced.
+        #
+        # At version 2 every stored token is plaintext (older code never hashed
+        # them), so each can be hashed unconditionally with no risk of a
+        # double-hash. Because the lookup key *is* the plaintext token, hashing
+        # it yields exactly the value the new code computes from an incoming
+        # token, so the links users already hold keep working — nothing is wiped.
+        cursor = conn.cursor()
+        now = str(datetime.datetime.now())
+
+        rows = cursor.execute(
+            "SELECT option, value FROM botamusique WHERE section='web_token'").fetchall()
+        for plaintext_token, username in rows:
+            token_hash = hashlib.sha256(plaintext_token.encode("utf-8")).hexdigest()
+
+            # Rewrite the reverse-lookup row: plaintext key -> hashed key.
+            cursor.execute("DELETE FROM botamusique WHERE section='web_token' AND option=?",
+                           (plaintext_token,))
+            cursor.execute("INSERT OR REPLACE INTO botamusique (section, option, value) "
+                           "VALUES ('web_token', ?, ?)", (token_hash, username))
+
+            # Update the user record: store the hash and (re)stamp the creation
+            # time so every migrated token gets a full TTL window from upgrade.
+            user_row = cursor.execute(
+                "SELECT value FROM botamusique WHERE section='user' AND option=?",
+                (username,)).fetchone()
+            if user_row:
+                try:
+                    user_dict = json.loads(user_row[0])
+                except (json.JSONDecodeError, TypeError):
+                    user_dict = {}
+                user_dict['token'] = token_hash
+                user_dict['token_created'] = now
+                cursor.execute("INSERT OR REPLACE INTO botamusique (section, option, value) "
+                               "VALUES ('user', ?, ?)", (username, json.dumps(user_dict)))
+
+        conn.commit()
+        return 3  # return new version number
 
     def music_table_migrate_from_0_to_1(self, conn: sqlite3.Connection) -> int:
         cursor = conn.cursor()
