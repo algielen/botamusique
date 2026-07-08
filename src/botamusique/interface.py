@@ -164,11 +164,16 @@ def requires_auth(f: Callable[..., Any]) -> Callable[..., Any]:
             ttl = _bot.config.getint("webinterface", "token_ttl", fallback=604800)
 
             if 'user' in session and 'token' not in request.args:
-                # Resume an existing browser session, but only while the
-                # underlying token is still within its TTL — otherwise the
-                # signed cookie could outlive the token it was minted from.
+                # Resume an existing browser session, but only while it still
+                # matches the user's current token hash and that token is
+                # within its TTL. Matching the hash ensures a regenerated or
+                # revoked token (which overwrites the stored hash) kills any
+                # session minted from the old one, instead of the signed
+                # cookie outliving the token it was minted from.
                 sess_info = _bot.db.get("user", session['user'], fallback=None)
-                if sess_info and not util.is_token_expired(json.loads(sess_info), ttl):
+                user_dict = json.loads(sess_info) if sess_info else {}
+                if user_dict and session.get('token') == user_dict.get('token') \
+                        and not util.is_token_expired(user_dict, ttl):
                     user = session['user']
                     return f(*args, **kwargs)
                 session.pop('user', None)
