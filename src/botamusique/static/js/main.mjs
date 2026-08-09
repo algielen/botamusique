@@ -348,8 +348,11 @@ function setFilterType(event, type) {
     filters[type].classList.remove('btn-primary');
     filters[type].classList.add('active', 'btn-info');
   }
+  const included = filters[type].classList.contains('active');
+  filters[type].querySelector('use').setAttribute(
+      'href', 'static/image/icons.svg#icon-' + (included ? 'square-check' : 'square'));
   if (type === 'file') {
-    filter_dir.disabled = !filters[type].classList.contains('active');
+    filter_dir.disabled = !included;
   }
   updateResults();
 }
