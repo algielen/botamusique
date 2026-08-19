@@ -420,11 +420,11 @@ wheels = [
 
 [[package]]
 name = "opuslib-next"
-version = "1.3.0"
+version = "1.3.1"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/a4/54/f0528115c40a3a6e14d9c3f24bb2f2c418dce248dffa1ccd21dd58b3d483/opuslib_next-1.3.0.tar.gz", hash = "sha256:0fe7350ec2e524380cca69700705abe6e2545b824f921a32f36c8c98f35b8527", size = 54800, upload-time = "2026-06-15T03:08:33.935Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/84/8f/5c91b792689a70f3333e3569832c9a1263c3a736b69f81f43c7131494a8a/opuslib_next-1.3.1.tar.gz", hash = "sha256:fa22ed3934d9cf885e0e88fa52b0b0ea9d51895970e288c3831067f7713e1462", size = 28098, upload-time = "2026-08-10T03:13:33.369Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/da/75/5e3d7c884f239cb4014666a71bc7c2bf03fbaa7a00940838df90072180c3/opuslib_next-1.3.0-py3-none-any.whl", hash = "sha256:3025e961d8fe73874801dfba7ef85fc71f1d82f76fd5363806558338547deaa5", size = 21432, upload-time = "2026-06-15T03:08:33.095Z" },
+    { url = "https://files.pythonhosted.org/packages/58/af/037773144edf48fa4920592be2b91ec7cea5f5587fe1926a529e7de24270/opuslib_next-1.3.1-py3-none-any.whl", hash = "sha256:26a3eb057269bcafdcd363fbd2bae61a35ebe033cc91d264d54d408fe9fca0f6", size = 19499, upload-time = "2026-08-10T03:13:32.512Z" },
 ]
 
 [[package]]
