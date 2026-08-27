@@ -65,7 +65,7 @@ wheels = [
 
 [[package]]
 name = "botamusique"
-version = "8.9.2"
+version = "8.9.3"
 source = { editable = "." }
 dependencies = [
     { name = "audioop-lts" },
