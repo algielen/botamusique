@@ -1,4 +1,4 @@
-FROM ghcr.io/docker/astral-sh/uv:python3.15-rc-trixie-slim AS python-builder
+FROM ghcr.io/astral-sh/uv:python3.15-rc-trixie-slim AS python-builder
 ENV DEBIAN_FRONTEND=noninteractive
 ARG GIT_COMMIT
 WORKDIR /botamusique
@@ -14,7 +14,7 @@ RUN uv venv --clear \
     && uv run --group build scripts/build.py
 
 
-FROM ghcr.io/docker/astral-sh/uv:python3.15-rc-trixie-slim
+FROM ghcr.io/astral-sh/uv:python3.15-rc-trixie-slim
 ENV DEBIAN_FRONTEND=noninteractive
 ARG GIT_COMMIT
 ENV GIT_COMMIT=${GIT_COMMIT}

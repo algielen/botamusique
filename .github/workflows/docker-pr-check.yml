@@ -15,7 +15,7 @@ jobs:
       uses: actions/checkout@v7.0.1
 
     - name: Install uv
-      uses: astral-sh/setup-uv@v7
+      uses: astral-sh/setup-uv@v10.3.0
 
     - name: Install dependencies
       run: uv sync --dev
@@ -33,7 +33,7 @@ jobs:
           - platform: linux/amd64
             runner: ubuntu-latest
           - platform: linux/arm64
-            runner: ubuntu-24.04-arm
+            runner: ubuntu-26.04-arm
     runs-on: ${{ matrix.runner }}
 
     steps:
@@ -49,10 +49,10 @@ jobs:
           type=ref,event=pr
 
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v4
+      uses: docker/setup-buildx-action@v4.4.1
 
     - name: Build Docker image
-      uses: docker/build-push-action@v7
+      uses: docker/build-push-action@v7.4.0
       with:
         context: .
         platforms: ${{ matrix.platform }}
