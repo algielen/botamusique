@@ -4,8 +4,12 @@ from typing import Any
 
 import pymumble_py3.messages as messages
 from pymumble_py3.acl import ACL
-from pymumble_py3.errors import UnknownChannelError, TextTooLongError, ImageTooBigError
-from pymumble_py3.pymumble_constants import *
+from pymumble_py3.errors import ImageTooBigError, TextTooLongError, UnknownChannelError
+from pymumble_py3.pymumble_constants import (
+    PYMUMBLE_CLBK_CHANNELCREATED,
+    PYMUMBLE_CLBK_CHANNELREMOVED,
+    PYMUMBLE_CLBK_CHANNELUPDATED,
+)
 
 
 class Channels(dict):

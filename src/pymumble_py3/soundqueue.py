@@ -6,7 +6,13 @@ from typing import Any
 
 import opuslib_next
 
-from pymumble_py3.pymumble_constants import *
+from pymumble_py3.pymumble_constants import (
+    PYMUMBLE_AUDIO_TYPE_OPUS,
+    PYMUMBLE_CLBK_SOUNDRECEIVED,
+    PYMUMBLE_READ_BUFFER_SIZE,
+    PYMUMBLE_SAMPLERATE,
+    PYMUMBLE_SEQUENCE_DURATION,
+)
 
 
 class SoundQueue:

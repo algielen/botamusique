@@ -6,16 +6,13 @@ import secrets
 import sys
 from argparse import ArgumentParser, Namespace
 from configparser import ConfigParser
-from logging import Logger, Handler
+from logging import Handler, Logger
 from logging.handlers import RotatingFileHandler
 from threading import Thread
 from typing import Any
 
-from botamusique import command
-from botamusique import constants
-from botamusique import interface
-from botamusique import util
-from botamusique.database import SettingsDatabase, MusicDatabase, DatabaseMigration
+from botamusique import command, constants, interface, util
+from botamusique.database import DatabaseMigration, MusicDatabase, SettingsDatabase
 from botamusique.media.cache import MusicCache
 from botamusique.media.playlist import get_playlist
 from botamusique.mumbleBot import MumbleBot

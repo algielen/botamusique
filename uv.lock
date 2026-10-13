@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = ">=3.14"
 
 [[package]]
@@ -74,12 +74,12 @@ dependencies = [
     { name = "flask" },
     { name = "mutagen" },
     { name = "opuslib-next" },
-    { name = "packaging" },
     { name = "pillow" },
     { name = "protobuf" },
     { name = "pycryptodome" },
     { name = "pyradios" },
     { name = "requests" },
+    { name = "werkzeug" },
     { name = "yt-dlp", extra = ["default"] },
 ]
 
@@ -99,12 +99,12 @@ requires-dist = [
     { name = "flask", specifier = ">=3.1.3" },
     { name = "mutagen", specifier = ">=1.48.1" },
     { name = "opuslib-next", specifier = ">=1.3.1" },
-    { name = "packaging", specifier = ">=26.3" },
     { name = "pillow", specifier = ">=12.3.0" },
     { name = "protobuf", specifier = ">=7.36.2" },
     { name = "pycryptodome", specifier = ">=3.24.1" },
     { name = "pyradios", specifier = ">=2.1.1" },
     { name = "requests", specifier = ">=2.34.2" },
+    { name = "werkzeug", specifier = ">=3.1.9" },
     { name = "yt-dlp", extras = ["default"], specifier = ">=2026.8.19" },
 ]
 

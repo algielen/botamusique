@@ -7,4 +7,4 @@
 # native ubuntu-24.04-arm runner, so the arm matrix leg builds under the host
 # architecture. This still validates the Dockerfile and workflow wiring.
 -P ubuntu-latest=catthehacker/ubuntu:act-latest
--P ubuntu-24.04-arm=catthehacker/ubuntu:act-latest
+-P ubuntu-26.04-arm=catthehacker/ubuntu:act-latest

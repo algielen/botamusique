@@ -385,7 +385,8 @@ def get_snapshot_version() -> str:
     if git_ver:
         return git_ver
 
-    from importlib.metadata import version as pkg_version, PackageNotFoundError
+    from importlib.metadata import PackageNotFoundError
+    from importlib.metadata import version as pkg_version
     try:
         ver = pkg_version("botamusique")
     except PackageNotFoundError:

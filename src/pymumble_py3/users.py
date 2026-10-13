@@ -5,8 +5,13 @@ from typing import Any
 import pymumble_py3.messages as messages
 import pymumble_py3.mumble_pb2 as mumble_pb2
 from pymumble_py3 import soundqueue
-from pymumble_py3.errors import TextTooLongError, ImageTooBigError
-from pymumble_py3.pymumble_constants import *
+from pymumble_py3.errors import ImageTooBigError, TextTooLongError
+from pymumble_py3.pymumble_constants import (
+    PYMUMBLE_CLBK_USERCREATED,
+    PYMUMBLE_CLBK_USERREMOVED,
+    PYMUMBLE_CLBK_USERUPDATED,
+    PYMUMBLE_MSG_TYPES_AUTHENTICATE,
+)
 
 
 class Users(dict):

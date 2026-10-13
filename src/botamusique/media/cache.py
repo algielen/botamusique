@@ -6,7 +6,7 @@ from typing import Any
 
 import filetype
 
-from botamusique.database import MusicDatabase, Condition, SettingsDatabase
+from botamusique.database import Condition, MusicDatabase, SettingsDatabase
 from botamusique.media.file import FileItem
 from botamusique.media.item import BaseItem
 from botamusique.media.radio import RadioItem

@@ -12,11 +12,21 @@ from functools import wraps
 from pathlib import Path
 from typing import Any, Callable
 
-from flask import Flask, Blueprint, render_template, request, redirect, send_file, Response, jsonify, abort, session
+from flask import (
+    Blueprint,
+    Flask,
+    Response,
+    abort,
+    jsonify,
+    redirect,
+    render_template,
+    request,
+    send_file,
+    session,
+)
 from werkzeug.utils import secure_filename
 
-from botamusique import media
-from botamusique import util
+from botamusique import media, util
 from botamusique.database import Condition
 from botamusique.media.file import FileItem
 from botamusique.media.item import BaseItem
@@ -24,7 +34,6 @@ from botamusique.media.radio import RadioItem
 from botamusique.media.url import URLItem
 from botamusique.media.url_from_playlist import PlaylistURLItem
 from botamusique.mumbleBot import MumbleBot
-
 
 _bot: MumbleBot | None = None
 

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-from threading import Lock
 from collections import deque
+from threading import Lock
 
 
 class Commands:
