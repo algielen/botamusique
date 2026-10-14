@@ -10,11 +10,10 @@ from typing import Any
 from pyradios import RadioBrowser
 
 import pymumble_py3 as pymumble
-from botamusique import media
-from botamusique import util
+from botamusique import media, util
 from botamusique.constants import commands
 from botamusique.constants import tr_cli as tr
-from botamusique.database import SettingsDatabase, MusicDatabase, Condition
+from botamusique.database import Condition, MusicDatabase, SettingsDatabase
 from botamusique.media.cache import CachedItemWrapper
 from botamusique.media.url_from_playlist import get_playlist_info
 from botamusique.mumbleBot import MumbleBot

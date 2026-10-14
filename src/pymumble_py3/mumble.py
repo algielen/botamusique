@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import logging
 import platform
+import select
 import socket
 import ssl
 import struct
@@ -8,8 +9,6 @@ import sys
 import threading
 import time
 from typing import Any
-
-import select
 
 import pymumble_py3.blobs as blobs
 import pymumble_py3.callbacks as callbacks
@@ -19,23 +18,81 @@ import pymumble_py3.mumble_pb2 as mumble_pb2
 import pymumble_py3.soundoutput as soundoutput
 import pymumble_py3.tools as tools
 import pymumble_py3.users as users
-from pymumble_py3.errors import *
-from pymumble_py3.pymumble_constants import *
+from pymumble_py3.errors import (
+    CodecNotSupportedError,
+    ConnectionRejectedError,
+)
+from pymumble_py3.pymumble_constants import (
+    PYMUMBLE_AUDIO_PER_PACKET,
+    PYMUMBLE_AUDIO_TYPE_OPUS,
+    PYMUMBLE_AUDIO_TYPE_OPUS_PROFILE,
+    PYMUMBLE_AUDIO_TYPE_PING,
+    PYMUMBLE_BANDWIDTH,
+    PYMUMBLE_CLBK_ACLRECEIVED,
+    PYMUMBLE_CLBK_CONNECTED,
+    PYMUMBLE_CLBK_CONTEXTACTIONRECEIVED,
+    PYMUMBLE_CLBK_DISCONNECTED,
+    PYMUMBLE_CLBK_PERMISSIONDENIED,
+    PYMUMBLE_CLBK_PERMISSIONQUERY,
+    PYMUMBLE_CLBK_SOUNDRECEIVED,
+    PYMUMBLE_CLBK_TEXTMESSAGERECEIVED,
+    PYMUMBLE_CMD_LINKCHANNEL,
+    PYMUMBLE_CMD_MODUSERSTATE,
+    PYMUMBLE_CMD_MOVE,
+    PYMUMBLE_CMD_QUERYACL,
+    PYMUMBLE_CMD_REMOVEUSER,
+    PYMUMBLE_CMD_TEXTMESSAGE,
+    PYMUMBLE_CMD_TEXTPRIVATEMESSAGE,
+    PYMUMBLE_CMD_UNLINKCHANNEL,
+    PYMUMBLE_CMD_UPDATEACL,
+    PYMUMBLE_CMD_UPDATECHANNEL,
+    PYMUMBLE_CONN_STATE_AUTHENTICATING,
+    PYMUMBLE_CONN_STATE_CONNECTED,
+    PYMUMBLE_CONN_STATE_FAILED,
+    PYMUMBLE_CONN_STATE_NOT_CONNECTED,
+    PYMUMBLE_CONNECTION_RETRY_INTERVAL,
+    PYMUMBLE_LOOP_RATE,
+    PYMUMBLE_MSG_TYPES_ACL,
+    PYMUMBLE_MSG_TYPES_AUTHENTICATE,
+    PYMUMBLE_MSG_TYPES_BANLIST,
+    PYMUMBLE_MSG_TYPES_CHANNELREMOVE,
+    PYMUMBLE_MSG_TYPES_CHANNELSTATE,
+    PYMUMBLE_MSG_TYPES_CODECVERSION,
+    PYMUMBLE_MSG_TYPES_CONTEXTACTION,
+    PYMUMBLE_MSG_TYPES_CONTEXTACTIONMODIFY,
+    PYMUMBLE_MSG_TYPES_CRYPTSETUP,
+    PYMUMBLE_MSG_TYPES_PERMISSIONDENIED,
+    PYMUMBLE_MSG_TYPES_PERMISSIONQUERY,
+    PYMUMBLE_MSG_TYPES_PING,
+    PYMUMBLE_MSG_TYPES_QUERYUSERS,
+    PYMUMBLE_MSG_TYPES_REJECT,
+    PYMUMBLE_MSG_TYPES_REQUESTBLOB,
+    PYMUMBLE_MSG_TYPES_SERVERCONFIG,
+    PYMUMBLE_MSG_TYPES_SERVERSYNC,
+    PYMUMBLE_MSG_TYPES_TEXTMESSAGE,
+    PYMUMBLE_MSG_TYPES_UDPTUNNEL,
+    PYMUMBLE_MSG_TYPES_USERLIST,
+    PYMUMBLE_MSG_TYPES_USERREMOVE,
+    PYMUMBLE_MSG_TYPES_USERSTATE,
+    PYMUMBLE_MSG_TYPES_USERSTATS,
+    PYMUMBLE_MSG_TYPES_VERSION,
+    PYMUMBLE_MSG_TYPES_VOICETARGET,
+    PYMUMBLE_OS_STRING,
+    PYMUMBLE_OS_VERSION_STRING,
+    PYMUMBLE_PING_DELAY,
+    PYMUMBLE_PROTOCOL_VERSION,
+    PYMUMBLE_READ_BUFFER_SIZE,
+    PYMUMBLE_VERSION_STRING,
+)
 
 
 def _wrap_socket(sock: socket.socket, keyfile: str | None = None, certfile: str | None = None, verify_mode: ssl.VerifyMode = ssl.CERT_NONE, server_hostname: str | None = None) -> ssl.SSLSocket:
-    try:
-        ssl_context = ssl.create_default_context()
-        if certfile:
-            ssl_context.load_cert_chain(certfile, keyfile)
-        ssl_context.check_hostname = (verify_mode != ssl.CERT_NONE) and (server_hostname is not None)
-        ssl_context.verify_mode = verify_mode
-        return ssl_context.wrap_socket(sock, server_hostname=server_hostname)
-    except AttributeError:
-        try:
-            return ssl.wrap_socket(sock, keyfile, certfile, cert_reqs=verify_mode, ssl_version=ssl.PROTOCOL_TLS)
-        except AttributeError:
-            return ssl.wrap_socket(sock, keyfile, certfile, cert_reqs=verify_mode, ssl_version=ssl.PROTOCOL_TLSv1)
+    ssl_context = ssl.create_default_context()
+    if certfile:
+        ssl_context.load_cert_chain(certfile, keyfile)
+    ssl_context.check_hostname = (verify_mode != ssl.CERT_NONE) and (server_hostname is not None)
+    ssl_context.verify_mode = verify_mode
+    return ssl_context.wrap_socket(sock, server_hostname=server_hostname)
 
 
 class Mumble(threading.Thread):

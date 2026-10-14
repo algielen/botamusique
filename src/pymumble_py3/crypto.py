@@ -1,7 +1,7 @@
-from typing import Tuple
 import struct
 import time
 from math import ceil
+from typing import Tuple
 
 from Crypto.Cipher import AES
 from Crypto.Random import get_random_bytes

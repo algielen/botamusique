@@ -15,7 +15,11 @@ from PIL import Image
 from botamusique import util
 from botamusique.constants import tr_cli as tr
 from botamusique.database import SettingsDatabase
-from botamusique.media.item import BaseItem, ValidationFailedError, PreparationFailedError
+from botamusique.media.item import (
+    BaseItem,
+    PreparationFailedError,
+    ValidationFailedError,
+)
 from botamusique.util import format_time
 
 log = logging.getLogger("bot")

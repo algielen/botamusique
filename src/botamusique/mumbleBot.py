@@ -3,8 +3,6 @@
 import logging
 import logging.handlers
 import math
-import os
-import os.path
 import queue
 import re
 import signal
@@ -17,21 +15,29 @@ import traceback
 import types
 from argparse import Namespace
 from configparser import ConfigParser
-from typing import Callable, Any
+from typing import Any, Callable
 
 import audioop
 
 from botamusique import util
 from botamusique.constants import tr_cli as tr
-from botamusique.database import SettingsDatabase, MusicDatabase
-from botamusique.media.cache import MusicCache, CachedItemWrapper
-from botamusique.media.item import ValidationFailedError, PreparationFailedError
+from botamusique.database import MusicDatabase, SettingsDatabase
+from botamusique.media.cache import CachedItemWrapper, MusicCache
+from botamusique.media.item import PreparationFailedError, ValidationFailedError
 from botamusique.media.playlist import BasePlaylist
 from pymumble_py3.mumble import Mumble
-from pymumble_py3.pymumble_constants import PYMUMBLE_CONN_STATE_FAILED, PYMUMBLE_CLBK_TEXTMESSAGERECEIVED, \
-    PYMUMBLE_CLBK_SOUNDRECEIVED, PYMUMBLE_CLBK_USERREMOVED, PYMUMBLE_CLBK_USERUPDATED, \
-    PYMUMBLE_CLBK_PERMISSIONDENIED, PYMUMBLE_CLBK_PERMISSIONQUERY, \
-    MUMBLE_PERM_ENTER, MUMBLE_PERM_SPEAK, MUMBLE_PERM_TEXTMESSAGE
+from pymumble_py3.pymumble_constants import (
+    MUMBLE_PERM_ENTER,
+    MUMBLE_PERM_SPEAK,
+    MUMBLE_PERM_TEXTMESSAGE,
+    PYMUMBLE_CLBK_PERMISSIONDENIED,
+    PYMUMBLE_CLBK_PERMISSIONQUERY,
+    PYMUMBLE_CLBK_SOUNDRECEIVED,
+    PYMUMBLE_CLBK_TEXTMESSAGERECEIVED,
+    PYMUMBLE_CLBK_USERREMOVED,
+    PYMUMBLE_CLBK_USERUPDATED,
+    PYMUMBLE_CONN_STATE_FAILED,
+)
 
 
 class MumbleBot:

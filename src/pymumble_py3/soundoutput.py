@@ -9,7 +9,14 @@ import opuslib_next
 
 from pymumble_py3.errors import CodecNotSupportedError
 from pymumble_py3.messages import VoiceTarget
-from pymumble_py3.pymumble_constants import *
+from pymumble_py3.pymumble_constants import (
+    PYMUMBLE_AUDIO_TYPE_OPUS,
+    PYMUMBLE_AUDIO_TYPE_OPUS_PROFILE,
+    PYMUMBLE_MSG_TYPES_UDPTUNNEL,
+    PYMUMBLE_SAMPLERATE,
+    PYMUMBLE_SEQUENCE_DURATION,
+    PYMUMBLE_SEQUENCE_RESET_INTERVAL,
+)
 from pymumble_py3.tools import VarInt
 
 

@@ -1,4 +1,4 @@
-FROM ghcr.io/astral-sh/uv:python3.14-trixie-slim AS python-builder
+FROM ghcr.io/astral-sh/uv:python3.15-trixie-slim AS python-builder
 ENV DEBIAN_FRONTEND=noninteractive
 ARG GIT_COMMIT
 WORKDIR /botamusique
@@ -14,7 +14,7 @@ RUN uv venv --clear \
     && uv run --group build scripts/build.py
 
 
-FROM ghcr.io/astral-sh/uv:python3.14-trixie-slim
+FROM ghcr.io/astral-sh/uv:python3.15-trixie-slim
 ENV DEBIAN_FRONTEND=noninteractive
 ARG GIT_COMMIT
 ENV GIT_COMMIT=${GIT_COMMIT}
@@ -23,7 +23,7 @@ RUN apt-get update && \
     apt-get install --no-install-recommends -y opus-tools ffmpeg curl tar && \
     rm -rf /var/lib/apt/lists/*
 
-COPY --from=docker.io/denoland/deno:bin-2.8.3 /deno /usr/local/bin/deno
+COPY --from=docker.io/denoland/deno:bin-2.9.7 /deno /usr/local/bin/deno
 RUN chmod +x /usr/local/bin/deno
 RUN deno --version
 # check quickjs as alternative : https://github.com/yt-dlp/yt-dlp/wiki/EJS#quickjs--quickjs-ng
