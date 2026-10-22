@@ -16,6 +16,8 @@ jobs:
 
     - name: Install uv
       uses: astral-sh/setup-uv@v10.3.0
+      with:
+        version: "0.13.4"
 
     - name: Install dependencies
       run: uv sync --dev
@@ -54,6 +56,8 @@ jobs:
     - name: Build Docker image
       uses: docker/build-push-action@v7.4.0
       with:
+        pull: true
+        no-cache: true
         context: .
         platforms: ${{ matrix.platform }}
         file: ./Dockerfile
