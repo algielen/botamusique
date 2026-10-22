@@ -9,6 +9,8 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 
+RUN python -m pip install --no-cache-dir --upgrade "pip>=26.2.2"
+
 COPY . /botamusique
 RUN uv venv --clear \
     && uv sync --no-dev \
@@ -24,6 +26,8 @@ RUN apt-get update && \
     apt-get install --no-install-recommends -y ca-certificates opus-tools ffmpeg curl tar && \
     dpkg --compare-versions "$(dpkg-query -W -f='${Version}' ca-certificates)" ge "20250419+deb13u1" && \
     rm -rf /var/lib/apt/lists/*
+
+RUN python -m pip install --no-cache-dir --upgrade "pip>=26.2.2"
 
 COPY --from=docker.io/denoland/deno:bin-2.9.8 /deno /usr/local/bin/deno
 RUN chmod +x /usr/local/bin/deno
