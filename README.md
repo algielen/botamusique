@@ -201,6 +201,8 @@ The web interface can be used if you'd like an intuitive way of interacting with
 
 ### Updating yt-dlp
 
+The container includes yt-dlp 2026.10.21 or newer, certifi 2026.10.19 or newer, and Deno 2.9.8 with updated certificate trust.
+
 You can update yt-dlp without restarting the bot by sending `!update` (admins only). This upgrades yt-dlp in-place and reloads it immediately.
 
 ### Updating the bot
