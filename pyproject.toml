@@ -1,6 +1,6 @@
 [project]
 name = "botamusique"
-version = "8.9.6"
+version = "8.9.7"
 description = "Bot to play youtube / soundcloud / radio / local music on Mumble (using pymumble)"
 readme = "README.md"
 requires-python = ">=3.14"
@@ -17,7 +17,7 @@ dependencies = [
     "filetype>=1.2",
     "requests>=2.34.2",
     "werkzeug>=3.1.9",
-    "yt-dlp[default]>=2026.10.21",
+    "yt-dlp[default]>=2026.10.26",
 ]
 
 [project.scripts]
