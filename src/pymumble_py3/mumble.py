@@ -88,6 +88,7 @@ from pymumble_py3.pymumble_constants import (
 
 def _wrap_socket(sock: socket.socket, keyfile: str | None = None, certfile: str | None = None, verify_mode: ssl.VerifyMode = ssl.CERT_NONE, server_hostname: str | None = None) -> ssl.SSLSocket:
     ssl_context = ssl.create_default_context()
+    ssl_context.minimum_version = ssl.TLSVersion.TLSv1_2
     if certfile:
         ssl_context.load_cert_chain(certfile, keyfile)
     ssl_context.check_hostname = (verify_mode != ssl.CERT_NONE) and (server_hostname is not None)
