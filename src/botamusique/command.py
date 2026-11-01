@@ -14,6 +14,7 @@ from botamusique import media, util
 from botamusique.constants import commands
 from botamusique.constants import tr_cli as tr
 from botamusique.database import Condition, MusicDatabase, SettingsDatabase
+from botamusique.localfiles import LocalFiles
 from botamusique.media.cache import CachedItemWrapper
 from botamusique.media.url_from_playlist import get_playlist_info
 from botamusique.mumbleBot import MumbleBot
@@ -293,18 +294,32 @@ def cmd_pause(bot: MumbleBot, user: str, text: Any, command: str, parameter: str
 def cmd_play_file(bot: MumbleBot, user: str, text: Any, command: str, parameter: str, do_not_refresh_cache: bool = False) -> None:
     global log, song_shortlist
 
-    # assume parameter is a path
-    music_wrappers = bot.cache.get_cached_wrappers_from_dicts(bot.music_db.query_music(Condition().and_equal('path', parameter)), user)
+    # Local files are selected by public title, never by a supplied filesystem path.
+    music_wrappers = bot.cache.get_cached_wrappers_from_dicts(bot.music_db.query_music(
+        Condition().and_equal('type', 'file').and_equal('title', parameter)), user)
+    if len(music_wrappers) > 1:
+        song_shortlist = [wrapper.to_dict() for wrapper in music_wrappers]
+        msgs = [tr('multiple_matches')]
+        for index, match in enumerate(song_shortlist):
+            msgs.append(f"<b>{index + 1}</b> - <b>{match['title']}</b>")
+        msgs.append(tr('shortlist_instruction'))
+        send_multi_lines(bot, msgs, text)
+        return
     if music_wrappers:
         bot.playlist.append(music_wrappers[0])
         log.info("cmd: add to playlist: " + music_wrappers[0].format_debug_string())
         send_item_added_message(bot, music_wrappers[0], len(bot.playlist) - 1, text)
         return
 
-    # assume parameter is a folder
-    music_wrappers = bot.cache.get_cached_wrappers_from_dicts(bot.music_db.query_music(Condition()
-                                                                             .and_equal('type', 'file')
-                                                                             .and_like('path', parameter + '%')), user)
+    # Folder labels resolve through server-owned metadata and enumerated folders.
+    registry = json.loads(bot.db.get('library', 'folders', fallback='{}'))
+    folders = set(LocalFiles(bot.music_folder).folders().values())
+    folder = registry.get(parameter, parameter)
+    music_wrappers = []
+    if folder in folders:
+        prefix = '' if folder == '.' else folder + '/'
+        music_wrappers = bot.cache.get_cached_wrappers_from_dicts(bot.music_db.query_music(
+            Condition().and_equal('type', 'file').and_like('path', prefix + '%')), user)
     if music_wrappers:
         msgs = [tr('multiple_file_added')]
 
@@ -320,7 +335,7 @@ def cmd_play_file(bot: MumbleBot, user: str, text: Any, command: str, parameter:
     # try to do a partial match
     matches = bot.music_db.query_music(Condition()
                                        .and_equal('type', 'file')
-                                       .and_like('path', '%' + parameter + '%', case_sensitive=False))
+                                       .and_like('title', '%' + parameter + '%', case_sensitive=False))
     if len(matches) == 1:
         music_wrapper = bot.cache.get_cached_wrapper_from_dict(matches[0], user)
         bot.playlist.append(music_wrapper)
@@ -824,7 +839,7 @@ def cmd_list_file(bot: MumbleBot, user: str, text: Any, command: str, parameter:
         count = 0
         for index, file in enumerate(files):
             if parameter:
-                match = re.search(parameter, file['path'])
+                match = re.search(parameter, file['title'])
                 if not match:
                     continue
 

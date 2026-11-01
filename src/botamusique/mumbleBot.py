@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import audioop
 import logging
 import logging.handlers
 import math
@@ -17,11 +18,15 @@ from argparse import Namespace
 from configparser import ConfigParser
 from typing import Any, Callable
 
-import audioop
-
 from botamusique import util
 from botamusique.constants import tr_cli as tr
 from botamusique.database import MusicDatabase, SettingsDatabase
+from botamusique.localfiles import (
+    LocalFiles,
+    UnsafePath,
+    cache_location,
+    subprocess_input,
+)
 from botamusique.media.cache import CachedItemWrapper, MusicCache
 from botamusique.media.item import PreparationFailedError, ValidationFailedError
 from botamusique.media.playlist import BasePlaylist
@@ -490,14 +495,39 @@ class MumbleBot:
         channels = 2 if self.stereo else 1
         self.pcm_buffer_size = 960 * channels
 
+        source = None
+        options = {}
+        item = music_wrapper.item()
+        if item.type in ('file', 'url'):
+            if item.type == 'file':
+                store, name = LocalFiles(self.music_folder), item.path
+            else:
+                store, name = cache_location(self.cache.tmp_folder, item.path)
+            source = store.open(name)
+            input_path, options = subprocess_input(source)
+            uri = input_path or uri
+
         command = ("ffmpeg", '-v', ffmpeg_debug, '-nostdin', '-i',
                    uri, '-ss', f"{start_from:f}", '-ac', str(channels), '-f', 's16le', '-ar', '48000', '-')
         self.log.debug("bot: execute ffmpeg command: " + " ".join(command))
 
         self._stderr_queue = queue.Queue()
-        self.thread = sp.Popen(command, stdout=sp.PIPE,
-                               stderr=sp.PIPE if self.redirect_ffmpeg_log else None,
-                               bufsize=self.pcm_buffer_size)
+        try:
+            self.thread = sp.Popen(command, stdout=sp.PIPE,
+                                   stderr=sp.PIPE if self.redirect_ffmpeg_log else None,
+                                   bufsize=self.pcm_buffer_size, **options)
+        except BaseException:
+            if source:
+                source.close()
+            raise
+        if source:
+            # Retain the Windows no-delete-sharing handle for the whole playback.
+            def release_input(proc, stream):
+                try:
+                    proc.wait()
+                finally:
+                    stream.close()
+            threading.Thread(target=release_input, args=(self.thread, source), daemon=True).start()
         if self.redirect_ffmpeg_log:
             th = threading.Thread(target=self._drain_stderr, args=(self.thread,), daemon=True)
             th.start()
@@ -657,7 +687,13 @@ class MumbleBot:
                             self.wait_for_ready = False
                             self.read_pcm_size = 0
 
-                            self.launch_music(current, self.playhead)
+                            try:
+                                self.launch_music(current, self.playhead)
+                            except (OSError, UnsafePath):
+                                self.log.exception('bot: unable to open media safely')
+                                self.send_channel_msg(tr('unable_play', item=current.format_title()))
+                                self.playlist.remove_by_id(current.id)
+                                continue
                             self.last_volume_cycle_time = time.time()
                             self.async_download_next()
                         elif current.is_failed():

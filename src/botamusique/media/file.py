@@ -9,6 +9,7 @@ from PIL import Image
 
 from botamusique import util
 from botamusique.constants import tr_cli as tr
+from botamusique.localfiles import LocalFiles, UnsafePath, subprocess_input
 from botamusique.media.item import BaseItem, ValidationFailedError
 
 '''
@@ -33,10 +34,15 @@ class FileItem(BaseItem):
         self.thumbnail = None
         self.music_folder = music_folder
         self.id = self.generate_id(path)
-        if os.path.exists(self.uri()):
+        try:
+            exists = os.path.exists(self.uri())
+        except (OSError, UnsafePath):
+            self.ready = 'failed'
+            exists = False
+        if exists:
             self._get_info_from_tag()
             self.ready = "yes"
-            self.duration = util.get_media_duration(self.uri())
+            self.duration = self._duration()
         self.keywords = self.title + " " + self.artist
 
     @classmethod
@@ -59,19 +65,27 @@ class FileItem(BaseItem):
         return hashlib.md5(path.encode()).hexdigest()
 
     def uri(self) -> str:
-        return self.music_folder + self.path if self.path[0] != "/" else self.path
+        return LocalFiles(self.music_folder).path(self.path)
+
+    def _duration(self):
+        with LocalFiles(self.music_folder).open(self.path) as source:
+            path, options = subprocess_input(source)
+            return util.get_media_duration(path or self.uri(), **options)
 
     def is_ready(self) -> bool:
-        return True
+        return self.ready == 'yes'
 
     def validate(self) -> bool:
-        if not os.path.exists(self.uri()):
+        try:
+            with LocalFiles(self.music_folder).open(self.path):
+                pass
+        except (OSError, UnsafePath):
             self.log.info(
                 "file: music file missed for %s" % self.format_debug_string())
             raise ValidationFailedError(tr('file_missed', file=self.path))
 
         if self.duration == 0:
-            self.duration = util.get_media_duration(self.uri())
+            self.duration = self._duration()
             self.version += 1  # 0 -> 1, notify the wrapper to save me
         self.ready = "yes"
         return True
@@ -86,15 +100,20 @@ class FileItem(BaseItem):
             im = None
             path_thumbnail = os.path.join(path, file_name + ".jpg")
 
-            if os.path.isfile(path_thumbnail):
-                im = Image.open(path_thumbnail)
+            if os.path.isfile(path_thumbnail) and not os.path.islink(path_thumbnail):
+                with LocalFiles(self.music_folder).open(os.path.relpath(path_thumbnail, self.music_folder).replace(os.sep, '/')) as image_source:
+                    im = Image.open(image_source)
+                    im.load()
             else:
                 path_thumbnail = os.path.join(path, "cover.jpg")
-                if os.path.isfile(path_thumbnail):
-                    im = Image.open(path_thumbnail)
+                if os.path.isfile(path_thumbnail) and not os.path.islink(path_thumbnail):
+                    with LocalFiles(self.music_folder).open(os.path.relpath(path_thumbnail, self.music_folder).replace(os.sep, '/')) as image_source:
+                        im = Image.open(image_source)
+                        im.load()
 
             if ext == ".mp3":
-                tags = mutagen.File(self.uri())
+                with LocalFiles(self.music_folder).open(self.path) as source:
+                    tags = mutagen.File(source)
                 if 'TIT2' in tags:
                     self.title = tags['TIT2'].text[0]
                 if 'TPE1' in tags:  # artist
@@ -105,7 +124,8 @@ class FileItem(BaseItem):
                         im = Image.open(BytesIO(tags["APIC:"].data))
 
             elif ext == ".m4a" or ext == ".m4b" or ext == ".mp4" or ext == ".m4p":
-                tags = mutagen.File(self.uri())
+                with LocalFiles(self.music_folder).open(self.path) as source:
+                    tags = mutagen.File(source)
                 if '©nam' in tags:
                     self.title = tags['©nam'][0]
                 if '©ART' in tags:  # artist
@@ -116,7 +136,8 @@ class FileItem(BaseItem):
                         im = Image.open(BytesIO(tags["covr"][0]))
 
             elif ext == ".opus":
-                tags = mutagen.File(self.uri())
+                with LocalFiles(self.music_folder).open(self.path) as source:
+                    tags = mutagen.File(source)
                 if 'title' in tags:
                     self.title = tags['title'][0]
                 if 'artist' in tags:
@@ -129,7 +150,8 @@ class FileItem(BaseItem):
                         im = Image.open(BytesIO(as_flac_picture.data))
 
             elif ext == ".flac":
-                tags = mutagen.File(self.uri())
+                with LocalFiles(self.music_folder).open(self.path) as source:
+                    tags = mutagen.File(source)
                 if 'title' in tags:
                     self.title = tags['title'][0]
                 if 'artist' in tags:

@@ -16,34 +16,36 @@ Alert links: https://github.com/algielen/botamusique/security/code-scanning
 
 These fixes need a new CodeQL run before their alerts can be confirmed closed.
 
-## File paths: alerts #4–#9 (high priority)
+## File paths: alerts #4–#9
 
-The upload and empty-directory deletion routes already check lexical absolute
-paths against the music folder. Those checks do not resolve symlinks/junctions;
-an in-folder link can point outside the music folder. Upload also checks for an
-existing file separately from saving it, leaving a race that can overwrite a
-file. Deletion of individual library files uses database-provided paths and
-also needs an explicit storage-boundary review.
+Implemented on `fix/restrict-local-filepaths`; a new CodeQL run must confirm closure.
 
-1. Define the storage policy: uploads and deletion must stay within the music
-   folder; decide whether links inside that folder are supported or rejected.
-   Identify which downloaded/cache files, if any, may legitimately be deleted
-   outside that root before applying restrictions to all item types.
-2. Add a shared path-validation helper using resolved paths and component-aware
-   containment checks. Validate request directories before any library or
-   filesystem mutation. Check both parent directories and final upload paths,
-   including existing symlinks. Return 400/403 for invalid paths.
-3. Use exclusive file creation rather than `exists()` followed by `save()`;
-   preserve the 409 response for collisions and remove partial uploads on errors.
-   If local users can change directories concurrently, use directory-relative
-   filesystem operations that reject symlink traversal on Linux, and define an
-   equivalent Windows strategy. Resolved-path checks alone do not eliminate races.
-4. Test traversal with `/` and `\`, absolute/drive/UNC paths, sibling directories
-   sharing a prefix, symlinks/junctions escaping the root, existing target links,
-   collisions, and normal upload/deletion. Assert outside files remain untouched
-   and invalid requests do not alter the playlist/database.
-5. Run CodeQL on the changed routes and inspect any remaining dataflow findings.
-   Document verified false positives individually rather than suppressing the rule.
+- Uploads use generated storage names. Original filenames and optional `name`
+  values are display metadata. Existing regular files remain supported.
+- Existing folder labels resolve through server-owned enumeration. New labels
+  map to generated directories; typed paths cannot create arbitrary directories.
+- Reject symlinks, junctions/reparse points, hard links, absolute paths, traversal,
+  alternate data streams, and ambiguous trailing spaces/dots. Apply this to
+  scans, metadata, local playback, downloads/ZIPs, and local deletion.
+- On POSIX, use directory descriptors and `O_NOFOLLOW`; subprocesses inherit the
+  secured file descriptor. On Windows, open reparse points without following
+  them and pin ancestors/files with handles that deny delete sharing.
+- Create uploads exclusively and clean up partial writes. Serialize uploads with
+  rescans so partially uploaded files are not indexed. Keep empty folders instead
+  of deleting directories selected by a request.
+- Bound cached-download playback, downloads, and cleanup to their separate cache
+  root. Downloads and ZIPs stream secured file objects instead of reopening paths.
+- Reject invalid bulk-delete inputs before changing files or library state.
+
+Tests cover traversal/drive/UNC inputs, junctions and symlinks (including links
+within the root), hard links, collisions, partial uploads, independent display
+names, invalid database paths, normal download/ZIP/delete operations, subprocess
+file access, and a POSIX parent-directory replacement race.
+
+Compatibility: local play/list searches now use library titles. Existing regular
+files keep their filenames and IDs; absolute-path and linked entries are rejected.
+Keep both the music database and settings database when backing up app-managed
+uploads, since they hold display titles and folder-label mappings.
 
 ## TLS: alert #10
 
@@ -75,5 +77,7 @@ priority alongside the path fixes.
 - `node --check src/botamusique/static/js/main.mjs`
 - `node --test tests/test_web_text.mjs` (literal-text rendering and tag round trip)
 - `.venv/Scripts/python.exe -m pytest tests/ -q --basetemp=tmp/pytest-security-review`
+- Linux-specific helper tests: `python3 -m pytest --noconftest tests/test_localfiles.py`
+  with `src` on `PYTHONPATH`
 - Re-run GitHub CodeQL after publishing the branch; local tests cannot confirm
   GitHub alert closure.

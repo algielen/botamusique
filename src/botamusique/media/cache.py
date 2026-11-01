@@ -7,6 +7,7 @@ from typing import Any
 import filetype
 
 from botamusique.database import Condition, MusicDatabase, SettingsDatabase
+from botamusique.localfiles import LocalFiles, UnsafePath, cache_location
 from botamusique.media.file import FileItem
 from botamusique.media.item import BaseItem
 from botamusique.media.radio import RadioItem
@@ -153,8 +154,11 @@ class MusicCache(dict):
             self.log.debug("library: DELETE item from the database: %s" % item.format_debug_string())
 
             if item.type == 'url':
-                if os.path.exists(item.path):
-                    os.remove(item.path)
+                store, name = cache_location(self.tmp_folder, item.path)
+                try:
+                    store.delete(name)
+                except FileNotFoundError:
+                    pass
 
             if item.id in self:
                 del self[item.id]
@@ -170,57 +174,52 @@ class MusicCache(dict):
         self.clear()
 
     def build_dir_cache(self) -> None:
-        self.dir_lock.acquire()
-        self.log.info("library: rebuild directory cache")
-        files = self.get_recursive_file_list_sorted(self.music_folder)
+        with self.dir_lock:
+            self.log.info("library: rebuild directory cache")
+            files = self.get_recursive_file_list_sorted(self.music_folder)
 
-        # remove deleted files
-        results = self.music_db.query_music(Condition().or_equal('type', 'file'))
-        for result in results:
-            if result['path'] not in files:
-                self.log.debug("library: music file missed: %s, delete from library." % result['path'])
-                self.music_db.delete_music(Condition().and_equal('id', result['id']))
-            else:
-                files.remove(result['path'])
+            # remove deleted files
+            results = self.music_db.query_music(Condition().or_equal('type', 'file'))
+            for result in results:
+                if result['path'] not in files:
+                    self.log.debug("library: music file missed: %s, delete from library." % result['path'])
+                    self.music_db.delete_music(Condition().and_equal('id', result['id']))
+                else:
+                    files.remove(result['path'])
 
-        for file in files:
-            results = self.music_db.query_music(Condition().and_equal('path', file))
-            if not results:
-                item = FileItem(file, self.music_folder)
-                self.log.debug("library: music save into database: %s" % item.format_debug_string())
-                self.music_db.insert_music(item.to_dict())
+            for file in files:
+                results = self.music_db.query_music(Condition().and_equal('path', file))
+                if not results:
+                    item = FileItem(file, self.music_folder)
+                    self.log.debug("library: music save into database: %s" % item.format_debug_string())
+                    self.music_db.insert_music(item.to_dict())
 
-        self.music_db.manage_special_tags()
-        self.dir_lock.release()
+            self.music_db.manage_special_tags()
 
     def get_recursive_file_list_sorted(self, path: str) -> list[str]:
         filelist = []
-
-        if not os.access(path, os.R_OK):
-            self.log.error(f"Unable to list files at {path}. Verify it exists and traverse permission is granted for all parent paths.")
-            return filelist
-
-        for root, dirs, files in os.walk(path, topdown=True, onerror=None, followlinks=True):
-            relroot = root.replace(path, '', 1)
-            if relroot != '' and relroot in self.config.get('bot', 'ignored_folders'):
-                continue
-            for file in files:
-                if file in self.config.get('bot', 'ignored_files'):
+        store = LocalFiles(path)
+        try:
+            folders = store.folders().values()
+            for folder in folders:
+                if folder != '.' and folder in self.config.get('bot', 'ignored_folders'):
                     continue
-
-                fullpath = os.path.join(path, relroot, file)
-                if not os.access(fullpath, os.R_OK):
-                    continue
-
-                try:
-                    mime = filetype.guess_mime(fullpath)
-                    if mime and ('audio' in mime or 'video' in mime):
-                        filelist.append(os.path.join(relroot, file))
-                except:
-                    pass
-
-        filelist.sort()
-        return filelist
+                directory = store.root if folder == '.' else store.path(folder)
+                for entry in os.scandir(directory):
+                    if entry.name in self.config.get('bot', 'ignored_files'):
+                        continue
+                    relative = entry.name if folder == '.' else folder + '/' + entry.name
+                    try:
+                        with store.open(relative) as source:
+                            mime = filetype.guess_mime(source)
+                            if mime and ('audio' in mime or 'video' in mime):
+                                filelist.append(relative)
+                    except (OSError, UnsafePath):
+                        continue
+        except (OSError, UnsafePath):
+            self.log.exception('Unable to scan local music folder safely')
+            raise
+        return sorted(filelist)
 
     # -------------------------
     # Cached wrapper helpers

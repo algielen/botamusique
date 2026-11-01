@@ -1,11 +1,13 @@
 """Tests for FileItem in media/file.py."""
 import hashlib
-import pytest
+import os
 from unittest.mock import patch
 
-from botamusique.media.file import FileItem
-from botamusique.media.file import ValidationFailedError
+import pytest
+
 from botamusique.constants import load_lang
+from botamusique.localfiles import UnsafePath
+from botamusique.media.file import FileItem, ValidationFailedError
 
 # Ensure lang strings are available (FileItem.validate() calls tr())
 load_lang("en_US")
@@ -37,7 +39,7 @@ def test_generate_id_different_paths_differ():
 # ---------------------------------------------------------------------------
 
 def test_constructor_nonexistent_path_ready_pending():
-    item = FileItem("/nonexistent/path/song.mp3", MUSIC_FOLDER)
+    item = FileItem("nonexistent/path/song.mp3", MUSIC_FOLDER)
     # File does not exist → ready stays "pending"
     assert item.ready == "pending"
 
@@ -57,20 +59,20 @@ def test_constructor_type_is_file():
 # uri()
 # ---------------------------------------------------------------------------
 
-def test_uri_absolute_path_returned_directly():
+def test_uri_absolute_path_is_rejected():
     item = FileItem("/absolute/song.mp3", MUSIC_FOLDER)
-    assert item.uri() == "/absolute/song.mp3"
+    with pytest.raises(UnsafePath):
+        item.uri()
 
 
 def test_uri_relative_path_prepends_music_folder():
     item = FileItem("relative/song.mp3", MUSIC_FOLDER)
-    assert item.uri() == MUSIC_FOLDER + "relative/song.mp3"
+    assert item.uri() == os.path.abspath(os.path.join(MUSIC_FOLDER, "relative", "song.mp3"))
 
 
-def test_is_ready_always_true():
-    """FileItem overrides is_ready() to always return True."""
+def test_invalid_file_is_not_ready():
     item = FileItem("/nonexistent/song.mp3", MUSIC_FOLDER)
-    assert item.is_ready() is True
+    assert item.is_ready() is False
 
 
 # ---------------------------------------------------------------------------
@@ -84,32 +86,32 @@ def test_validate_raises_when_file_missing():
             item.validate()
 
 
-def test_validate_succeeds_when_file_exists():
-    item = FileItem("/nonexistent/song.mp3", MUSIC_FOLDER)
+def test_validate_succeeds_when_file_exists(tmp_path):
+    item = FileItem("song.mp3", str(tmp_path))
+    (tmp_path / "song.mp3").write_bytes(b"test")
     item.duration = 0
-    with patch("botamusique.media.file.os.path.exists", return_value=True), \
-         patch("botamusique.media.file.util.get_media_duration", return_value=120):
+    with patch("botamusique.media.file.util.get_media_duration", return_value=120):
         result = item.validate()
     assert result is True
     assert item.ready == "yes"
     assert item.duration == 120
 
 
-def test_validate_skips_duration_when_already_set():
-    item = FileItem("/nonexistent/song.mp3", MUSIC_FOLDER)
+def test_validate_skips_duration_when_already_set(tmp_path):
+    item = FileItem("song.mp3", str(tmp_path))
+    (tmp_path / "song.mp3").write_bytes(b"test")
     item.duration = 60
-    with patch("botamusique.media.file.os.path.exists", return_value=True), \
-         patch("botamusique.media.file.util.get_media_duration") as mock_dur:
+    with patch("botamusique.media.file.util.get_media_duration") as mock_dur:
         item.validate()
     mock_dur.assert_not_called()
 
 
-def test_validate_increments_version_when_duration_computed():
-    item = FileItem("/nonexistent/song.mp3", MUSIC_FOLDER)
+def test_validate_increments_version_when_duration_computed(tmp_path):
+    item = FileItem("song.mp3", str(tmp_path))
+    (tmp_path / "song.mp3").write_bytes(b"test")
     item.duration = 0
     v = item.version
-    with patch("botamusique.media.file.os.path.exists", return_value=True), \
-         patch("botamusique.media.file.util.get_media_duration", return_value=180):
+    with patch("botamusique.media.file.util.get_media_duration", return_value=180):
         item.validate()
     assert item.version > v
 
@@ -151,3 +153,19 @@ def test_to_dict_includes_artist_and_thumbnail():
     assert "artist" in d
     assert "thumbnail" in d
     assert d["type"] == "file"
+
+
+def test_real_ffprobe_can_read_secured_local_input(tmp_path):
+    import shutil
+    import wave
+
+    if shutil.which('ffprobe') is None:
+        pytest.skip('ffprobe is not installed')
+    with wave.open(str(tmp_path / 'song.wav'), 'wb') as output:
+        output.setnchannels(1)
+        output.setsampwidth(2)
+        output.setframerate(8000)
+        output.writeframes(b'\x00\x00' * 8000)
+    item = FileItem('song.wav', str(tmp_path))
+    assert item.is_ready()
+    assert item.duration == pytest.approx(1.0)

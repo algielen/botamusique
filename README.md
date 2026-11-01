@@ -25,6 +25,22 @@ Predicted functionalities will be those people would expect from any classic mus
 6. **Multilingual support.** A list of supported languages can be found below.
 
 
+## Local music storage
+
+Local music must be inside the configured music folder. Existing regular files
+are indexed, but symbolic links, Windows junctions/reparse points, hard links,
+and absolute-path library entries are rejected.
+
+Uploads receive generated filenames. Their original names become library titles;
+play and list commands search those titles rather than storage paths. Duplicate
+titles produce a selection list. Select an existing folder label when uploading,
+or enter a new single folder name; the app chooses its storage directory.
+Empty folders are retained when deleting their music.
+
+Back up both the music and settings databases alongside uploaded files to preserve
+their display titles and folder labels. Rescan the library after upgrading to
+remove unsupported linked or absolute-path entries.
+
 ## Screenshots
 
 ![botamusique in Mumble channel](https://user-images.githubusercontent.com/2306637/75210917-68fbf680-57bd-11ea-9cf8-c0871edff13f.jpg)
