@@ -247,10 +247,10 @@ def youtube_search(query: str, config: ConfigParser) -> list[list[str]] | bool:
         return False
 
 
-def get_media_duration(path: str) -> float:
+def get_media_duration(path: str, **popen_options) -> float:
     command = ("ffprobe", "-v", "quiet", "-show_entries", "format=duration",
                "-of", "default=noprint_wrappers=1:nokey=1", path)
-    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, **popen_options)
     stdout, stderr = process.communicate()
 
     try:

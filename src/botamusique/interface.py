@@ -1,13 +1,14 @@
 #!/usr/bin/python3
 
-import errno
 import json
 import logging
 import math
-import os
-import os.path
+import shutil
 import sqlite3
+import tempfile
 import time
+import uuid
+import zipfile
 from functools import wraps
 from pathlib import Path
 from typing import Any, Callable
@@ -28,6 +29,12 @@ from werkzeug.utils import secure_filename
 
 from botamusique import media, util
 from botamusique.database import Condition
+from botamusique.localfiles import (
+    LocalFiles,
+    UnsafePath,
+    cache_location,
+    relative_parts,
+)
 from botamusique.media.file import FileItem
 from botamusique.media.item import BaseItem
 from botamusique.media.radio import RadioItem
@@ -263,19 +270,51 @@ def build_tags_color_lookup() -> dict[str, str]:
 
 
 def get_all_dirs() -> list[str]:
-    dirs = ["."]
-    paths = _bot.music_db.query_all_paths()
-    for path in paths:
-        pos = 0
-        while True:
-            pos = path.find("/", pos + 1)
-            if pos == -1:
-                break
-            folder = path[:pos]
-            if folder not in dirs:
-                dirs.append(folder)
+    return list(local_folders())
 
-    return dirs
+
+def local_folders() -> dict[str, str]:
+    """Resolve public folder labels through server-owned storage metadata."""
+    paths = set(LocalFiles(_bot.music_folder).folders().values())
+    registry = json.loads(_bot.db.get('library', 'folders', fallback='{}'))
+    aliases = {path: label for label, path in registry.items()}
+    return {aliases.get(path, path): path for path in sorted(paths)}
+
+
+def delete_local_item(item) -> None:
+    if item.type == 'file':
+        try:
+            LocalFiles(_bot.music_folder).delete(item.path)
+        except FileNotFoundError:
+            pass
+        except (OSError, UnsafePath):
+            abort(403)
+
+
+def validate_item_storage(item) -> None:
+    try:
+        if item.type == 'file':
+            store, name = LocalFiles(_bot.music_folder), item.path
+        elif item.type == 'url':
+            store, name = cache_location(_bot.cache.tmp_folder, item.path)
+        else:
+            return
+        with store.open(name):
+            pass
+    except FileNotFoundError:
+        # A stale library record can still be removed without touching storage.
+        pass
+    except (OSError, UnsafePath):
+        abort(403)
+
+
+def media_source(item):
+    if item['type'] == 'file':
+        return LocalFiles(_bot.music_folder).open(item['path'])
+    if item['type'] == 'url':
+        store, name = cache_location(_bot.cache.tmp_folder, item['path'])
+        return store.open(name)
+    abort(404)
 
 
 @bp.route("/", methods=["GET"])
@@ -483,12 +522,14 @@ def post() -> Response:
 
         elif 'delete_item_from_library' in payload:
             _id = payload['delete_item_from_library']
-            _bot.playlist.remove_by_id(_id)
+            if not _bot.config.getboolean('bot', 'delete_allowed'):
+                abort(403)
             item = _bot.cache.get_item_by_id(_id)
-
-            if os.path.isfile(item.uri()):
-                log.info("web: user %s (%s) deleting file %s" % (user, request.remote_addr, item.uri()))
-                os.remove(item.uri())
+            if item is None:
+                abort(404)
+            validate_item_storage(item)
+            delete_local_item(item)
+            _bot.playlist.remove_by_id(_id)
 
             _bot.cache.free_and_delete(_id)
             time.sleep(0.1)
@@ -584,7 +625,9 @@ def build_library_query_condition(form: dict[str, Any]) -> Condition:
         condition.and_sub_condition(sub_cond)
 
         if form['type'] == 'file':
-            folder = form['dir']
+            folder = local_folders().get(form['dir'])
+            if folder is None:
+                abort(403)
             if folder == ".":
                 folder = ""
             if not folder.endswith('/') and folder:
@@ -673,21 +716,13 @@ def library() -> Response:
             elif payload['action'] == 'delete':
                 if _bot.config.getboolean("bot", "delete_allowed"):
                     items = _bot.cache.dicts_to_items(_bot.music_db.query_music(condition))
+                    # Validate the entire batch before changing files or library state.
                     for item in items:
+                        validate_item_storage(item)
+                    for item in items:
+                        delete_local_item(item)
                         _bot.playlist.remove_by_id(item.id)
-                        item = _bot.cache.get_item_by_id(item.id)
-
-                        if os.path.isfile(item.uri()):
-                            log.info("web: user %s (%s) deleting file %s" % (user, request.remote_addr, item.uri()))
-                            os.remove(item.uri())
-
                         _bot.cache.free_and_delete(item.id)
-
-                    music_root = os.path.abspath(_bot.music_folder)
-                    deldir = os.path.abspath(os.path.join(music_root, payload['dir']))
-                    if (deldir == music_root or deldir.startswith(music_root + os.sep)) \
-                            and os.path.isdir(deldir) and len(os.listdir(deldir)) == 0:
-                        os.rmdir(deldir)
 
                     time.sleep(0.1)
                     return redirect("./", code=302)
@@ -757,51 +792,52 @@ def upload() -> tuple[str, int]:
     if not file:
         abort(400)
 
-    # Sanitize the client-supplied filename: secure_filename strips any
-    # directory components (../, absolute paths, drive letters), preventing
-    # path traversal when it is later joined onto the storage path.
-    filename = secure_filename(file.filename or '')
-    if filename == '':
+    # The original name is display metadata; storage uses a generated name.
+    original_name = (file.filename or '').replace('\\', '/').rsplit('/', 1)[-1]
+    if not original_name.strip():
         abort(400)
 
-    targetdir = request.form['targetdir'].strip()
-    if targetdir == '':
-        targetdir = 'uploads/'
-    elif '../' in targetdir:
-        abort(403)
-
-    log.info('web: user %s uploading file from %s:' % (user, request.remote_addr))
-    log.info('web: - filename: ' + filename)
-    log.info('web: - targetdir: ' + targetdir)
-    log.info('web: - mimetype: ' + file.mimetype)
-
-    music_root = os.path.abspath(_bot.music_folder)
-    if "audio" in file.mimetype or "video" in file.mimetype:
-        storagepath = os.path.abspath(os.path.join(music_root, targetdir))
-        if storagepath != music_root and not storagepath.startswith(music_root + os.sep):
-            abort(403)
-
-        try:
-            os.makedirs(storagepath)
-        except OSError as ee:
-            if ee.errno != errno.EEXIST:
-                log.error(f'web: failed to create directory {storagepath}')
-                abort(500)
-
-        filepath = os.path.join(storagepath, filename)
-        # Defense in depth: re-validate the final, fully-resolved path lies
-        # inside the music folder before writing.
-        if os.path.abspath(filepath) != music_root \
-                and not os.path.abspath(filepath).startswith(music_root + os.sep):
-            abort(403)
-        log.info('web: - file saved at: ' + filepath)
-        if os.path.exists(filepath):
-            return 'File existed!', 409
-
-        file.save(filepath)
-    else:
-        log.error(f'web: unsupported file type {file.mimetype}! File was not saved.')
+    if not ("audio" in file.mimetype or "video" in file.mimetype):
         return 'Unsupported media type!', 415
+
+    label = request.form.get('targetdir', '').strip() or 'Uploads'
+    store = LocalFiles(_bot.music_folder)
+    try:
+        # Serialize with rescans and other uploads: partially written files must
+        # not be indexed, and folder-label registrations must not overwrite peers.
+        with _bot.cache.dir_lock:
+            choices = local_folders()
+            directory = choices.get(label)
+            if directory is None:
+                # A new folder label is data, never a path. Nested user paths are forbidden.
+                if len(relative_parts(label)) != 1 or len(label) > 128:
+                    abort(400)
+                directory = 'uploads/' + uuid.uuid4().hex
+            extension = Path(original_name).suffix.lower()
+            if extension not in {'.mp3', '.mp4', '.m4a', '.m4b', '.m4p', '.ogg', '.opus', '.flac', '.wav', '.webm', '.aac'}:
+                extension = '.media'
+            relative = directory + '/' + uuid.uuid4().hex + extension if directory != '.' else uuid.uuid4().hex + extension
+            with store.open(relative, create=True) as output:
+                try:
+                    file.save(output)
+                except BaseException:
+                    output.close()
+                    store.delete(relative)
+                    raise
+            registry = json.loads(_bot.db.get('library', 'folders', fallback='{}'))
+            registry[label] = directory
+            _bot.db.set('library', 'folders', json.dumps(registry))
+            item = FileItem(relative, _bot.music_folder)
+            item.title = request.form.get('name', '').strip()[:256] or Path(original_name).stem
+            item.keywords = item.title + ' ' + item.artist
+            _bot.music_db.insert_music(item.to_dict())
+    except FileExistsError:
+        return 'File existed!', 409
+    except UnsafePath:
+        abort(403)
+    except OSError:
+        log.exception('web: local file upload failed')
+        abort(403)
 
     return '', 200
 
@@ -811,33 +847,40 @@ def upload() -> tuple[str, int]:
 def download() -> Response:
     global log
 
-    if 'id' in request.args and request.args['id']:
-        item = _bot.cache.dicts_to_items(_bot.music_db.query_music(
-            Condition().and_equal('id', request.args['id'])))[0]
-
-        requested_file = item.uri()
-        log.info('web: user %s (%s) requested download of file %s' % (user, request.remote_addr, requested_file))
-
-        try:
-            return send_file(requested_file, as_attachment=True)
-        except Exception as e:
-            log.exception(e)
-            abort(404)
-
-    else:
-        condition = build_library_query_condition(request.args)
-        items = _bot.cache.dicts_to_items(_bot.music_db.query_music(condition))
-
-        temp_folder = util.solve_filepath(_bot.config.get('bot', 'tmp_folder'))
-        zipfile = util.zipdir([item.uri() for item in items], temp_folder, _bot.config)
-
-        try:
-            return send_file(zipfile, as_attachment=True)
-        except Exception as e:
-            log.exception(e)
-            abort(404)
-
-    return abort(400)
+    try:
+        if request.args.get('id'):
+            rows = _bot.music_db.query_music(Condition().and_equal('id', request.args['id']))
+            if not rows:
+                abort(404)
+            item = rows[0]
+            source = media_source(item)
+            name = secure_filename(item['title']) or 'music'
+            name += Path(item['path']).suffix
+            try:
+                response = send_file(source, as_attachment=True, download_name=name)
+            except BaseException:
+                source.close()
+                raise
+        else:
+            rows = _bot.music_db.query_music(build_library_query_condition(request.args))
+            source = tempfile.TemporaryFile()
+            try:
+                with zipfile.ZipFile(source, 'w', zipfile.ZIP_DEFLATED) as archive:
+                    for item in rows:
+                        if item['type'] not in ('file', 'url'):
+                            continue
+                        name = (secure_filename(item['title']) or 'music') + '-' + item['id'][:8] + Path(item['path']).suffix
+                        with media_source(item) as media_input, archive.open(name, 'w') as output:
+                            shutil.copyfileobj(media_input, output)
+                source.seek(0)
+                response = send_file(source, as_attachment=True, download_name='music.zip')
+            except BaseException:
+                source.close()
+                raise
+        response.call_on_close(source.close)
+        return response
+    except (OSError, UnsafePath):
+        abort(403)
 
 
 if __name__ == '__main__':
