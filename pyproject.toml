@@ -1,6 +1,6 @@
 [project]
 name = "botamusique"
-version = "8.9.9"
+version = "8.9.10"
 description = "Bot to play youtube / soundcloud / radio / local music on Mumble (using pymumble)"
 readme = "README.md"
 requires-python = ">=3.14"
@@ -43,7 +43,7 @@ exclude = [
     "/docker-compose.yaml",
     "/dockerbuild.sh",
     "/ideas.md",
-    "/CLAUDE.md",
+    "/AGENTS.md",
     "/uv.lock",
     "/static",
     "/tests",

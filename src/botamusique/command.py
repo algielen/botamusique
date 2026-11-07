@@ -5,6 +5,7 @@ import json
 import logging
 import re
 import secrets
+from html import escape
 from typing import Any
 
 from pyradios import RadioBrowser
@@ -37,6 +38,7 @@ def register_all_commands(bot: MumbleBot) -> None:
     bot.register_command(commands('joinme', bot.config), cmd_joinme, access_outside_channel=True)
     bot.register_command(commands('last', bot.config), cmd_last)
     bot.register_command(commands('list_file', bot.config), cmd_list_file)
+    bot.register_command(commands('list_folder', bot.config), cmd_list_folder)
     bot.register_command(commands('mode', bot.config), cmd_mode)
     bot.register_command(commands('pause', bot.config), cmd_pause)
     bot.register_command(commands('play', bot.config), cmd_play)
@@ -823,6 +825,34 @@ def cmd_remove(bot: MumbleBot, user: str, text: Any, command: str, parameter: st
 
     else:
         bot.send_msg(tr('bad_parameter', command=command), text)
+
+
+def cmd_list_folder(bot: MumbleBot, user: str, text: Any, command: str, parameter: str) -> None:
+    try:
+        pattern = re.compile(parameter) if parameter else None
+    except re.error as error:
+        bot.send_msg(tr('wrong_pattern', error=escape(str(error))), text)
+        return
+
+    paths = set(LocalFiles(bot.music_folder).folders().values())
+    registry = json.loads(bot.db.get('library', 'folders', fallback='{}'))
+    aliases = {path: label for label, path in registry.items()}
+    folders = [(path, '.' if path == '.' else aliases.get(path, path)) for path in paths]
+    folders.sort(key=lambda entry: (entry[0] != '.', entry[1]))
+    matches = [name for _, name in folders if pattern is None or pattern.search(name)]
+    if not matches:
+        bot.send_msg(tr('no_folder'), text)
+        return
+
+    msgs = [tr('list_folder_header') + '<ul>']
+    for index, name in enumerate(matches[:ITEMS_PER_PAGE], start=1):
+        label = tr('list_folder_root') + ' (.)' if name == '.' else name
+        msgs.append(f'<li><b>{index}</b> - <b>{escape(label)}</b></li>')
+    msgs.append('</ul>')
+    if len(matches) > ITEMS_PER_PAGE:
+        msgs.append(tr('records_omitted'))
+    msgs.append(tr('list_folder_instruction'))
+    send_multi_lines(bot, msgs, text, '')
 
 
 def cmd_list_file(bot: MumbleBot, user: str, text: Any, command: str, parameter: str) -> None:
