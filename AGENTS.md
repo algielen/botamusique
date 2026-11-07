@@ -1,6 +1,8 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to coding agents working in this repository.
+
+If `.agents/local.md` exists, read it for additional machine-local instructions. Keep machine-specific paths and settings in that ignored file, not in tracked documentation.
 
 ## Project Overview
 
@@ -28,13 +30,13 @@ uv sync
 uv sync --dev
 
 # Run the bot
-uv run src/botamusique/main.py --config configuration.ini
+uv run botamusique --config configuration.ini
 
 # Run tests
-uv run pytest
+uv run pytest tests/
 
 # Run a specific test
-uv run pytest src/pymumble_py3/tests/test_crypto.py
+uv run pytest tests/test_crypto.py
 
 ```
 
@@ -50,10 +52,10 @@ This downloads the two pre-built Bootswatch themes directly to `src/botamusique/
 
 The theme download is cached in `tmp/vendor/build_cache.json` (keyed by URL). `uv build --clear` only clears the `dist/` output directory, not this cache; pass `--no-cache` to force a fresh re-download: `uv run --group build scripts/build.py --no-cache`.
 
-To run the translation step on its own (e.g. after editing a `lang/*.json` file):
+To run the translation step on its own (e.g. after editing a `src/botamusique/lang/*.json` file):
 
 ```bash
-uv run scripts/translate_templates.py --lang-dir lang/ --template-dir src/botamusique/web/templates/
+uv run scripts/translate_templates.py --lang-dir src/botamusique/lang/ --template-dir src/botamusique/web/templates/ --output-dir src/botamusique/web/
 ```
 
 **Frontend source layout:**
@@ -119,16 +121,16 @@ Copy `configuration.example.ini` to `configuration.ini` and edit it. Do **not** 
 ### Startup flow (`src/botamusique/main.py`)
 
 `src/botamusique/main.py` is the entry point. It:
-1. Parses CLI args and environment variables (`BAM_*` env vars mirror all CLI flags).
+1. Parses CLI args and environment variables (`BAM_*` env vars provide defaults for supported CLI flags).
 2. Loads and validates `configuration.ini` against `configuration.default.ini`.
 3. Initializes two SQLite databases: a **settings DB** (`settings-<username>.db`) and a **music library DB** (`music.db`).
-4. Loads the translation strings for the selected language from `lang/<lang>.json`.
+4. Loads the translation strings for the selected language from `src/botamusique/lang/<lang>.json`.
 5. Creates a `MusicCache` and optionally builds the directory cache.
 6. Creates the `MumbleBot` instance and registers all bot commands.
 7. Optionally starts the Flask web interface in a daemon thread.
 8. Enters `MumbleBot.loop()`, the main audio loop.
 
-### Bot core (`src/mumbleBot.py`)
+### Bot core (`src/botamusique/mumbleBot.py`)
 
 `MumbleBot` owns the pymumble connection and the ffmpeg subprocess. The main loop (`loop()`) reads PCM audio from ffmpeg stdout in 960-sample chunks (stereo: 1920) and feeds it into pymumble's sound output buffer. Volume is adjusted via exponential smoothing; ducking is implemented by listening to incoming sound RMS.
 
@@ -137,35 +139,35 @@ Audio playback lifecycle per item:
 2. `prepare()` — download/transcode to a local file if needed
 3. `launch_music()` — spawn an ffmpeg process, start reading PCM
 
-### Commands (`src/command.py`)
+### Commands (`src/botamusique/command.py`)
 
 All chat commands are registered via `bot.register_command(command_name, handler_fn)` in `command.register_all_commands()`. Command names come from `configuration.ini` `[commands]` section (resolved via `constants.commands()`), so they are user-configurable. Partial prefix matching is supported unless `no_partial_match=True`.
 
-### Media items (`src/media/`)
+### Media items (`src/botamusique/media/`)
 
-Each media source is a subclass of `BaseItem` (`src/media/item.py`):
-- `FileItem` (`src/media/file.py`) — local audio files
-- `URLItem` (`src/media/url.py`) — yt-dlp downloads
-- `PlaylistURLItem` (`src/media/url_from_playlist.py`) — items expanded from a URL playlist
-- `RadioItem` (`src/media/radio.py`) — streaming radio URLs
+Each media source is a subclass of `BaseItem` (`src/botamusique/media/item.py`):
+- `FileItem` (`src/botamusique/media/file.py`) — local audio files
+- `URLItem` (`src/botamusique/media/url.py`) — yt-dlp downloads
+- `PlaylistURLItem` (`src/botamusique/media/url_from_playlist.py`) — items expanded from a URL playlist
+- `RadioItem` (`src/botamusique/media/radio.py`) — streaming radio URLs
 
-Items go through states: `pending → validated → yes` (or `failed`). `MusicCache` (`src/media/cache.py`) is a dict keyed by item ID that also persists metadata to `MusicDatabase`. The cache is the single source of truth for item objects shared between the playlist, the bot loop, and the web interface.
+Items go through states: `pending → validated → yes` (or `failed`). `MusicCache` (`src/botamusique/media/cache.py`) is a dict keyed by item ID that also persists metadata to `MusicDatabase`. The cache is the single source of truth for item objects shared between the playlist, the bot loop, and the web interface.
 
-### Playlist modes (`src/media/playlist.py`)
+### Playlist modes (`src/botamusique/media/playlist.py`)
 
 `BasePlaylist` is a Python `list` subclass with a `current_index`. Concrete implementations: `OneshotPlaylist`, `RepeatPlaylist`, `RandomPlaylist`, `AutoPlaylist`. Mode can be changed at runtime; `get_playlist()` converts between modes.
 
-### Web interface (`src/interface.py`)
+### Web interface (`src/botamusique/interface.py`)
 
-A Flask app served on a daemon thread. Holds a module-level `_bot` reference set via `set_bot(bot)`, called from `start_web_interface(addr, port, bot)` in `src/botamusique/main.py`. Supports reverse-proxy deployment via `X-Script-Name` / `X-Forwarded-For` headers (`ReverseProxied` middleware).
+A Flask app served on a daemon thread. Holds a module-level `_bot` reference set via `set_bot(bot)`, called from `start_web_interface(addr, port, bot)` in `src/botamusique/main.py`. Supports reverse-proxy deployment via `X-Script-Name` / `X-Scheme` / `X-Real-IP` headers (`ReverseProxied` middleware).
 
-### Translation (`src/constants.py`)
+### Translation (`src/botamusique/constants.py`)
 
-`tr_cli(key, **kwargs)` and `tr_web(key, **kwargs)` look up strings in `lang/<lang>.json`. The JSON has two top-level sections: `"cli"` (bot chat messages) and `"web"` (web interface strings). English (`en_US`) is the fallback.
+`tr_cli(key, **kwargs)` and `tr_web(key, **kwargs)` look up strings in `src/botamusique/lang/<lang>.json`. The JSON has two top-level sections: `"cli"` (bot chat messages) and `"web"` (web interface strings). English (`en_US`) is the fallback.
 
 ### pymumble (`src/pymumble_py3/`)
 
-Vendored fork of the pymumble library. Contains the Mumble protocol implementation (protobuf, CELT/Opus audio, crypto). Tests live in `src/pymumble_py3/tests/`.
+Vendored fork of the pymumble library. Contains the Mumble protocol implementation (protobuf, CELT/Opus audio, crypto). Tests live in `tests/`.
 
 #### Protobuf regeneration
 
@@ -195,7 +197,7 @@ uv run --with grpcio-tools python -m grpc_tools.protoc \
 
 ## Key Conventions
 
-- **State ownership**: `MumbleBot` is the central owner of runtime state (`config`, `db`, `music_db`, `cache`, `playlist`, `music_folder`). All dependencies are passed explicitly via constructors — there are no module-level globals.
+- **State ownership**: `MumbleBot` is the central owner of runtime state (`config`, `db`, `music_db`, `cache`, `playlist`, `music_folder`). Runtime dependencies are passed explicitly; command and web modules also maintain some module-level state.
 - **Config reading**: `bot.config.get(section, key)` / `bot.config.getboolean(...)`. The settings DB (`bot.db`) overrides config for user-changeable runtime settings (volume, ducking thresholds, etc.).
 - **`MusicCache` as item factory**: Construct items via `cache.get_item(type=..., ...)` or `cache.get_cached_wrapper_from_scrap(...)` rather than directly calling item constructors, so the cache stays consistent.
 - **Playlist / bot wiring**: `BasePlaylist` is created before `MumbleBot` with `send_channel_msg=None`, then wired after: `playlist.send_channel_msg = bot.send_channel_msg`.

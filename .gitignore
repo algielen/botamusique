@@ -36,6 +36,8 @@ tmp/
 # Tools
 .python-version
 .claude/
+.agents/local.md
+.agents/legacy-claude-settings.json
 
 # OS
 .DS_Store
