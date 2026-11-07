@@ -6,6 +6,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Botamusique is a Mumble (VoIP) music bot written in Python 3.14+. It connects to a Mumble server, plays audio (local files, YouTube/SoundCloud URLs via yt-dlp, radio streams), and offers a Flask-based web remote control interface. This is a personal fork of the upstream azlux/botamusique project.
 
+## Wiki maintenance
+
+Keep the [GitHub wiki](https://github.com/algielen/botamusique/wiki) up to date alongside changes to user-facing behavior, commands, configuration, installation, authentication, and security restrictions. The wiki is a separate Git repository: `https://github.com/algielen/botamusique.wiki.git`.
+
+Review the relevant pages against the implementation and update examples, command names, defaults, and upgrade guidance in the same task. When a command is added, check whether existing documented abbreviations become ambiguous. Clearly distinguish unreleased behavior from functionality available in published releases. Keep detailed operational guidance in the wiki and the README focused on getting started.
+
+Use an existing wiki checkout when available; machine-specific checkout locations belong only in local, ignored instructions. Check wiki links, code fences, and diffs after editing. Report changes in both repositories, and do not commit or push wiki changes unless requested.
+
 ## Commands
 
 ### Python Environment (uv)
