@@ -200,7 +200,7 @@ jobs:
       run: uv build
 
     - name: Upload release assets
-      uses: softprops/action-gh-release@v3.0.3
+      uses: softprops/action-gh-release@v3.0.4
       with:
         files: |
             dist/*.tar.gz
