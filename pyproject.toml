@@ -1,23 +1,24 @@
 [project]
 name = "botamusique"
-version = "8.9.11"
+version = "8.9.12"
 description = "Bot to play youtube / soundcloud / radio / local music on Mumble (using pymumble)"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
-    "certifi>=2026.10.23",  # Distrust compromised eMudhra certificate chains.
+    "certifi>=2026.11.20",  # Distrust compromised eMudhra certificate chains.
     "audioop-lts>=0.2.2",
     "flask>=3.1.3",
     "mutagen>=1.48.1",
     "opuslib-next>=1.3.1",
     "pillow>=13.0.0",
     "protobuf>=7.36.2",
-    "pycryptodome>=4.2.0",
+    "pycryptodome>=4.6.0",
     "pyradios>=2.1.1",
     "filetype>=1.2.0",
     "requests>=2.34.2",
     "werkzeug>=3.1.9",
-    "yt-dlp[default]>=2026.10.26",
+    "yt-dlp[default]>=2026.11.23",
+    "ty>=0.0.109",
 ]
 
 [project.scripts]
